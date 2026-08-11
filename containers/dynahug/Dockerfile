@@ -46,14 +46,9 @@ RUN DYN_PREFIX="https://raw.githubusercontent.com/DynaHug-Detector/DynaHug/${DYN
 
 # Verify the artifacts load (pinned scikit-learn/joblib) and strace works
 # under rootless podman (ptrace) before relying on it.
-RUN python3.13 - <<'EOF'
-import joblib, os
-base = "/opt/dynahug/classifier/models/text-generation/2000_benign_data_presence_frequency_new_logs_std_scaler_nomean_best/OneClassSVM/params-gamma_0.1_kernel_rbf_nu_0.01"
-m = joblib.load(os.path.join(base, "oneclass_svm_model.pkl"))
-v = joblib.load(os.path.join(base, "vectorizer.pkl"))
-s = joblib.load(os.path.join(base, "scaler.pkl"))
-print("model", type(m).__name__, "| vectorizer", type(v).__name__, "| n_feats", len(v.get_feature_names_out()))
-EOF
+# NOTE: single-line `python3.13 -c` (not a heredoc) so it builds with the
+# classic (non-BuildKit) imagebuilder used by podman on CI.
+RUN python3.13 -c 'import joblib,os; base="/opt/dynahug/classifier/models/text-generation/2000_benign_data_presence_frequency_new_logs_std_scaler_nomean_best/OneClassSVM/params-gamma_0.1_kernel_rbf_nu_0.01"; m=joblib.load(os.path.join(base,"oneclass_svm_model.pkl")); v=joblib.load(os.path.join(base,"vectorizer.pkl")); s=joblib.load(os.path.join(base,"scaler.pkl")); print("model %s | vectorizer %s | n_feats %s" % (type(m).__name__, type(v).__name__, len(v.get_feature_names_out())))'
 RUN strace -c -f -o /dev/null true
 
 COPY loader.py /usr/local/bin/dynahug-loader

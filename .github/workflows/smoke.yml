@@ -1,0 +1,37 @@
+name: smoke
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install podman
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y podman python3
+
+      # ci/smoke.sh builds base + panel images, generates the torch corpus
+      # inside the base container, and runs the assertions. It exits non-zero
+      # (failing the job) if any artifact's (verdict, exit_code) mismatches
+      # ci/corpus/expected.json.
+      - name: Run smoke suite
+        id: smoke
+        run: |
+          set -o pipefail
+          ./ci/smoke.sh 2>&1 | tee smoke-report.txt
+        working-directory: ${{ github.workspace }}
+
+      - name: Upload smoke report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-report
+          path: smoke-report.txt
+          retention-days: 7
