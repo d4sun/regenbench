@@ -1,0 +1,4 @@
+# T0.9 experiment tracking (MlflowSink). Installed on the host that runs the
+# pipeline orchestrator (pipeline.runner). The scanner/oracle containers do NOT
+# need this; only the host-side tracking does.
+mlflow>=2.10,<3
