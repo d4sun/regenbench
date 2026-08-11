@@ -1,0 +1,324 @@
+{
+  "pkl/benign/benign_01.pkl": {
+    "picklescan": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "fickling": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "modeltracer": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "_format": "pkl"
+  },
+  "pkl/benign/benign_02.pkl": {
+    "picklescan": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "fickling": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "modeltracer": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "_format": "pkl"
+  },
+  "pkl/benign/benign_03.pkl": {
+    "picklescan": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "fickling": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "modeltracer": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "_format": "pkl"
+  },
+  "pkl/benign/benign_04.pkl": {
+    "picklescan": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "fickling": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "modeltracer": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "_format": "pkl"
+  },
+  "pkl/benign/benign_05.pkl": {
+    "picklescan": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "fickling": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "modeltracer": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "_format": "pkl"
+  },
+  "pkl/benign/benign_06.pkl": {
+    "picklescan": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "fickling": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "modeltracer": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "_format": "pkl"
+  },
+  "pkl/benign/benign_07.pkl": {
+    "picklescan": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "fickling": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "modeltracer": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "_format": "pkl"
+  },
+  "pkl/benign/benign_08.pkl": {
+    "picklescan": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "fickling": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "modeltracer": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "_format": "pkl"
+  },
+  "pkl/benign/benign_09.pkl": {
+    "picklescan": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "fickling": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "modeltracer": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "_format": "pkl"
+  },
+  "pkl/benign/benign_10.pkl": {
+    "picklescan": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "fickling": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "modeltracer": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "_format": "pkl"
+  },
+  "pkl/malicious/malicious_01.pkl": {
+    "picklescan": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "fickling": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "modeltracer": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "_format": "pkl"
+  },
+  "pkl/malicious/malicious_02.pkl": {
+    "picklescan": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "fickling": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "modeltracer": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "_format": "pkl"
+  },
+  "pkl/malicious/malicious_03.pkl": {
+    "picklescan": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "fickling": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "modeltracer": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "_format": "pkl"
+  },
+  "pkl/malicious/malicious_04.pkl": {
+    "picklescan": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "fickling": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "modeltracer": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "_format": "pkl"
+  },
+  "pkl/malicious/malicious_05.pkl": {
+    "picklescan": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "fickling": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "modeltracer": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "_format": "pkl"
+  },
+  "pkl/malicious/malicious_06.pkl": {
+    "picklescan": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "fickling": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "modeltracer": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "_format": "pkl"
+  },
+  "pkl/malicious/malicious_07.pkl": {
+    "picklescan": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "fickling": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "modeltracer": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "_format": "pkl"
+  },
+  "pkl/malicious/malicious_08.pkl": {
+    "picklescan": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "fickling": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "modeltracer": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "_format": "pkl"
+  },
+  "pkl/malicious/malicious_09.pkl": {
+    "picklescan": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "fickling": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "modeltracer": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "_format": "pkl"
+  },
+  "pkl/malicious/malicious_10.pkl": {
+    "picklescan": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "fickling": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "modeltracer": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "_format": "pkl"
+  },
+  "torch/benign/benign.pt": {
+    "dynahug": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "modelscan": {
+      "verdict": "benign",
+      "exit_code": 0
+    },
+    "_format": "torch"
+  },
+  "torch/malicious/malicious.pt": {
+    "dynahug": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "modelscan": {
+      "verdict": "malicious",
+      "exit_code": 1
+    },
+    "_format": "torch"
+  }
+}
