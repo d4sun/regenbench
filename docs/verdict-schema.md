@@ -17,6 +17,7 @@ argv-provided path and prints exactly one JSON object to stdout.
 | `findings` | array | Structured per-finding records (scanner-specific shape) |
 | `summary` | object | Counters: `scanned_files`, `infected_files`, `dangerous`, `suspicious` |
 | `raw_output` | string | Captured scanner output (text) for audit/backward compatibility |
+| `decision_score` | float\|null | Oracle-only (T0.7, `dynahug`). Signed OneClassSVM `decision_function`; benign > 0, malicious < 0. `null` when the verdict is `error`. |
 
 ## Verdict rules
 
