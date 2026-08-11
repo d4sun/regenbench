@@ -1,2 +1,6 @@
 __pycache__/
 *.pyc
+
+# T0.9 MLflow file-backed store (local experiment tracking output)
+mlruns/
+.mlflow/
