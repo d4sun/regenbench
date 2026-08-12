@@ -31,6 +31,7 @@ reproducible container and wrapped behind a single
 | T2.5 | Seed corpus manifest and versioning | — | [`data/crawled/seed_manifest.json`](data/crawled/seed_manifest.json) |
 | T3.1 | Port PickleFuzzer opcode categorization | — | [`pipeline/opcodes.py`](pipeline/opcodes.py) |
 | T3.2 | Build dangerous-callable registry | — | [`pipeline/dangerous_callables.yaml`](pipeline/dangerous_callables.yaml) |
+| T3.3 | Implement candidate generator core | — | [`pipeline/generator.py`](pipeline/generator.py) |
 
 Each `containers/<name>/` holds a `Dockerfile`, `wrapper.py`, and `build.sh`
 (produces `regenbench/<name>:<version>` and `:latest`).
