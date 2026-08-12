@@ -1,0 +1,11 @@
+campaign:
+  name: "pilot-text-generation"
+  time_budget_hours: 24
+  default_rounds: 5
+  candidates_per_round: 20
+  task_cluster: "text-generation"
+  concurrency_limit: 2
+  scanners:
+    - "picklescan"
+    - "fickling"
+    - "dynahug"
