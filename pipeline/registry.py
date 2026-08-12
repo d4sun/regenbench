@@ -1,0 +1,73 @@
+"""T3.2 — Dangerous-Callable Registry.
+
+Loads and queries the registry of dangerous callable modules/targets.
+"""
+
+from __future__ import annotations
+
+import os
+import yaml
+from typing import Any
+
+
+class RegistryEntry:
+    def __init__(self, module: str, name: str, category: str, description: str, genuine_code_exec: bool):
+        self.module = module
+        self.name = name
+        self.category = category
+        self.description = description
+        self.genuine_code_exec = genuine_code_exec
+
+    def __repr__(self) -> str:
+        return f"RegistryEntry({self.module}.{self.name}, category={self.category})"
+
+
+_REGISTRY: dict[tuple[str, str], RegistryEntry] = {}
+
+
+def load_registry(yaml_path: str | None = None) -> None:
+    """Load the dangerous callables registry from YAML."""
+    global _REGISTRY
+    _REGISTRY.clear()
+    
+    if yaml_path is None:
+        # Resolve path relative to this file
+        this_dir = os.path.dirname(os.path.abspath(__file__))
+        yaml_path = os.path.join(this_dir, "dangerous_callables.yaml")
+        
+    if not os.path.exists(yaml_path):
+        raise FileNotFoundError(f"Dangerous callables registry file not found: {yaml_path}")
+        
+    with open(yaml_path, "r") as f:
+        data = yaml.safe_load(f)
+        
+    for entry in data.get("dangerous_callables", []):
+        reg_entry = RegistryEntry(
+            module=entry["module"],
+            name=entry["name"],
+            category=entry["category"],
+            description=entry.get("description", ""),
+            genuine_code_exec=entry.get("genuine_code_exec", True),
+        )
+        _REGISTRY[(reg_entry.module, reg_entry.name)] = reg_entry
+
+
+def is_dangerous(module: str, name: str) -> bool:
+    """Check if a module and callable name pair is registered as dangerous."""
+    if not _REGISTRY:
+        load_registry()
+    return (module, name) in _REGISTRY
+
+
+def get_entry(module: str, name: str) -> RegistryEntry | None:
+    """Get the registry entry details for a module and callable name pair."""
+    if not _REGISTRY:
+        load_registry()
+    return _REGISTRY.get((module, name))
+
+
+def get_all_entries() -> list[RegistryEntry]:
+    """Get all registered dangerous callables."""
+    if not _REGISTRY:
+        load_registry()
+    return list(_REGISTRY.values())

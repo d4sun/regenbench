@@ -1,0 +1,115 @@
+schema_version: "1.0"
+dangerous_callables:
+  - module: "os"
+    name: "system"
+    category: "command_execution"
+    description: "Executes the command in a subshell."
+    genuine_code_exec: true
+
+  - module: "posix"
+    name: "system"
+    category: "command_execution"
+    description: "Executes the command on Unix systems."
+    genuine_code_exec: true
+
+  - module: "nt"
+    name: "system"
+    category: "command_execution"
+    description: "Executes the command on Windows systems."
+    genuine_code_exec: true
+
+  - module: "subprocess"
+    name: "Popen"
+    category: "command_execution"
+    description: "Executes a child program in a new process."
+    genuine_code_exec: true
+
+  - module: "subprocess"
+    name: "run"
+    category: "command_execution"
+    description: "Run command with arguments and wait for it to complete."
+    genuine_code_exec: true
+
+  - module: "subprocess"
+    name: "call"
+    category: "command_execution"
+    description: "Run command with arguments and return status code."
+    genuine_code_exec: true
+
+  - module: "subprocess"
+    name: "check_call"
+    category: "command_execution"
+    description: "Run command with arguments and raise on non-zero exit."
+    genuine_code_exec: true
+
+  - module: "subprocess"
+    name: "check_output"
+    category: "command_execution"
+    description: "Run command with arguments and return output."
+    genuine_code_exec: true
+
+  - module: "subprocess"
+    name: "getstatusoutput"
+    category: "command_execution"
+    description: "Run command in shell and return status/output."
+    genuine_code_exec: true
+
+  - module: "subprocess"
+    name: "getoutput"
+    category: "command_execution"
+    description: "Run command in shell and return output."
+    genuine_code_exec: true
+
+  - module: "builtins"
+    name: "eval"
+    category: "code_evaluation"
+    description: "Parses and evaluates a Python expression string."
+    genuine_code_exec: true
+
+  - module: "builtins"
+    name: "exec"
+    category: "code_execution"
+    description: "Supports dynamic execution of Python code."
+    genuine_code_exec: true
+
+  - module: "runpy"
+    name: "run_module"
+    category: "code_execution"
+    description: "Locates and executes a Python module."
+    genuine_code_exec: true
+
+  - module: "runpy"
+    name: "run_path"
+    category: "code_execution"
+    description: "Executes the code at the specified path."
+    genuine_code_exec: true
+
+  - module: "numpy.testing._private.utils"
+    name: "runstring"
+    category: "code_execution"
+    description: "Numpy testing helper that executes code strings."
+    genuine_code_exec: true
+
+  - module: "pandas"
+    name: "eval"
+    category: "code_evaluation"
+    description: "Evaluate a Python expression as a string using various backends."
+    genuine_code_exec: true
+
+  - module: "sympy"
+    name: "sympify"
+    category: "code_evaluation"
+    description: "Converts arbitrary strings into SymPy expressions, which can trigger code evaluation."
+    genuine_code_exec: true
+
+  - module: "IPython.utils.process"
+    name: "system"
+    category: "command_execution"
+    description: "Executes command using system shell in IPython environment."
+    genuine_code_exec: true
+
+  - module: "yaml"
+    name: "unsafe_load"
+    category: "serialization_vulnerability"
+    description: "YAML deserializer that allows arbitrary object construction."
+    genuine_code_exec: true
