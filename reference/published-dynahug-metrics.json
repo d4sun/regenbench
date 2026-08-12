@@ -1,0 +1,85 @@
+{
+  "schema_version": "1.0",
+  "kind": "reference-published-dynahug-metrics",
+  "description": "Transcribed published DynaHug metrics for the ReGenBench baseline reference-comparison dataset. Numbers are transcribed verbatim from the cited paper; they are NOT re-derived in this repository. See docs/reference-dynahug-metrics.md and docs/comparison-methodology.md.",
+  "source": {
+    "id": "dynahug",
+    "title": "Malicious ML Model Detection by Learning Dynamic Behaviors",
+    "arxiv": "arXiv:2604.19438",
+    "tables": "Table 5 (per-cluster), Table 6 (vs SOTA), Table 7 (analysis-type ablation), Table 8 (feature-set ablation)"
+  },
+  "model_context": {
+    "default_model": "text-generation/2000_benign_data_presence_frequency_new_logs_std_scaler_nomean_best/OneClassSVM/params-gamma_0.1_kernel_rbf_nu_0.01",
+    "architecture": "One-Class SVM (kernel RBF, gamma 0.1, nu 0.01)",
+    "training": "2,000 benign PTMs (text-generation cluster), supervised only on benign, presence+frequency syscall features",
+    "dataset_split": "80:10:10 train/validation/test; malicious in val/test = half MalHug + half MalHug-injected",
+    "features_default": ["presence", "frequency"],
+    "observability": "strace -c count pass during torch.load(weights_only=False) deserialization in Docker",
+    "testsets_in_table5": {
+      "text-generation": {"benign_real": 2025, "malicious_real": 25, "injected": 2000},
+      "text-classification": {"benign_real": 2004, "malicious_real": 4, "injected": 2000},
+      "feature-extraction": {"benign_real": 2017, "malicious_real": 17, "injected": 2000}
+    }
+  },
+  "table_5_per_cluster": {
+    "caption": "DynaHug's performance on three (3) task-based clusters.",
+    "columns": ["cluster", "benign_real", "malicious_real", "injected", "tp", "tn", "fp", "fn", "precision", "recall", "f1"],
+    "rows": [
+      {"cluster": "text-generation", "benign_real": 2025, "malicious_real": 25, "injected": 2000, "tp": 2011, "tn": 2024, "fp": 1, "fn": 14, "precision": 0.9995, "recall": 0.9931, "f1": 0.9963},
+      {"cluster": "text-classification", "benign_real": 2004, "malicious_real": 4, "injected": 2000, "tp": 1989, "tn": 1976, "fp": 28, "fn": 15, "precision": 0.9861, "recall": 0.9925, "f1": 0.9893},
+      {"cluster": "feature-extraction", "benign_real": 2017, "malicious_real": 17, "injected": 2000, "tp": 2007, "tn": 1999, "fp": 18, "fn": 10, "precision": 0.9911, "recall": 0.9950, "f1": 0.9930}
+    ],
+    "meta": "Benign Real = benign HF PTMs; Malicious Real = HF-flagged/known malicious; Injected = MalHug-injected payloads. Numbers are raw counts and ratios reported in the paper."
+  },
+  "table_6_vs_sota": {
+    "caption": "Comparison of DynaHug vs. open-source SOTA's performance.",
+    "columns": ["detector", "analysis_type", "benign_hf", "real", "malhug", "pypi", "tp", "tn", "fp", "fn", "precision", "recall", "f1"],
+    "malicious_total_note": "Malicious (2025) = 25 Real + 1000 MalHug + 1000 PyPI-injected on the text-generation test set.",
+    "rows": [
+      {"detector": "PickleScan", "analysis_type": "static", "benign_hf": 0, "real": 23, "malhug": 1000, "pypi": 44, "tp": 1067, "tn": 2025, "fp": 0, "fn": 958, "precision": 1.0, "recall": 0.5269, "f1": 0.6902},
+      {"detector": "ModelScan", "analysis_type": "static", "benign_hf": 0, "real": 23, "malhug": 1000, "pypi": 44, "tp": 1067, "tn": 2025, "fp": 0, "fn": 958, "precision": 1.0, "recall": 0.5269, "f1": 0.6902},
+      {"detector": "Fickling", "analysis_type": "static", "benign_hf": 2025, "real": 25, "malhug": 1000, "pypi": 1000, "tp": 2025, "tn": 0, "fp": 2025, "fn": 0, "precision": 0.5, "recall": 1.0, "f1": 0.6667},
+      {"detector": "ModelTracer", "analysis_type": "dynamic", "benign_hf": 0, "real": 25, "malhug": 828, "pypi": 907, "tp": 1760, "tn": 2025, "fp": 0, "fn": 265, "precision": 1.0, "recall": 0.8691, "f1": 0.9299},
+      {"detector": "Llama-3.1", "analysis_type": "dynamic+LLM", "benign_hf": 1337, "real": 22, "malhug": 993, "pypi": 995, "tp": 2010, "tn": 688, "fp": 1337, "fn": 15, "precision": 0.6005, "recall": 0.9926, "f1": 0.7483},
+      {"detector": "GPT-5.2", "analysis_type": "dynamic+LLM", "benign_hf": 12, "real": 20, "malhug": 988, "pypi": 796, "tp": 1804, "tn": 2013, "fp": 12, "fn": 221, "precision": 0.9933, "recall": 0.8909, "f1": 0.9393},
+      {"detector": "DynaHug (default)", "analysis_type": "dynamic", "benign_hf": 1, "real": 25, "malhug": 1000, "pypi": 986, "tp": 2011, "tn": 2024, "fp": 1, "fn": 14, "precision": 0.9995, "recall": 0.9931, "f1": 0.9963}
+    ]
+  },
+  "table_7_analysis_ablation": {
+    "caption": "DynaHug's performance under different analysis types.",
+    "columns": ["analysis_type", "detector", "benign_hf", "real", "injected", "tp", "tn", "fp", "fn", "precision", "recall", "f1"],
+    "rows": [
+      {"analysis_type": "static", "detector": "DynaHug", "benign_hf": 2025, "real": 25, "injected": 2000, "tp": 2025, "tn": 0, "fp": 2025, "fn": 0, "precision": 0.5000, "recall": 1.0000, "f1": 0.6667},
+      {"analysis_type": "dynamic", "detector": "DynaHug (default)", "benign_hf": 1, "real": 25, "injected": 1986, "tp": 2011, "tn": 2024, "fp": 1, "fn": 14, "precision": 0.9995, "recall": 0.9931, "f1": 0.9963},
+      {"analysis_type": "hybrid", "detector": "DynaHug", "benign_hf": 1, "real": 25, "injected": 1986, "tp": 2011, "tn": 2024, "fp": 1, "fn": 14, "precision": 0.9995, "recall": 0.9931, "f1": 0.9963}
+    ],
+    "note": "Dynamic is ~2x more effective than static (precision 0.9995 vs 0.5); hybrid equals dynamic."
+  },
+  "table_8_feature_ablation": {
+    "caption": "DynaHug's effectiveness with varying feature sets ('freq'=frequency, 'seq'=sequence, 'proc'=process).",
+    "columns": ["feature_set", "detector", "benign_hf", "real", "injected", "tp", "tn", "fp", "fn", "precision", "recall", "f1"],
+    "feature_sets": {
+      "presence": "binary presence of syscalls",
+      "freq": "frequency of syscalls",
+      "presence_freq": "presence + frequency (default)",
+      "presence_freq_seq": "presence + frequency + syscall sequence",
+      "presence_freq_seq_procseq": "presence + frequency + syscall sequence + process sequence"
+    },
+    "rows": [
+      {"feature_set": "presence", "detector": "DynaHug", "benign_hf": 0, "real": 22, "injected": 1664, "tp": 1686, "tn": 2025, "fp": 0, "fn": 339, "precision": 1.0000, "recall": 0.8326, "f1": 0.9086},
+      {"feature_set": "freq", "detector": "DynaHug", "benign_hf": 1, "real": 25, "injected": 1986, "tp": 2011, "tn": 2024, "fp": 1, "fn": 14, "precision": 0.9995, "recall": 0.9931, "f1": 0.9963},
+      {"feature_set": "presence, freq", "detector": "DynaHug (default)", "benign_hf": 1, "real": 25, "injected": 1986, "tp": 2011, "tn": 2024, "fp": 1, "fn": 14, "precision": 0.9995, "recall": 0.9931, "f1": 0.9963},
+      {"feature_set": "presence, freq, seq", "detector": "DynaHug", "benign_hf": 33, "real": 24, "injected": 2000, "tp": 2024, "tn": 1992, "fp": 33, "fn": 1, "precision": 0.9840, "recall": 0.9995, "f1": 0.9917},
+      {"feature_set": "presence, freq, seq, proc seq", "detector": "DynaHug", "benign_hf": 51, "real": 24, "injected": 2000, "tp": 2024, "tn": 1974, "fp": 51, "fn": 1, "precision": 0.9754, "recall": 0.9995, "f1": 0.9873}
+    ],
+    "note": "Frequency improves recall+F1 over presence only by ~19% (recall 0.8326->0.9931) and ~10% (F1 0.9086->0.9963). Adding sequence/proc-seq reduces precision and F1."
+  },
+  "claims": [
+    "DynaHug achieves up to 0.9963 F1 (text-generation cluster).",
+    "DynaHug is up to 44% more effective than the best static baselines (PickleScan/ModelScan, F1 0.6902 vs 0.9963).",
+    "DynaHug outperforms closest competitor GPT-5.2 by ~5% (0.9963 vs 0.9393 F1).",
+    "DynaHug is 33% more effective than Llama-3.1 (0.9963 vs 0.7483 F1).",
+    "Dynamic analysis is ~2x static (precision 0.9995 vs 0.5, Table 7).",
+    "Default feature set (presence+frequency) outperforms alternatives (Table 8)."
+  ]
+}
