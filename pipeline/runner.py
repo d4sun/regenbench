@@ -60,6 +60,7 @@ class Config:
     min_size: int = 0
     skip: set[str] = field(default_factory=set)
     oracle: bool = True
+    pre_filter: bool = True
 
 
 def make_generator(paths: list[str]) -> tuple[list[str], Callable[[str], list[str]]]:
@@ -131,22 +132,65 @@ class Runner:
             )
         return res
 
-    def run(self, artifacts: Iterable[str]) -> list[ScanResult]:
+    def run(self, artifacts: Iterable[str], db_path: str | None = None) -> list[ScanResult]:
+        import hashlib
+        from pipeline.pre_filter import is_admitted
+        from pipeline.db import init_db, log_candidate, log_panel_result, log_oracle_result
+
         artifacts = list(artifacts)
+        if db_path:
+            init_db(db_path)
+
         jobs = []
+        pre_filtered_artifacts = set()
+        
         for src in artifacts:
             if self._filter(src) is False:
                 continue
-            for scanner in self._scanners_for(src):
-                jobs.append((src, scanner))
+
+            # Generate candidate ID linking all records
+            cand_id = hashlib.md5(src.encode("utf-8")).hexdigest()
+            if db_path:
+                log_candidate(db_path, cand_id, src, "Fuzzer Campaign")
+
+            scanners = self._scanners_for(src)
+            
+            # Check pre-filter for DynaHug oracle
+            if "dynahug" in scanners and self.config.pre_filter:
+                admitted = is_admitted(src)
+                if not admitted:
+                    pre_filtered_artifacts.add(src)
+                    scanners = [s for s in scanners if s != "dynahug"]
+                    if db_path:
+                        log_oracle_result(db_path, cand_id, "benign", 0.0, 0.0, True)
+
+            for scanner in scanners:
+                jobs.append((src, scanner, cand_id))
 
         workers = self.config.max_workers or max(1, min(32, (os.cpu_count() or 4)))
         results: list[ScanResult] = []
+        
         with ThreadPoolExecutor(max_workers=workers, thread_name_prefix="scan") as ex:
-            futs = {ex.submit(self._one, src, scanner): (src, scanner)
-                    for src, scanner in jobs}
+            futs = {ex.submit(self._one, src, scanner): (src, scanner, cand_id)
+                    for src, scanner, cand_id in jobs}
             for fut in as_completed(futs):
-                results.append(fut.result())
+                res = fut.result()
+                src, scanner, cand_id = futs[fut]
+                results.append(res)
+                
+                # Log execution output to the database
+                if db_path:
+                    if scanner == "dynahug":
+                        log_oracle_result(db_path, cand_id, res.verdict or "error", res.decision_score, res.duration, False)
+                    else:
+                        log_panel_result(db_path, cand_id, scanner, res.verdict or "error", res.exit_code, res.findings, res.duration)
+
+        # Append fake benign ScanResult for pre-filtered dynahug runs so that the summaries are balanced
+        for src in pre_filtered_artifacts:
+            cand_id = hashlib.md5(src.encode("utf-8")).hexdigest()
+            res = ScanResult("dynahug", src, "benign", 0, decision_score=0.0, duration=0.0)
+            results.append(res)
+
         results.sort(key=lambda r: (r.artifact, r.scanner))
         return results
 
@@ -208,6 +252,8 @@ def main(argv: list[str] | None = None) -> int:
                     help="also fan out to the DynaHug oracle on torch artifacts")
     ap.add_argument("--json", metavar="PATH", default=None,
                     help="write the full result set as JSON")
+    ap.add_argument("--db", metavar="PATH", default=None,
+                    help="write results to a unified SQLite database")
     args = ap.parse_args(argv)
 
     config = Config(
@@ -223,7 +269,7 @@ def main(argv: list[str] | None = None) -> int:
     runner = Runner(config, scanners=args.scanner, overrides=args.image)
     artifacts = gen()
     print(f"[pipeline] {len(artifacts)} artifact(s), pool={runner.config.max_workers or 'auto'}, backend={args.backend}")
-    results = runner.run(artifacts)
+    results = runner.run(artifacts, db_path=args.db)
     summary = summarize(results)
     print_report(results, summary)
 
