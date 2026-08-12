@@ -7,6 +7,7 @@ sampling to produce syntactically valid malicious pickle candidates.
 from __future__ import annotations
 
 import os
+import pickle
 import random
 import struct
 from typing import Any
@@ -143,12 +144,16 @@ class CandidateGenerator:
         
         injection_bytes = b"".join(injection_parts)
 
-        # 4. Reconstruct the stream, inserting the malicious chunk right before STOP
+        # Reconstruct the stream, inserting the malicious chunk right before STOP
         rebuilt_parts = [op.code + arg for op, arg in mutated_parsed]
         rebuilt_parts.append(injection_bytes)
         rebuilt_parts.append(OPCODES_BY_NAME["STOP"].code)
-        
-        return b"".join(rebuilt_parts)
+
+        rebuilt_bytes = b"".join(rebuilt_parts)
+        if len(rebuilt_bytes) > 11 and rebuilt_bytes[0] == 0x80 and rebuilt_bytes[2] == 0x95:
+            body_len = len(rebuilt_bytes) - 11
+            rebuilt_bytes = rebuilt_bytes[:3] + struct.pack("<Q", body_len) + rebuilt_bytes[11:]
+        return rebuilt_bytes
 
     def generate_candidate_pt(
         self,
@@ -159,7 +164,8 @@ class CandidateGenerator:
         mutation_prob: float = 0.15,
     ) -> bytes:
         """Inject a mutated pickle payload into a PyTorch checkpoint file."""
-        # For a PyTorch checkpoint, we extract/inject into the state dict pickle payload
+        import tempfile
+
         # First, generate a malicious pickle payload using a dummy pickle
         dummy_benign = pickle.dumps({})
         malicious_pkl = self.mutate_pickle_bytes(
@@ -169,5 +175,26 @@ class CandidateGenerator:
             mutate_meta=mutate_meta,
             mutation_prob=mutation_prob,
         )
-        # Inject the raw malicious pickle bytes into the PT container format
-        return inject_payload_into_torch(benign_pt_bytes, malicious_pkl)
+        
+        # Write input bytes to temporary file
+        with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f_in:
+            f_in.write(benign_pt_bytes)
+            in_path = f_in.name
+            
+        out_path = in_path + ".out.pt"
+        
+        try:
+            inject_payload_into_torch(in_path, out_path, malicious_pkl)
+            with open(out_path, "rb") as f_out:
+                result_bytes = f_out.read()
+        finally:
+            try:
+                os.remove(in_path)
+            except OSError:
+                pass
+            try:
+                os.remove(out_path)
+            except OSError:
+                pass
+                
+        return result_bytes
