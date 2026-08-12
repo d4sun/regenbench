@@ -32,6 +32,7 @@ reproducible container and wrapped behind a single
 | T3.1 | Port PickleFuzzer opcode categorization | — | [`pipeline/opcodes.py`](pipeline/opcodes.py) |
 | T3.2 | Build dangerous-callable registry | — | [`pipeline/dangerous_callables.yaml`](pipeline/dangerous_callables.yaml) |
 | T3.3 | Implement candidate generator core | — | [`pipeline/generator.py`](pipeline/generator.py) |
+| T3.4 | Implement mutation operators | — | [`pipeline/mutators.py`](pipeline/mutators.py) |
 
 Each `containers/<name>/` holds a `Dockerfile`, `wrapper.py`, and `build.sh`
 (produces `regenbench/<name>:<version>` and `:latest`).
