@@ -136,8 +136,10 @@ def parse_pickle(data: bytes) -> list[tuple[OpcodeClassification, bytes]]:
             
         parsed.append((op, arg))
         
-        # Stop immediately when we hit the STOP opcode to ignore trailing padding/data
+        # Stop when we hit STOP only if the remaining data is just padding/zeros
         if op.name == "STOP":
-            break
+            remaining = data[i:]
+            if not remaining.strip(b"\x00\r\n\t "):
+                break
             
     return parsed
