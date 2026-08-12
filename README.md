@@ -34,6 +34,7 @@ reproducible container and wrapped behind a single
 | T3.3 | Implement candidate generator core | — | [`pipeline/generator.py`](pipeline/generator.py) |
 | T3.4 | Implement mutation operators | — | [`pipeline/mutators.py`](pipeline/mutators.py) |
 | T3.5 | Implement validity oracle | — | [`pipeline/validity.py`](pipeline/validity.py) |
+| T3.6 | Unit/property tests for generator | — | [`scripts/test_generator_suite.py`](scripts/test_generator_suite.py) |
 
 Each `containers/<name>/` holds a `Dockerfile`, `wrapper.py`, and `build.sh`
 (produces `regenbench/<name>:<version>` and `:latest`).
