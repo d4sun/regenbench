@@ -36,6 +36,8 @@ reproducible container and wrapped behind a single
 | T3.5 | Implement validity oracle | — | [`pipeline/validity.py`](pipeline/validity.py) |
 | T3.6 | Unit/property tests for generator | — | [`scripts/test_generator_suite.py`](scripts/test_generator_suite.py) |
 | T4.1 | Implement static pre-filter | — | [`pipeline/pre_filter.py`](pipeline/pre_filter.py) |
+| T4.2 | Implement scanner panel runner | — | [`pipeline/runner.py`](pipeline/runner.py) |
+| T4.3 | Implement behavioral oracle runner | — | [`pipeline/runner.py`](pipeline/runner.py) |
 | T4.4 | Define unified candidate schema | — | [`pipeline/db.py`](pipeline/db.py) |
 | T4.5 | E2E integration test suite | — | [`scripts/test_integration.py`](scripts/test_integration.py) |
 | T4.6 | Throughput/latency benchmarking | — | [`scripts/benchmark_perf.py`](scripts/benchmark_perf.py) |
