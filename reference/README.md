@@ -13,3 +13,15 @@ Published baseline numbers transcribed from the source papers, used for
 
 Human-readable tables: [`../docs/reference-scanner-metrics.md`](../docs/reference-scanner-metrics.md)
 and [`../docs/reference-dynahug-metrics.md`](../docs/reference-dynahug-metrics.md).
+
+## T1.4 sanity smoke test
+
+`scripts/sanity_smoke.py` runs the full panel (picklescan/modelscan/fickling/
+modeltracer) plus the DynaHug oracle against a 6-model sanity set (3 obviously
+benign, 3 obviously malicious — the committed corpus plus one real
+text-generation model fetched at runtime) and writes
+`sanity-verdict-log.json`. The real model file is not committed.
+
+```sh
+python3 scripts/sanity_smoke.py --model openai-community/gpt2
+```

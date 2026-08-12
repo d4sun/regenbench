@@ -83,6 +83,22 @@ The oracle is validated behaviorally on this hardware:
   / exit 1. Per the caveat above, a locally-traced micro-checkpoint reports
   `malicious` (out-of-distribution), which is the faithful model output.
 
+### T1.3 — pretrained-oracle sanity check on a real model
+
+`scripts/oracle_sanity.py` fetches a real HuggingFace text-generation
+checkpoint at runtime (in-distribution for the embedded OCSVM), runs it through
+this container, and records the `decision_score` as a working-checkpoint record
+(`reference/oracle-sanity.json`). The model file itself is not committed.
+
+```sh
+python3 scripts/oracle_sanity.py --model openai-community/gpt2
+```
+
+Only a clearly in-distribution (real-model-like) trace yields a positive
+`decision_score` / exit 0; a small checkpoint (e.g. `sshleifer/tiny-gpt2`) still
+traces import-dominated and returns ≈ `-rho` — the faithful pretrained-model
+output, per the caveat above.
+
 ## Reference layout in the image
 
 ```

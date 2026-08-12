@@ -1,0 +1,12 @@
+{
+  "task": "T1.3",
+  "model": "openai-community/gpt2",
+  "file": "pytorch_model.bin",
+  "sha256": "7c5d3f4b8b76583b422fcb9189ad6c89d5d97a094541ce8932dce3ecabde1421",
+  "image": "regenbench/dynahug:latest",
+  "verdict": "malicious",
+  "exit_code": 1,
+  "decision_score": -1.3488830680940862,
+  "note": "In-distribution text-generation checkpoint: a positive decision_score / exit 0 is the expected benign path of the pretrained OCSVM (arXiv:2604.19438 default model).",
+  "raw_output_tail": "000038           4         8           rseq\n  0.00    0.000030           3         9           clock_nanosleep\n  0.00    0.000016           8         2           open\n  0.00    0.000013           1         7         6 readlink\n  0.00    0.000009           1         5           sched_getaffinity\n  0.00    0.000006           1         4           fcntl\n  0.00    0.000006           0         9           mbind\n  0.00    0.000006           6         1           epoll_create1\n  0.00    0.000004           0         5           getcwd\n  0.00    0.000002           0         4           pread64\n  0.00    0.000002           0         5           getrandom\n  0.00    0.000001           0         2           prlimit64\n  0.00    0.000000           0         1         1 access\n  0.00    0.000000           0         7           madvise\n  0.00    0.000000           0         1           execve\n  0.00    0.000000           0         3           uname\n  0.00    0.000000           0         1           getuid\n  0.00    0.000000           0         1           getgid\n  0.00    0.000000           0         1           geteuid\n  0.00    0.000000           0         1           getegid\n  0.00    0.000000           0         1           arch_prctl\n  0.00    0.000000           0         2           gettid\n  0.00    0.000000           0         1           set_tid_address\n------ ----------- ----------- --------- --------- ------------------\n100.00    3.048185         115     26456      1660 total\n--- syscalls observed ---\n13432 newfstatat\n3004 lseek\n2536 read\n2249 fstat\n1287 openat\n1242 close\n1028 ioctl\n618 brk\n332 mmap\n320 getdents64\n106 munmap\n67 rt_sigaction\n56 mprotect\n44 futex\n29 rt_sigprocmask\n10 sched_setaffinity\n9 clock_nanosleep\n9 mbind\n8 rseq\n8 set_robust_list\n7 clone3\n7 madvise\n7 readlink\n5 getcwd\n5 getrandom\n5 sched_getaffinity\n4 fcntl\n4 pread64\n3 uname\n2 gettid\n2 open\n2 prlimit64\n1 access\n1 arch_prctl\n1 epoll_create1\n1 execve\n1 getegid\n1 geteuid\n1 getgid\n1 getuid\n1 set_tid_address"
+}

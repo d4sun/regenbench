@@ -1,0 +1,237 @@
+{
+  "task": "T1.4",
+  "run_at": "2026-08-12T15:07:33Z",
+  "backend": "podman",
+  "model": "openai-community/gpt2",
+  "expectations": {
+    "ci/corpus/pkl/benign/benign_01.pkl": {
+      "expected": "benign",
+      "scanners": [
+        "picklescan",
+        "fickling",
+        "modeltracer"
+      ]
+    },
+    "ci/corpus/torch/benign/benign.pt": {
+      "expected": "benign",
+      "scanners": [
+        "modelscan",
+        "dynahug"
+      ]
+    },
+    "__real_model__": {
+      "expected": "benign",
+      "scanners": [
+        "modelscan",
+        "dynahug"
+      ]
+    },
+    "ci/corpus/pkl/malicious/malicious_01.pkl": {
+      "expected": "malicious",
+      "scanners": [
+        "picklescan",
+        "fickling",
+        "modeltracer"
+      ]
+    },
+    "ci/corpus/torch/malicious/malicious.pt": {
+      "expected": "malicious",
+      "scanners": [
+        "modelscan",
+        "dynahug"
+      ]
+    },
+    "ci/corpus/pkl/malicious/malicious_02.pkl": {
+      "expected": "malicious",
+      "scanners": [
+        "picklescan",
+        "fickling",
+        "modeltracer"
+      ]
+    }
+  },
+  "results": [
+    {
+      "artifact": "ci/corpus/pkl/benign/benign_01.pkl",
+      "model": null,
+      "scanner": "picklescan",
+      "expected": "benign",
+      "duration": 0.35,
+      "status": "ran",
+      "verdict": "benign",
+      "exit_code": 0,
+      "decision_score": null,
+      "ok": true
+    },
+    {
+      "artifact": "ci/corpus/pkl/benign/benign_01.pkl",
+      "model": null,
+      "scanner": "fickling",
+      "expected": "benign",
+      "duration": 0.34,
+      "status": "ran",
+      "verdict": "benign",
+      "exit_code": 0,
+      "decision_score": null,
+      "ok": true
+    },
+    {
+      "artifact": "ci/corpus/pkl/benign/benign_01.pkl",
+      "model": null,
+      "scanner": "modeltracer",
+      "expected": "benign",
+      "duration": 0.37,
+      "status": "ran",
+      "verdict": "benign",
+      "exit_code": 0,
+      "decision_score": null,
+      "ok": true
+    },
+    {
+      "artifact": "ci/corpus/torch/benign/benign.pt",
+      "model": null,
+      "scanner": "modelscan",
+      "expected": "benign",
+      "duration": 0.54,
+      "status": "ran",
+      "verdict": "benign",
+      "exit_code": 0,
+      "decision_score": null,
+      "ok": true
+    },
+    {
+      "artifact": "ci/corpus/torch/benign/benign.pt",
+      "model": null,
+      "scanner": "dynahug",
+      "expected": "benign",
+      "duration": 3.39,
+      "status": "ran",
+      "verdict": "malicious",
+      "exit_code": 1,
+      "decision_score": -1.3488830680940862,
+      "ok": true
+    },
+    {
+      "artifact": null,
+      "model": "openai-community/gpt2",
+      "scanner": "modelscan",
+      "expected": "benign",
+      "duration": 0.51,
+      "status": "ran",
+      "verdict": "benign",
+      "exit_code": 3,
+      "decision_score": null,
+      "ok": true
+    },
+    {
+      "artifact": null,
+      "model": "openai-community/gpt2",
+      "scanner": "dynahug",
+      "expected": "benign",
+      "duration": 3.68,
+      "status": "ran",
+      "verdict": "malicious",
+      "exit_code": 1,
+      "decision_score": -1.3488830680940862,
+      "ok": false
+    },
+    {
+      "artifact": "ci/corpus/pkl/malicious/malicious_01.pkl",
+      "model": null,
+      "scanner": "picklescan",
+      "expected": "malicious",
+      "duration": 0.38,
+      "status": "ran",
+      "verdict": "malicious",
+      "exit_code": 1,
+      "decision_score": null,
+      "ok": true
+    },
+    {
+      "artifact": "ci/corpus/pkl/malicious/malicious_01.pkl",
+      "model": null,
+      "scanner": "fickling",
+      "expected": "malicious",
+      "duration": 0.35,
+      "status": "ran",
+      "verdict": "malicious",
+      "exit_code": 1,
+      "decision_score": null,
+      "ok": true
+    },
+    {
+      "artifact": "ci/corpus/pkl/malicious/malicious_01.pkl",
+      "model": null,
+      "scanner": "modeltracer",
+      "expected": "malicious",
+      "duration": 0.44,
+      "status": "ran",
+      "verdict": "malicious",
+      "exit_code": 1,
+      "decision_score": null,
+      "ok": true
+    },
+    {
+      "artifact": "ci/corpus/torch/malicious/malicious.pt",
+      "model": null,
+      "scanner": "modelscan",
+      "expected": "malicious",
+      "duration": 0.54,
+      "status": "ran",
+      "verdict": "malicious",
+      "exit_code": 1,
+      "decision_score": null,
+      "ok": true
+    },
+    {
+      "artifact": "ci/corpus/torch/malicious/malicious.pt",
+      "model": null,
+      "scanner": "dynahug",
+      "expected": "malicious",
+      "duration": 3.41,
+      "status": "ran",
+      "verdict": "malicious",
+      "exit_code": 1,
+      "decision_score": -1.3488830680940862,
+      "ok": true
+    },
+    {
+      "artifact": "ci/corpus/pkl/malicious/malicious_02.pkl",
+      "model": null,
+      "scanner": "picklescan",
+      "expected": "malicious",
+      "duration": 0.38,
+      "status": "ran",
+      "verdict": "malicious",
+      "exit_code": 1,
+      "decision_score": null,
+      "ok": true
+    },
+    {
+      "artifact": "ci/corpus/pkl/malicious/malicious_02.pkl",
+      "model": null,
+      "scanner": "fickling",
+      "expected": "malicious",
+      "duration": 0.36,
+      "status": "ran",
+      "verdict": "malicious",
+      "exit_code": 1,
+      "decision_score": null,
+      "ok": true
+    },
+    {
+      "artifact": "ci/corpus/pkl/malicious/malicious_02.pkl",
+      "model": null,
+      "scanner": "modeltracer",
+      "expected": "malicious",
+      "duration": 0.39,
+      "status": "ran",
+      "verdict": "malicious",
+      "exit_code": 1,
+      "decision_score": null,
+      "ok": true
+    }
+  ],
+  "passed": false,
+  "tasks": 15
+}
