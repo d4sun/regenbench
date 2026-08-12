@@ -27,6 +27,9 @@ reproducible container and wrapped behind a single
 | T2.1 | Parameterized Overwritten-Module template | — | [`pipeline/templates.py`](pipeline/templates.py) |
 | T2.2 | Parameterized PyPI-Injected template | — | [`pipeline/templates.py`](pipeline/templates.py) |
 | T2.3 | Parameterized External-Module template | — | [`pipeline/templates.py`](pipeline/templates.py) |
+| T2.4 | Benign Hugging Face seed corpus | — | `data/crawled/` |
+| T2.5 | Seed corpus manifest and versioning | — | [`data/crawled/seed_manifest.json`](data/crawled/seed_manifest.json) |
+| T3.1 | Port PickleFuzzer opcode categorization | — | [`pipeline/opcodes.py`](pipeline/opcodes.py) |
 
 Each `containers/<name>/` holds a `Dockerfile`, `wrapper.py`, and `build.sh`
 (produces `regenbench/<name>:<version>` and `:latest`).
