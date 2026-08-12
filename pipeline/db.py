@@ -61,6 +61,16 @@ def init_db(db_path: str) -> None:
             FOREIGN KEY (candidate_id) REFERENCES candidates(candidate_id)
         )
     """)
+
+    # 5. Campaign coverage table
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS campaign_coverage (
+            round_num INTEGER PRIMARY KEY,
+            opcode_coverage REAL,
+            callable_coverage REAL,
+            timestamp TEXT
+        )
+    """)
     
     conn.commit()
     conn.close()
@@ -164,3 +174,17 @@ def get_candidate_summary(db_path: str, candidate_id: str) -> dict[str, Any] | N
     
     conn.close()
     return summary
+
+
+def log_coverage(db_path: str, round_num: int, opcode_cov: float, callable_cov: float) -> None:
+    """Insert or replace round coverage statistics."""
+    conn = sqlite3.connect(db_path)
+    cursor = conn.cursor()
+    cursor.execute(
+        """INSERT OR REPLACE INTO campaign_coverage 
+        (round_num, opcode_coverage, callable_coverage, timestamp) 
+        VALUES (?, ?, ?, ?)""",
+        (round_num, opcode_cov, callable_cov, time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),
+    )
+    conn.commit()
+    conn.close()

