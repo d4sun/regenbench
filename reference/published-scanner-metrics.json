@@ -1,0 +1,593 @@
+{
+  "schema_version": "1.0",
+  "kind": "reference-published-scanner-metrics",
+  "description": "Transcribed published scanner metrics for the ReGenBench baseline reference-comparison dataset. Numbers are transcribed verbatim from the cited papers; they are NOT re-derived in this repository. See docs/reference-scanner-metrics.md and docs/comparison-methodology.md.",
+  "sources": [
+    {
+      "id": "shadowpickle",
+      "title": "ShadowPickle: Evading Machine Learning Model Scanners via Stealthy Pickle Deserialization Attacks",
+      "arxiv": "arXiv:2607.17503",
+      "table": "Table IV (RQ1, open-source scanners), Table VI (RQ2, ShadowPickle vs SOTA attacks), Table XII (scanner versions)"
+    },
+    {
+      "id": "picklefuzzer",
+      "title": "PickleFuzzer: A Case Study in Fuzzing for Discrepancies Between Python Pickle Implementations",
+      "arxiv": "arXiv:2605.15084",
+      "table": "Table I (discrepancy results)"
+    }
+  ],
+  "scanner_versions_paper": {
+    "note": "Versions as pinned in ShadowPickle Table XII (Appendix J).",
+    "picklescan": {
+      "version": "0.0.32",
+      "commit": "d3273f4225da08c0998177a5ac0588724fa4bba0"
+    },
+    "modelscan": {
+      "version": "0.8.7",
+      "commit": "abc4b1510315ba1ba1623eae002e5d394db32200"
+    },
+    "fickling": {
+      "version": "0.1.5",
+      "commit": "8a302e69c0a41dec30dfc157e696915d4da9392b"
+    },
+    "weights_only": {
+      "version": "2.9.1 torch",
+      "commit": "dc48fef658cc6fde242af3608d98a9132ea56f2f"
+    },
+    "modeltracer": {
+      "version": "0.0.1",
+      "commit": "5725b26f62a1c0e4f22c793761cefb70ead64ee5"
+    }
+  },
+  "scanner_versions_regenbench_pins": {
+    "note": "Versions pinned in this repository's containers. These DIFFER from the paper's pins; comparisons are directional only.",
+    "picklescan": {
+      "version": "1.0.5",
+      "commit": "f15d54da3dec9aa28a87ede82f87882bb80f1023"
+    },
+    "modelscan": {
+      "version": "0.8.8",
+      "commit": "61fcec9c2a37c24c1fb12d84ede30fe248a364bd"
+    },
+    "fickling": {
+      "version": "0.1.12",
+      "commit": "c3c695cdcce451c04dfe892802675161614287a2"
+    },
+    "modeltracer": {
+      "version": "0.1.0",
+      "commit": "5725b26f62a1c0e4f22c793761cefb70ead64ee5"
+    }
+  },
+  "shadowpickle_corpus_context": {
+    "benchmark": "PickleBench",
+    "hub": "Hugging Face, text-generation task tag",
+    "benign": {
+      "count": 3000,
+      "selection": "top-3000 most-liked PTMs; validated benign via HF_Guardian/HF_PickleScan/HF_ClamAV/HF_VirusTotal scans"
+    },
+    "injected_benign": {
+      "note": "ShadowPickle payloads injected into the top-3600..4600 most-liked PTMs",
+      "contamination_guard": "600-model interlude (#3001..#3600) between benign and injected sets"
+    },
+    "malicious_per_attack": 1000,
+    "attack_types": [
+      "PyPI",
+      "External Module",
+      "Overwritten Module"
+    ]
+  },
+  "shadowpickle_table_iv": {
+    "caption": "Effectiveness of ShadowPickle on SOTA open-source scanners.",
+    "analysis_type": {
+      "static": [
+        "PickleScan",
+        "ModelScan",
+        "Fickling",
+        "Weights-only"
+      ],
+      "dynamic": [
+        "ModelTracer"
+      ]
+    },
+    "columns": [
+      "detector",
+      "analysis",
+      "hf_flagged",
+      "pypi",
+      "external",
+      "overwritten",
+      "tp",
+      "fp",
+      "tn",
+      "fn",
+      "precision",
+      "recall",
+      "f1"
+    ],
+    "rows": [
+      {
+        "detector": "PickleScan",
+        "analysis": "static",
+        "hf_flagged": 0,
+        "pypi": 0,
+        "external": 0,
+        "overwritten": 0,
+        "tp": 0,
+        "fp": 0,
+        "tn": 3000,
+        "fn": 3000,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      {
+        "detector": "ModelScan",
+        "analysis": "static",
+        "hf_flagged": 0,
+        "pypi": 0,
+        "external": 0,
+        "overwritten": 0,
+        "tp": 0,
+        "fp": 0,
+        "tn": 3000,
+        "fn": 3000,
+        "precision": 0.0,
+        "recall": 0.0,
+        "f1": 0.0
+      },
+      {
+        "detector": "Fickling",
+        "analysis": "static",
+        "hf_flagged": 2834,
+        "pypi": 1000,
+        "external": 1000,
+        "overwritten": 1000,
+        "tp": 3000,
+        "fp": 2834,
+        "tn": 166,
+        "fn": 0,
+        "precision": 0.5142,
+        "recall": 1.0,
+        "f1": 0.6791
+      },
+      {
+        "detector": "Weights-only",
+        "analysis": "static",
+        "hf_flagged": 54,
+        "pypi": 1000,
+        "external": 1000,
+        "overwritten": 39,
+        "tp": 2039,
+        "fp": 54,
+        "tn": 2946,
+        "fn": 961,
+        "precision": 0.9742,
+        "recall": 0.6797,
+        "f1": 0.8007
+      },
+      {
+        "detector": "ModelTracer",
+        "analysis": "dynamic",
+        "hf_flagged": 0,
+        "pypi": 907,
+        "external": 953,
+        "overwritten": 821,
+        "tp": 2681,
+        "fp": 0,
+        "tn": 3000,
+        "fn": 319,
+        "precision": 1.0,
+        "recall": 0.8937,
+        "f1": 0.9438
+      }
+    ],
+    "per_attack_tpr": {
+      "pypi": 0.5814,
+      "external": 0.5906,
+      "overwritten": 0.372
+    },
+    "per_attack_fnr": {
+      "pypi": 0.4186,
+      "external": 0.4094,
+      "overwritten": 0.628
+    },
+    "tpr_note": "TPR/FNR rows are the mean per-attack detection rate across the five open-source scanners, i.e. sum(detections) / (5 scanners x 1000 attacks)."
+  },
+  "shadowpickle_table_vi": {
+    "caption": "Open-source SOTA's performance on ShadowPickle vs. SOTA attacks. '*' indicates the scanner crashed or failed to scan the model.",
+    "columns": [
+      "detector",
+      "s_pypi",
+      "s_external",
+      "s_overwritten",
+      "pcs_module_surface",
+      "pcs_eop",
+      "pcs_gadget",
+      "stacked_pickles",
+      "library_import"
+    ],
+    "attack_sizes": {
+      "s_pypi": 1000,
+      "s_external": 1000,
+      "s_overwritten": 1000,
+      "pcs_module_surface": 3,
+      "pcs_eop": 1,
+      "pcs_gadget": 57,
+      "stacked_pickles": 5,
+      "library_import": 1
+    },
+    "rows": [
+      {
+        "detector": "PickleScan",
+        "s_pypi": 0,
+        "s_external": 0,
+        "s_overwritten": 0,
+        "pcs_module_surface": 0,
+        "pcs_eop": 1,
+        "pcs_gadget": 7,
+        "stacked_pickles": 5,
+        "library_import": 1
+      },
+      {
+        "detector": "ModelScan",
+        "s_pypi": 0,
+        "s_external": 0,
+        "s_overwritten": 0,
+        "pcs_module_surface": 0,
+        "pcs_eop": 0,
+        "pcs_gadget": 0,
+        "stacked_pickles": 0,
+        "library_import": 1
+      },
+      {
+        "detector": "Fickling",
+        "s_pypi": 1000,
+        "s_external": 1000,
+        "s_overwritten": 1000,
+        "pcs_module_surface": 3,
+        "pcs_eop": 1,
+        "pcs_gadget": 57,
+        "stacked_pickles": 5,
+        "library_import": 1
+      },
+      {
+        "detector": "Weights-only",
+        "s_pypi": 1000,
+        "s_external": 1000,
+        "s_overwritten": 39,
+        "pcs_module_surface": 3,
+        "pcs_eop": 1,
+        "pcs_gadget": 57,
+        "stacked_pickles": 5,
+        "library_import": 1
+      },
+      {
+        "detector": "ModelTracer",
+        "s_pypi": 907,
+        "s_external": 953,
+        "s_overwritten": 821,
+        "pcs_module_surface": 3,
+        "pcs_eop": 1,
+        "pcs_gadget": 45,
+        "stacked_pickles": 5,
+        "library_import": 1
+      }
+    ],
+    "tpr": {
+      "s_pypi": 0.5814,
+      "s_external": 0.5906,
+      "s_overwritten": 0.372,
+      "pcs_module_surface": 0.6,
+      "pcs_eop": 0.8,
+      "pcs_gadget": 0.5824,
+      "stacked_pickles": 0.8,
+      "library_import": 1.0
+    },
+    "fnr": {
+      "s_pypi": 0.4186,
+      "s_external": 0.4094,
+      "s_overwritten": 0.628,
+      "pcs_module_surface": 0.4,
+      "pcs_eop": 0.2,
+      "pcs_gadget": 0.4176,
+      "stacked_pickles": 0.2,
+      "library_import": 0.0
+    },
+    "sota_attacks": {
+      "stacked_pickles": {
+        "ref": "[29]",
+        "n": 5,
+        "note": "detected by most scanners; uses common code-execution libraries patched after disclosure"
+      },
+      "library_import": {
+        "ref": "[30]",
+        "n": 1,
+        "note": "detected by most scanners"
+      },
+      "picklecloak_module_surface": {
+        "ref": "[31]",
+        "n": 3
+      },
+      "picklecloak_eop": {
+        "ref": "[31]",
+        "n": 1,
+        "note": "crashes/fails scanners (*)"
+      },
+      "picklecloak_gadget": {
+        "ref": "[31]",
+        "n": 57
+      }
+    }
+  },
+  "picklefuzzer_table_i": {
+    "caption": "PickleFuzzer discrepancy results. Lists every discrepancy discovered by PickleFuzzer or manual analysis across CPython pickle, _pickle, and pickletools (all CPython 3.13.0).",
+    "campaign": {
+      "campaign_1": {
+        "duration": "168 hours (1 week)",
+        "found": 13,
+        "note": "grammar fuzzer, opcodes 1-20, buffers=3, ASCII digits<=10, byte args<=300, PUT<=999999, LONG_BINPUT<=65535"
+      },
+      "campaign_2": {
+        "duration": "12 hours (relaxed limits)",
+        "found": 1,
+        "note": "ASCII digits<=25, byte args<=0x180000000 (6GB), PUT/LONG_BINPUT unrestricted"
+      },
+      "total": 14,
+      "discrepancy_types": {
+        "error": 13,
+        "storage": 1
+      },
+      "module_distribution": {
+        "pickle": "1 (7%)",
+        "_pickle": "9 (64%)",
+        "pickletools": "4 (29%)"
+      },
+      "found_within_minutes": 10
+    },
+    "security": {
+      "critical_discrepancies": [
+        1,
+        2,
+        3,
+        5
+      ],
+      "critical_criteria": "pickletools raises an error during analysis while pickle and/or _pickle deserializes correctly; can bypass scanners on Hugging Face and other platforms",
+      "disclosed_to": "Python Software Foundation (CPython) + huntr.com bug bounty (awarded $750)",
+      "fixes_released": 6,
+      "note_on_security_column": "Table I marks Security Impact \u2713 on rows 1,2,3,5,7; the RQ2 text names exactly four scanner-bypass-critical discrepancies (#1,2,3,5) where pickletools errors while a deserializer succeeds. The extra \u2713 on #7 is transcribed verbatim from the table."
+    },
+    "columns": [
+      "number",
+      "description",
+      "found_manually",
+      "found_by_fuzzing",
+      "type",
+      "differing_module",
+      "security_impact",
+      "python_issue",
+      "status"
+    ],
+    "rows": [
+      {
+        "number": 1,
+        "description": "INT and LONG opcodes use base 0 in all implementations except pickletools, which uses an explicit base of 10",
+        "found_manually": true,
+        "found_by_fuzzing": true,
+        "type": "Error",
+        "differing_module": "pickletools",
+        "security_impact": true,
+        "python_issue": 126992,
+        "status": "Fixed",
+        "note": "Used in bug-bounty PoC: base-16 value like 0x1337 parses in pickle/_pickle but raises in pickletools; picklescan shows no malicious alerts while loading executes posix.system.",
+        "critical_by_paper_rq2": true
+      },
+      {
+        "number": 2,
+        "description": "All newline-terminated opcode arguments are ended early by null bytes in _pickle, but throw errors in the other implementations",
+        "found_manually": true,
+        "found_by_fuzzing": true,
+        "type": "Error",
+        "differing_module": "_pickle",
+        "security_impact": true,
+        "python_issue": 126996,
+        "status": "Open",
+        "critical_by_paper_rq2": true
+      },
+      {
+        "number": 3,
+        "description": "Lack of pickletools encoding support leads to invalid transformation of bytes to strings for some opcodes",
+        "found_manually": true,
+        "found_by_fuzzing": true,
+        "type": "Error",
+        "differing_module": "pickletools",
+        "security_impact": true,
+        "python_issue": 126997,
+        "status": "Fixed",
+        "critical_by_paper_rq2": true
+      },
+      {
+        "number": 4,
+        "description": "pickletools errors if there's any number of items left on the stack when reaching the STOP opcode, while other implementations do not",
+        "found_manually": true,
+        "found_by_fuzzing": true,
+        "type": "Error",
+        "differing_module": "pickletools",
+        "security_impact": false,
+        "python_issue": 127079,
+        "status": "Not Fixed",
+        "critical_by_paper_rq2": false
+      },
+      {
+        "number": 5,
+        "description": "pickletools errors if any memo key is set multiple times, while other implementations don't",
+        "found_manually": true,
+        "found_by_fuzzing": true,
+        "type": "Error",
+        "differing_module": "pickletools",
+        "security_impact": true,
+        "python_issue": 123309,
+        "status": "Fixed",
+        "note": "Independently discovered and reported by a third party.",
+        "critical_by_paper_rq2": true
+      },
+      {
+        "number": 6,
+        "description": "In some cases, the INT opcode of _pickle may decode an argument as a boolean True/False instead of 1/0",
+        "found_manually": true,
+        "found_by_fuzzing": true,
+        "type": "Storage",
+        "differing_module": "_pickle",
+        "security_impact": false,
+        "python_issue": 135241,
+        "status": "Fixed",
+        "critical_by_paper_rq2": false
+      },
+      {
+        "number": 7,
+        "description": "If the reported length of a BINSTRING opcode's argument is greater than 0x80000000, then _pickle treats the length as positive and valid, while the others treat it as negative and invalid",
+        "found_manually": true,
+        "found_by_fuzzing": false,
+        "type": "Error",
+        "differing_module": "_pickle",
+        "security_impact": true,
+        "python_issue": 135321,
+        "status": "Fixed",
+        "critical_by_paper_rq2": false
+      },
+      {
+        "number": 8,
+        "description": "pickle errors if an APPENDS or ADDITEMS opcode immediately precedes a MARK object on the stack, while the others do not",
+        "found_manually": true,
+        "found_by_fuzzing": true,
+        "type": "Error",
+        "differing_module": "pickle",
+        "security_impact": false,
+        "python_issue": 135573,
+        "status": "Fixed",
+        "critical_by_paper_rq2": false
+      },
+      {
+        "number": 9,
+        "description": "PUT opcode argument is restrained to fit inside an ssize_t variable in _pickle but not in other implementations",
+        "found_manually": true,
+        "found_by_fuzzing": false,
+        "type": "Error",
+        "differing_module": "_pickle",
+        "security_impact": false,
+        "python_issue": 144410,
+        "status": "Not Fixed",
+        "critical_by_paper_rq2": false
+      },
+      {
+        "number": 10,
+        "description": "Large memo indices in two opcodes of _pickle cause Python to throw an Out-Of-Memory error",
+        "found_manually": true,
+        "found_by_fuzzing": true,
+        "type": "Error",
+        "differing_module": "_pickle",
+        "security_impact": false,
+        "python_issue": 115952,
+        "status": "Fixed",
+        "critical_by_paper_rq2": false
+      },
+      {
+        "number": 11,
+        "description": "_pickle checks that a NEWOBJ or NEWOBJ_EX argument is a tuple, while other implementations accept any iterable",
+        "found_manually": true,
+        "found_by_fuzzing": true,
+        "type": "Error",
+        "differing_module": "_pickle",
+        "security_impact": false,
+        "python_issue": 135579,
+        "status": "Not Fixed",
+        "critical_by_paper_rq2": false
+      },
+      {
+        "number": 12,
+        "description": "Any whitespace in the FLOAT opcode argument causes _pickle to error but not other implementations",
+        "found_manually": false,
+        "found_by_fuzzing": true,
+        "type": "Error",
+        "differing_module": "_pickle",
+        "security_impact": false,
+        "python_issue": 135580,
+        "status": "Open",
+        "critical_by_paper_rq2": false
+      },
+      {
+        "number": 13,
+        "description": "In _pickle, the BUILD opcode's state argument checks for Py_None, while others check if it's falsy",
+        "found_manually": false,
+        "found_by_fuzzing": true,
+        "type": "Error",
+        "differing_module": "_pickle",
+        "security_impact": false,
+        "python_issue": 128965,
+        "status": "Open",
+        "critical_by_paper_rq2": false
+      },
+      {
+        "number": 14,
+        "description": "In the FRAME opcode, _pickle checks to see that n bytes exist in the stream, but others check to see that up to n bytes exist",
+        "found_manually": true,
+        "found_by_fuzzing": true,
+        "type": "Error",
+        "differing_module": "_pickle",
+        "security_impact": false,
+        "python_issue": 128853,
+        "status": "Not Fixed",
+        "critical_by_paper_rq2": false
+      },
+      {
+        "number": 15,
+        "description": "Splitting an opcode and its argument across multiple frames errors out in pickle but not others",
+        "found_manually": true,
+        "found_by_fuzzing": false,
+        "type": "Error",
+        "differing_module": "pickle",
+        "security_impact": false,
+        "python_issue": 128853,
+        "status": "Not Fixed",
+        "note": "Reached only with ~1/2^56 certain input relationships; not found by fuzzing within allotted time.",
+        "critical_by_paper_rq2": false
+      },
+      {
+        "number": 16,
+        "description": "Frames are not allowed to overlap in pickle but are in _pickle",
+        "found_manually": true,
+        "found_by_fuzzing": false,
+        "type": "Error",
+        "differing_module": "pickle",
+        "security_impact": false,
+        "python_issue": 128853,
+        "status": "Not Fixed",
+        "note": "Reached only with ~1/2^56 certain input relationships; not found by fuzzing within allotted time.",
+        "critical_by_paper_rq2": false
+      },
+      {
+        "number": 17,
+        "description": "_pickle checks that the REDUCE argument args is a tuple, while other implementations accept any iterable",
+        "found_manually": false,
+        "found_by_fuzzing": true,
+        "type": "Error",
+        "differing_module": "_pickle",
+        "security_impact": false,
+        "python_issue": 144412,
+        "status": "Open",
+        "critical_by_paper_rq2": false
+      },
+      {
+        "number": 18,
+        "description": "_pickle checks that the BUILD argument slotstate is a dictionary, while other implementations only check to see if it's falsy",
+        "found_manually": false,
+        "found_by_fuzzing": true,
+        "type": "Error",
+        "differing_module": "_pickle",
+        "security_impact": false,
+        "python_issue": 144411,
+        "status": "Open",
+        "critical_by_paper_rq2": false
+      }
+    ]
+  }
+}
