@@ -4,3 +4,9 @@ __pycache__/
 # T0.9 MLflow file-backed store (local experiment tracking output)
 mlruns/
 .mlflow/
+
+# Local python dependencies
+.pip_deps/
+
+# Seed corpus model files
+data/crawled/*/

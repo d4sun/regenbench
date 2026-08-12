@@ -1,0 +1,239 @@
+#!/usr/bin/env python3
+"""T2.4 & T2.5 — Crawl benign Hugging Face corpus, deduplicate, and build versioned seed manifest.
+
+Downloads pytorch_model.bin files from Hugging Face for three task clusters:
+- text-generation
+- text-classification
+- feature-extraction
+
+Filters by likes, enforces size safety, handles rate limits, deduplicates by SHA256,
+balances clusters, and records provenance tracking inside data/crawled/seed_manifest.json.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import os
+import sys
+import time
+from typing import Any
+
+from huggingface_hub import HfApi, hf_hub_download
+from huggingface_hub.utils import HfHubHTTPError
+
+
+def call_api_with_retry(func, *args, **kwargs):
+    """Robust API call wrapper that automatically handles 429 Rate Limits and retries."""
+    retries = 5
+    for attempt in range(retries):
+        try:
+            return func(*args, **kwargs)
+        except HfHubHTTPError as e:
+            if e.response is not None and e.response.status_code == 429:
+                retry_after = int(e.response.headers.get("Retry-After", 60))
+                print(f"\n[rate-limit] Hit 429 Too Many Requests. Sleeping for {retry_after + 5}s (attempt {attempt + 1}/{retries})...")
+                time.sleep(retry_after + 5)
+            else:
+                raise
+        except Exception as e:
+            if attempt == retries - 1:
+                raise
+            print(f"[warning] API call failed: {e}. Retrying in 5 seconds...")
+            time.sleep(5)
+    raise RuntimeError("API retries exhausted")
+
+
+def get_model_file_info(api: HfApi, repo_id: str, filename: str) -> dict[str, Any] | None:
+    """Query the repository file tree safely with retries and rate limit pacing."""
+    # Small delay before call to reduce API pressure
+    time.sleep(0.5)
+    try:
+        tree = call_api_with_retry(api.list_repo_tree, repo_id)
+        for item in tree:
+            if item.rfilename == filename:
+                return {
+                    "path": item.rfilename,
+                    "size": getattr(item, "size", None),
+                    "lfs": getattr(item, "lfs", None),
+                }
+    except Exception as e:
+        print(f"  [info] Could not get file tree for {repo_id}: {e}")
+    return None
+
+
+def crawl_cluster(
+    api: HfApi,
+    cluster: str,
+    limit: int,
+    max_size: int,
+    out_dir: str,
+    seen_hashes: set[str],
+) -> list[dict[str, Any]]:
+    """Crawl benign models for a specific task cluster, deduplicating by SHA256 hash."""
+    print(f"\n[crawl] Starting crawl for cluster: {cluster} (target limit: {limit}, max_size: {max_size} bytes)")
+    
+    # Query models sorted by likes
+    try:
+        models = call_api_with_retry(
+            api.list_models,
+            filter=cluster,
+            sort="likes",
+            limit=max(limit * 200, 1000),
+            full=True,
+        )
+    except Exception as e:
+        print(f"[error] Failed to list models for {cluster}: {e}")
+        return []
+
+    crawled = []
+    for m in models:
+        if len(crawled) >= limit:
+            break
+
+        # Filter out private, gated, or disabled models
+        if getattr(m, "private", False) or getattr(m, "gated", False) or getattr(m, "disabled", None):
+            continue
+
+        # Look up file info for pytorch_model.bin
+        finfo = get_model_file_info(api, m.id, "pytorch_model.bin")
+        if not finfo:
+            continue
+
+        # Memory-safety size check
+        size = finfo["size"]
+        if size is None and finfo["lfs"]:
+            size = finfo["lfs"].size
+            
+        if size is None:
+            continue
+            
+        if size > max_size:
+            continue
+
+        # Clean/sanitize repo name for local directory use
+        safe_repo_name = m.id.replace("/", "_")
+        dest_dir = os.path.join(out_dir, cluster, safe_repo_name)
+        os.makedirs(dest_dir, exist_ok=True)
+        dest_path = os.path.join(dest_dir, "pytorch_model.bin")
+
+        print(f"[crawl] Downloading {m.id} ({size / (1024*1024):.2f} MB)...")
+        try:
+            # Paced download
+            time.sleep(0.5)
+            downloaded_path = call_api_with_retry(
+                hf_hub_download,
+                repo_id=m.id,
+                filename="pytorch_model.bin",
+                local_dir=dest_dir,
+                local_dir_use_symlinks=False,
+            )
+        except Exception as e:
+            print(f"  [warning] Failed to download {m.id}: {e}")
+            continue
+
+        # Calculate SHA256 of the downloaded file
+        sha = hashlib.sha256()
+        try:
+            with open(downloaded_path, "rb") as f:
+                for chunk in iter(lambda: f.read(1 << 20), b""):
+                    sha.update(chunk)
+        except OSError as e:
+            print(f"  [warning] Failed to hash {downloaded_path}: {e}")
+            continue
+
+        sha256_val = sha.hexdigest()
+        
+        # Deduplication check
+        if sha256_val in seen_hashes:
+            print(f"  [skip] {m.id} is a duplicate (SHA256 already exists in seed corpus)")
+            # Clean up duplicate file to save disk space
+            try:
+                os.remove(downloaded_path)
+            except OSError:
+                pass
+            continue
+
+        seen_hashes.add(sha256_val)
+        metadata = {
+            "repo_id": m.id,
+            "likes": getattr(m, "likes", 0),
+            "downloads": getattr(m, "downloads", 0),
+            "size": size,
+            "sha256": sha256_val,
+            "local_path": os.path.relpath(downloaded_path, start=os.path.dirname(out_dir)),
+            "cluster": cluster,
+            "provenance": {
+                "source": "Hugging Face Hub",
+                "url": f"https://huggingface.co/{m.id}/blob/main/pytorch_model.bin",
+                "crawled_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+        }
+        crawled.append(metadata)
+        print(f"  [success] Saved to {metadata['local_path']} | SHA256: {metadata['sha256'][:16]}...")
+
+    return crawled
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description=__doc__)
+    ap.add_argument("--clusters", default="text-generation,text-classification,feature-extraction",
+                    help="comma-separated list of task clusters to crawl")
+    ap.add_argument("--limit-per-cluster", type=int, default=1000,
+                    help="maximum number of models to crawl per cluster")
+    ap.add_argument("--max-size", type=int, default=15 * 1024 * 1024,
+                    help="maximum size of pytorch_model.bin in bytes")
+    ap.add_argument("--out-dir", default="data/crawled",
+                    help="output directory to save files and manifest")
+    args = ap.parse_args()
+
+    api = HfApi()
+    clusters = [c.strip() for c in args.clusters.split(",") if c.strip()]
+    
+    seen_hashes = set()
+    all_metadata = []
+    
+    for cluster in clusters:
+        cluster_metadata = crawl_cluster(
+            api,
+            cluster=cluster,
+            limit=args.limit_per_cluster,
+            max_size=args.max_size,
+            out_dir=args.out_dir,
+            seen_hashes=seen_hashes,
+        )
+        all_metadata.extend(cluster_metadata)
+
+    # Balance counts check
+    summary_counts = {}
+    for c in clusters:
+        summary_counts[c] = sum(1 for m in all_metadata if m["cluster"] == c)
+
+    # Save final versioned seed manifest (T2.5)
+    manifest = {
+        "schema_version": "1.0",
+        "dataset_name": "ReGenBench Seed Corpus",
+        "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+        "summary": {
+            "total_models": len(all_metadata),
+            "clusters": summary_counts,
+        },
+        "models": all_metadata,
+    }
+
+    manifest_path = os.path.join(args.out_dir, "seed_manifest.json")
+    os.makedirs(args.out_dir, exist_ok=True)
+    with open(manifest_path, "w") as f:
+        json.dump(manifest, f, indent=2)
+        f.write("\n")
+
+    print(f"\n[crawl] Crawl complete. Downloaded {len(all_metadata)} total models.")
+    for c, count in summary_counts.items():
+        print(f"  - {c}: {count} models")
+    print(f"[crawl] Seed manifest written to {manifest_path}")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

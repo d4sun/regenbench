@@ -7,7 +7,7 @@ reproducible container and wrapped behind a single
 
 ## Components
 
-| T0 | Component | Container | Status |
+| Task | Component | Container / Path | Status |
 |----|-----------|-----------|--------|
 | T0.1 | Host spec & verification | — | [`docs/t0.1-host-spec.md`](docs/t0.1-host-spec.md) |
 | T0.2 | Base image | `regenbench/base` | `containers/base` |
@@ -17,6 +17,16 @@ reproducible container and wrapped behind a single
 | T0.6 | ModelTracer | `regenbench/modeltracer` | `containers/modeltracer` |
 | T0.7 | DynaHug behavioral oracle | `regenbench/dynahug` | `containers/dynahug` |
 | T0.8 | Smoke-test corpus + CI | — | `ci/` |
+| T0.9 | MLflow experiment tracking | — | `pipeline/tracking.py` |
+| T0.10| Local task orchestration | — | `pipeline/runner.py` |
+| T1.1 | Published scanner metrics | — | [`reference/published-scanner-metrics.json`](reference/published-scanner-metrics.json) |
+| T1.2 | Published DynaHug metrics | — | [`reference/published-dynahug-metrics.json`](reference/published-dynahug-metrics.json) |
+| T1.3 | Pretrained DynaHug oracle check | — | [`scripts/oracle_sanity.py`](scripts/oracle_sanity.py) |
+| T1.4 | Sanity smoke test | — | [`scripts/sanity_smoke.py`](scripts/sanity_smoke.py) |
+| T1.5 | Comparison methodology and caveats | — | [`docs/comparison-methodology.md`](docs/comparison-methodology.md) |
+| T2.1 | Parameterized Overwritten-Module template | — | [`pipeline/templates.py`](pipeline/templates.py) |
+| T2.2 | Parameterized PyPI-Injected template | — | [`pipeline/templates.py`](pipeline/templates.py) |
+| T2.3 | Parameterized External-Module template | — | [`pipeline/templates.py`](pipeline/templates.py) |
 
 Each `containers/<name>/` holds a `Dockerfile`, `wrapper.py`, and `build.sh`
 (produces `regenbench/<name>:<version>` and `:latest`).
