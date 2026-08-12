@@ -41,6 +41,11 @@ reproducible container and wrapped behind a single
 | T4.4 | Define unified candidate schema | — | [`pipeline/db.py`](pipeline/db.py) |
 | T4.5 | E2E integration test suite | — | [`scripts/test_integration.py`](scripts/test_integration.py) |
 | T4.6 | Throughput/latency benchmarking | — | [`scripts/benchmark_perf.py`](scripts/benchmark_perf.py) |
+| T5.1 | Implement dual-oracle comparator | — | [`pipeline/comparator.py`](pipeline/comparator.py) |
+| T5.2 | Implement distance-to-boundary fitness | — | [`pipeline/fitness.py`](pipeline/fitness.py) |
+| T5.3 | Implement coverage tracker | — | [`pipeline/feedback.py`](pipeline/feedback.py) |
+| T5.4 | Wire feedback into mutation weighting | — | [`pipeline/feedback.py`](pipeline/feedback.py) |
+| T5.5 | Directed E2E fuzzing campaign | — | [`scripts/run_fuzzing_campaign.py`](scripts/run_fuzzing_campaign.py) |
 
 Each `containers/<name>/` holds a `Dockerfile`, `wrapper.py`, and `build.sh`
 (produces `regenbench/<name>:<version>` and `:latest`).
