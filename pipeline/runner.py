@@ -26,7 +26,7 @@ import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
-from typing import Callable, Iterable, Optional
+from typing import Callable, Iterable
 
 from pipeline.scanners import (
     ORACLE_EXTENSIONS,
@@ -63,7 +63,7 @@ class Config:
     pre_filter: bool = True
 
 
-def make_generator(paths: list[str]) -> tuple[list[str], Callable[[str], list[str]]]:
+def make_generator(paths: list[str]) -> tuple[list[str], Callable[[], list[str]]]:
     """Return (root_paths, gen) where gen walks a dir tree or returns explicit
     files. Explicit file list is used verbatim (bypasses extension filter)."""
     files = [p for p in paths if os.path.isfile(p)]
@@ -99,6 +99,18 @@ class Runner:
             return False
         if any(s in base for s in self.config.skip):
             return False
+        # Optional extension filter: reject files whose suffix is not admitted.
+        if self.config.extensions:
+            ext = os.path.splitext(base)[1].lower()
+            if ext not in self.config.extensions:
+                return False
+        # Optional minimum-size filter: reject empty/trivial artifacts.
+        if self.config.min_size and self.config.min_size > 0:
+            try:
+                if os.path.getsize(rel) < self.config.min_size:
+                    return False
+            except OSError:
+                return False
         return True
 
     def _scanners_for(self, src: str) -> list[str]:
@@ -137,7 +149,7 @@ class Runner:
         from pipeline.pre_filter import is_admitted
         from pipeline.db import init_db, log_candidate, log_panel_result, log_oracle_result
 
-        artifacts = list(artifacts)
+        artifacts = list(dict.fromkeys(artifacts))
         if db_path:
             init_db(db_path)
 
@@ -226,7 +238,8 @@ def print_report(results: list[ScanResult], summary: dict) -> None:
     for r in results:
         score = f"{r.decision_score:+.3f}" if r.decision_score is not None else "  -   "
         verdict = r.verdict if r.verdict else "error"
-        print(f"{r.scanner:<12} {r.artifact:<40} {verdict:<10} {r.exit_code if r.exit_code is not None else 2:<5} {score} {r.duration:5.1f}")
+        exit_code = f"{r.exit_code:<5}" if r.exit_code is not None else "  -  "
+        print(f"{r.scanner:<12} {r.artifact:<40} {verdict:<10} {exit_code} {score} {r.duration:5.1f}")
     print("-" * 88)
     for name, b in summary["by_scanner"].items():
         print(f"{name}: {b['malicious']} malicious / {b['benign']} benign / "

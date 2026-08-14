@@ -58,6 +58,9 @@ def is_admitted(file_path: str) -> bool:
                     if is_dangerous(module, name):
                         return True  # Found dangerous import, admit to oracle!
     except Exception:
-        pass
+        # Fail-closed: a malformed/unparseable artifact must still reach the
+        # dynamic oracle. Rejecting it here would silently let a crafted
+        # payload bypass behavioral analysis entirely.
+        return True
         
     return False

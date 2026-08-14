@@ -46,21 +46,32 @@ def call_api_with_retry(func, *args, **kwargs):
 
 
 def get_model_file_info(api: HfApi, repo_id: str, filename: str) -> dict[str, Any] | None:
-    """Query the repository file tree safely with retries and rate limit pacing."""
+    """Query repository file metadata safely with retries and rate limit pacing.
+
+    Uses repo_info(files_metadata=True) which returns sizes in a single call.
+    """
     # Small delay before call to reduce API pressure
     time.sleep(0.5)
     try:
-        tree = call_api_with_retry(api.list_repo_tree, repo_id)
-        for item in tree:
-            if item.rfilename == filename:
+        info = call_api_with_retry(api.repo_info, repo_id, files_metadata=True)
+        for sib in (info.siblings or []):
+            if getattr(sib, "rfilename", None) == filename:
                 return {
-                    "path": item.rfilename,
-                    "size": getattr(item, "size", None),
-                    "lfs": getattr(item, "lfs", None),
+                    "path": sib.rfilename,
+                    "size": getattr(sib, "size", None),
+                    "lfs": getattr(sib, "lfs", None),
                 }
     except Exception as e:
         print(f"  [info] Could not get file tree for {repo_id}: {e}")
     return None
+
+
+def has_pytorch_model_bin(model) -> bool:
+    """True if the model's sibling list advertises a pytorch_model.bin."""
+    for sib in (getattr(model, "siblings", None) or []):
+        if getattr(sib, "rfilename", None) == "pytorch_model.bin":
+            return True
+    return False
 
 
 def crawl_cluster(
@@ -70,30 +81,37 @@ def crawl_cluster(
     max_size: int,
     out_dir: str,
     seen_hashes: set[str],
+    scan_cap: int = 10000,
 ) -> list[dict[str, Any]]:
     """Crawl benign models for a specific task cluster, deduplicating by SHA256 hash."""
-    print(f"\n[crawl] Starting crawl for cluster: {cluster} (target limit: {limit}, max_size: {max_size} bytes)")
+    print(f"\n[crawl] Starting crawl for cluster: {cluster} (target limit: {limit}, max_size: {max_size} bytes, scan_cap: {scan_cap})")
     
-    # Query models sorted by likes
+    crawled = []
+    # Iterate lazily; list_models paginates internally. We stop once we have
+    # collected `limit` non-duplicate downloads or scanned `scan_cap` models.
     try:
         models = call_api_with_retry(
             api.list_models,
             filter=cluster,
             sort="likes",
-            limit=max(limit * 200, 1000),
+            limit=scan_cap,
             full=True,
         )
     except Exception as e:
         print(f"[error] Failed to list models for {cluster}: {e}")
         return []
 
-    crawled = []
     for m in models:
         if len(crawled) >= limit:
             break
 
         # Filter out private, gated, or disabled models
         if getattr(m, "private", False) or getattr(m, "gated", False) or getattr(m, "disabled", None):
+            continue
+
+        # Skip models that do not advertise a pytorch_model.bin in their file tree.
+        # list_models(full=True) returns siblings, so this avoids a per-model API call.
+        if not has_pytorch_model_bin(m):
             continue
 
         # Look up file info for pytorch_model.bin
@@ -186,6 +204,8 @@ def main() -> int:
                     help="maximum size of pytorch_model.bin in bytes")
     ap.add_argument("--out-dir", default="data/crawled",
                     help="output directory to save files and manifest")
+    ap.add_argument("--scan-cap", type=int, default=10000,
+                    help="maximum number of models to scan per cluster before giving up")
     args = ap.parse_args()
 
     api = HfApi()
@@ -202,6 +222,7 @@ def main() -> int:
             max_size=args.max_size,
             out_dir=args.out_dir,
             seen_hashes=seen_hashes,
+            scan_cap=args.scan_cap,
         )
         all_metadata.extend(cluster_metadata)
 

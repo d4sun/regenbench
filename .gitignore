@@ -10,3 +10,12 @@ mlruns/
 
 # Seed corpus model files
 data/crawled/*/
+
+# Crawled real-model corpus (large downloaded checkpoints)
+real_benign_corpus/all/
+real_benign_corpus/oracle_positive/
+real_benign_corpus/oracle_negative/
+
+# Campaign runtime database
+data/regenbench_campaign.db
+data/campaign_results.db

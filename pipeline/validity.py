@@ -19,9 +19,11 @@ from typing import Any
 class ValidityOracle:
     """Validates candidates to ensure they load successfully and trigger execution."""
 
-    def __init__(self, container_backend: str = "podman", container_image: str = "localhost/regenbench/base:latest"):
+    def __init__(self, container_backend: str = "podman", container_image: str = "localhost/regenbench/base:latest",
+                 timeout: int = 20):
         self.backend = container_backend
         self.image = container_image
+        self.timeout = timeout
 
     def validate_pickle(self, pkl_bytes: bytes, trigger_file: str) -> bool:
         """Confirm that the pickle parses/loads successfully and triggers the payload execution."""
@@ -46,7 +48,7 @@ assert obj is not None
 """
         try:
             proc = subprocess.run(
-                [sys.executable if "sys" in globals() else "python3", "-c", load_script],
+                [sys.executable, "-c", load_script],
                 capture_output=True,
                 text=True,
                 timeout=10,
@@ -87,7 +89,8 @@ assert obj is not None
 
         # Save candidate to /tmp (so it is mountable inside container)
         temp_dir = tempfile.gettempdir()
-        temp_file_name = next(tempfile._get_candidate_names()) + ".pt"
+        with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f:
+            temp_file_name = os.path.basename(f.name)
         host_pt_path = os.path.join(temp_dir, temp_file_name)
         
         with open(host_pt_path, "wb") as f:
@@ -125,7 +128,7 @@ assert isinstance(obj, dict)
             ]
 
             try:
-                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=20)
+                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=self.timeout)
                 success_load = (proc.returncode == 0)
                 if not success_load:
                     print(f"[validity-debug] Container failed with code {proc.returncode}")

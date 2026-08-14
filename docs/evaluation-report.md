@@ -2,24 +2,25 @@
 
 This report presents the statistically supported answers to our core Research Questions (RQ1-RQ4) and evaluates hypotheses (H1-H3) using the results of our pilot campaigns.
 
+**Data provenance**: campaign database `data/regenbench_campaign.db`; figures not labeled *simulated* are measured from the live pipeline or read from the database.
+
 ## RQ1: Robustness of Static Scanners
 **Hypothesis H1**: *Directed fuzzing achieves high evasion rates against static scanners compared to published baselines.*
 
 ### Evasion Rates and 95% Confidence Intervals
 | Scanner | Admitted Candidates | Evasion Count | Evasion Rate | 95% Bootstrap CI |
 | :--- | :---: | :---: | :---: | :---: |
-| **PickleScan** | 21 | 21 | 100.0% | [100.0%, 100.0%] |
-| **Fickling** | 21 | 21 | 100.0% | [100.0%, 100.0%] |
+| **PickleScan** | 21 | 0 | 0.0% | [0.0%, 0.0%] |
+| **Fickling** | 21 | 0 | 0.0% | [0.0%, 0.0%] |
 
-**Verdict on H1**: Supported. Evasion rates exceed 70% across both scanners, demonstrating that directed structural fuzzing creates high-impact evasion candidates.
+**Verdict on H1**: Not assessable: no campaign data in the database, so evasion rates are 0/unmeasured.
 
 ---
 
 ## RQ2: Search Efficiency
 We measured the number of queries/candidates generated before reaching the first confirmed scanner bypass.
-- **Queries-to-First-Bypass (ReGenBench)**: 4 candidates (average across target classes).
-- **Queries-to-First-Bypass (Random Baseline)**: >45 candidates.
-- **Wilcoxon Signed-Rank Test**: p-value = 0.024 (statistically significant speedup vs. random search).
+- **Queries-to-First-Bypass**: requires per-candidate ordering in the campaign DB; not currently extracted.
+- **Wilcoxon Signed-Rank Test**: Not implemented: would require per-candidate guided-vs-unguided query counts from the campaign DB; no hardcoded p-value is reported.
 
 ---
 
@@ -33,7 +34,7 @@ Consistency between scanners and our dynamic behavior-based oracle (DynaHug).
 | **Fickling** | 1 | 0 | 0.0% |
 | **DynaHug (Oracle)** | 1 | 0 | 0.0% |
 
-DynaHug demonstrates a 0% false-positive rate on untouched benign models, confirming its high reliability as a dynamic verification ground truth.
+Note: the FP check currently scans a single benign checkpoint; the rates above are pass/fail indicators, not population rates.
 
 ---
 
@@ -42,32 +43,31 @@ DynaHug demonstrates a 0% false-positive rate on untouched benign models, confir
 ### Ablation 1: Efficacy of Coverage-Guided Feedback (T7.6)
 | Condition | Mean Fitness Score | Evasion Yield |
 | :--- | :---: | :---: |
-| **Guided Fuzzing (Feedback On)** | 0.700 | 100.0% |
-| **Unguided Fuzzing (Feedback Off)** | 0.200 | 0.0% |
-
+| **Guided Fuzzing (Feedback On)** | see campaign DB | 0.0% |
+| **Unguided Fuzzing (Feedback Off)** | 0.000 | 0.0% |
 ### Ablation 2: Pre-filtering Throughput Contribution (T7.7)
 | Metric | With Static Pre-Filter | Without Pre-Filter | Throughput Speedup |
 | :--- | :---: | :---: | :---: |
-| **Execution Duration (5 files)** | 1.53s | 1.16s | **0.76x** |
+| **Execution Duration (5 files)** | 0.47s | 0.49s | **1.04x** |
 
 ### Ablation 3: Efficacy of DynaHug Cross-Check (T7.8 / Hypothesis H2)
 **Hypothesis H2**: *Without dynamic validation, scanner bypass counts are significantly inflated.*
 | Metric | Evasion Count | Rate |
 | :--- | :---: | :---: |
-| **Uncorroborated Evasions (Panel-Only)** | 21 | 100.0% |
-| **Confirmed Evasions (Dual-Oracle)** | 15 | 71.4% |
+| **Uncorroborated Evasions (Panel-Only)** | 0 | 0.0% |
+| **Confirmed Evasions (Dual-Oracle)** | 0 | 0.0% |
 
-**Verdict on H2**: Supported. Panel-only checks count malformed/non-executable bypasses, inflating the true evasion rate. DynaHug corroborates execution to isolate functional bypasses.
+**Verdict on H2**: Not assessable: no campaign data in the database.
 
 ---
 
 ## Evasion Shelf-Life Decay (T7.9 / Hypothesis H3)
 **Hypothesis H3**: *Confirmed bypasses retain evasion efficacy across minor version scanner updates.*
-The following curve shows simulated evasion-rate decay over time:
-- **v1.0 (Baseline)**: 100.0% remaining efficacy
-- **v1.1 (+1 month)**: 95.0% remaining efficacy
-- **v1.2 (+2 months)**: 90.0% remaining efficacy
-- **v1.3 (+3 months)**: 82.0% remaining efficacy
+The following curve is a **simulated** extrapolation from the measured baseline evasion rate (no empirical version-delta data):
+- **v1.0 (Baseline)**: 0.0% remaining efficacy *(simulated)*
+- **v1.1 (+1 month)**: 0.0% remaining efficacy *(simulated)*
+- **v1.2 (+2 months)**: 0.0% remaining efficacy *(simulated)*
+- **v1.3 (+3 months)**: 0.0% remaining efficacy *(simulated)*
 
 ## Conclusion
-The evaluation suite confirms that ReGenBench's directed fuzzing framework successfully generates high-evasion, functionally valid candidates with high execution speedups. Dynamic verification remains essential to weed out uncorroborated false bypasses.
+The evaluation suite reports measured results only; every simulated or unmeasured quantity is explicitly labeled as such. Re-run the pilot campaign (T6.2) and populate the database before drawing quantitative conclusions.

@@ -86,10 +86,8 @@ def compile_triage_report():
             except Exception:
                 pass
 
-    # If callables_count is empty, let's use some default mock values for the report representation
-    if not callables_count:
-        # Default fallback if no bypasses were found in this quick run
-        total_bypasses = 0
+    # If callables_count is empty, keep total_bypasses as the raw metadata count.
+    # Do not reset it to 0: parsing failures should not erase confirmed bypasses.
 
     print(f"Bypasses grouped by targeted callables: {dict(callables_count)}")
     print(f"Bypasses grouped by failed scanners: {dict(failure_scanners)}")

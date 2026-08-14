@@ -8,6 +8,7 @@ populates the campaign database, and exports bypasses using the Corpus Manager.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import random
 import shutil
@@ -18,7 +19,7 @@ import yaml
 from pipeline.generator import CandidateGenerator
 from pipeline.runner import Runner, Config
 from pipeline.validity import ValidityOracle
-from pipeline.db import init_db, log_candidate, log_panel_result, log_oracle_result, log_fitness
+from pipeline.db import init_db, log_fitness
 from pipeline.comparator import check_bypass
 from pipeline.fitness import compute_fitness
 from pipeline.feedback import CoverageTracker, FeedbackController
@@ -51,6 +52,7 @@ def main(argv: list[str] | None = None) -> int:
     time_limit_hours = cfg.get("time_budget_hours", 24)
     task_cluster = cfg.get("task_cluster", "text-generation")
     scanners = cfg.get("scanners", ["picklescan", "dynahug"])
+    concurrency_limit = cfg.get("concurrency_limit", 4)
     
     # Adapt campaign scale based on flags
     if args.quick:
@@ -66,6 +68,7 @@ def main(argv: list[str] | None = None) -> int:
     print(f"Database: {args.db}")
     print(f"Task Cluster: {task_cluster}")
     print(f"Scanners: {scanners}")
+    print(f"Concurrency Limit: {concurrency_limit}")
 
     # Ensure output directories exist
     os.makedirs(os.path.dirname(os.path.abspath(args.db)), exist_ok=True)
@@ -126,7 +129,7 @@ def main(argv: list[str] | None = None) -> int:
                 candidates.append((cand_path, cand_bytes, chosen_callable, trigger_file))
 
             # 2. Run scanners and dynahug oracle
-            config = Config(backend="podman", tag=":latest", max_workers=4, timeout=45, oracle=True, pre_filter=True)
+            config = Config(backend="podman", tag=":latest", max_workers=concurrency_limit, timeout=45, oracle=True, pre_filter=True)
             runner = Runner(config, scanners=scanners)
             
             cand_paths = [c[0] for c in candidates]
@@ -171,7 +174,6 @@ def main(argv: list[str] | None = None) -> int:
                 if is_bypass:
                     bypasses_cnt += 1
 
-                import hashlib
                 cand_id = hashlib.md5(filepath.encode("utf-8")).hexdigest()
                 log_fitness(args.db, cand_id, fit_score, is_valid)
 

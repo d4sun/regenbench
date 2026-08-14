@@ -1,11 +1,65 @@
+# ReGenBench experiment configuration.
+#
+# Staged experiment tiers (see docs/experiment-plan.md):
+#   pilot — validate the harness end-to-end before scaling.
+#   main  — publication-strength sizes for RQ1-RQ4.
+
+experiment:
+  name: "regenbench-main"
+  tier: "pilot"          # pilot | main
+
+tiers:
+  pilot:
+    real_benign_checkpoints: 100
+    guided_candidates: 100
+    unguided_candidates: 100
+    campaign_replicates: 2
+    oracle_validation_sample: 60
+  main:
+    real_benign_checkpoints: 600
+    guided_candidates: 500
+    unguided_candidates: 500
+    campaign_replicates: 5
+    oracle_validation_sample: 100
+
+corpus:
+  # Directory populated by scripts/crawl_benign.py (real HuggingFace weights).
+  root: "real_benign_corpus/all"
+  # Views (hard links) split by DynaHug decision score, built by
+  # scripts/organize_corpus.py. These are for *seed selection only*; the RQ3 FP
+  # study always scans the full `all/` population.
+  oracle_positive: "real_benign_corpus/oracle_positive"
+  oracle_negative: "real_benign_corpus/oracle_negative"
+  clusters:
+    - "text-generation"
+    - "text-classification"
+    - "feature-extraction"
+
+oracle_validation:
+  script: "scripts/validate_oracle.py"
+  backend: "podman"
+  image: "regenbench/dynahug"
+
 campaign:
-  name: "pilot-text-generation"
-  time_budget_hours: 24
-  default_rounds: 5
+  base_checkpoint: "real_benign_corpus/all/text-generation/roneneldan_TinyStories-1M/pytorch_model.bin"
+  rounds: 5
   candidates_per_round: 20
-  task_cluster: "text-generation"
+  backend: "podman"
+  tag: ":latest"
+  timeout_seconds: 120
   concurrency_limit: 2
-  scanners:
+  # Static panel scanners; dynahug is appended as the behavioral oracle.
+  panel_scanners:
     - "picklescan"
     - "fickling"
+    - "modelscan"
+    - "modeltracer"
+  oracle_scanners:
     - "dynahug"
+
+database:
+  path: "data/regenbench_campaign.db"
+
+evaluation:
+  script: "scripts/run_evaluation_suite.py"
+  report: "docs/evaluation-report.md"

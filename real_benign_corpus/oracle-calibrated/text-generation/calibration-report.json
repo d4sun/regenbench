@@ -1,0 +1,55 @@
+{
+  "task": "oracle-calibration",
+  "image": "regenbench/dynahug:latest",
+  "backend": "podman",
+  "gamma": 0.1,
+  "nu": 0.01,
+  "generated_at": "2026-08-13T10:47:49Z",
+  "corpus": "real_benign_corpus/all/text-generation",
+  "traced_total": 50,
+  "train_n": 40,
+  "holdout_n": 10,
+  "train": {
+    "n": 40,
+    "min": -0.0003,
+    "q25": 0.0005,
+    "median": 0.0066,
+    "q75": 0.0139,
+    "max": 0.0234,
+    "mean": 0.0078,
+    "std": 0.007,
+    "positive": 0.85,
+    "spread": 0.0237
+  },
+  "holdout": {
+    "n": 10,
+    "min": -0.0642,
+    "q25": -0.0167,
+    "median": 0.0039,
+    "q75": 0.0129,
+    "max": 0.0244,
+    "mean": -0.0044,
+    "std": 0.0272,
+    "positive": 0.6,
+    "spread": 0.0886
+  },
+  "trace_duration_mean": 6.26,
+  "artifacts": [
+    "oneclass_svm_model.pkl",
+    "scaler.pkl",
+    "syscalls.txt",
+    "vectorizer.pkl"
+  ],
+  "models": [
+    "crumb_fake-gpt-j-17m",
+    "google_reformer-crime-and-punishment",
+    "concedo_OPT-19M-ChatSalad",
+    "roneneldan_TinyStories-Instruct-1M",
+    "jploski_falcon40b-mini-shakespeare",
+    "junnyu_roformer_chinese_sim_char_small",
+    "EleutherAI_pythia-14m-deduped",
+    "Rashik24_tinycoder-15M",
+    "i3-lab_i3-tiny",
+    "seyabde_mistral_7b_yo_instruct"
+  ]
+}

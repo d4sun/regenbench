@@ -52,7 +52,7 @@ TIMEOUT = 120  # upstream src/analysis.py TIMEOUT (seconds)
 
 DYN_HUG_DIR = "/opt/dynahug"
 SYSCALLS_FILE = os.path.join(DYN_HUG_DIR, "classifier", "syscalls.txt")
-MODEL_DIR = os.path.join(
+DEFAULT_MODEL_DIR = os.path.join(
     DYN_HUG_DIR,
     "classifier",
     "models",
@@ -61,6 +61,9 @@ MODEL_DIR = os.path.join(
     "OneClassSVM",
     "params-gamma_0.1_kernel_rbf_nu_0.01",
 )
+# Overridable so a locally-recalibrated OCSVM (fit on this environment's
+# strace profiles) can be used without rebuilding the image.
+MODEL_DIR = os.environ.get("DYNAHUG_MODEL_DIR", DEFAULT_MODEL_DIR)
 LOADER = "/usr/local/bin/dynahug-loader"
 WORKDIR = "/tmp/dynahug"
 

@@ -29,6 +29,12 @@ SCANNERS: dict[str, dict] = {
 # yield no behavioral signal.
 ORACLE_EXTENSIONS = {".pt", ".pth"}
 
+# If set, the dynahug container mounts this directory and points
+# DYNAHUG_MODEL_DIR at it, so a locally-recalibrated OCSVM (fit on this
+# environment's strace profiles) is used instead of the pretrained upstream
+# model. See scripts/calibrate_oracle.py.
+ORACLE_MODEL_DIR_ENV = "REGENBENCH_ORACLE_MODEL_DIR"
+
 
 @dataclass
 class ScanResult:
@@ -53,14 +59,23 @@ def full_image(image: str, tag: str) -> str:
 
 
 def run_scan(backend: str, image_full: str, src: str,
-             timeout: int = 300) -> tuple[Optional[dict], Optional[str]]:
+             timeout: int = 300,
+             oracle_model_dir: str | None = None) -> tuple[Optional[dict], Optional[str]]:
     """Run `image_full` on the host file/dir `src`; return (parsed_json, error).
-    `image_full` is the fully-qualified container id (image[:tag])."""
+    `image_full` is the fully-qualified container id (image[:tag]).
+    `oracle_model_dir` (or $REGENBENCH_ORACLE_MODEL_DIR) mounts a recalibrated
+    DynaHug model dir and sets DYNAHUG_MODEL_DIR inside the container."""
     cmd = [
         backend, "run", "--rm",
         "-v", f"{os.path.abspath(src)}:/artifact:ro,Z",
-        image_full, "/artifact",
     ]
+    model_dir = oracle_model_dir or os.environ.get(ORACLE_MODEL_DIR_ENV)
+    if model_dir:
+        if not os.path.isdir(model_dir):
+            return None, f"oracle model dir does not exist: {model_dir}"
+        cmd += ["-e", "DYNAHUG_MODEL_DIR=/opt/dynahug/recalibrated",
+                "-v", f"{os.path.abspath(model_dir)}:/opt/dynahug/recalibrated:ro,Z"]
+    cmd += [image_full, "/artifact"]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired:
