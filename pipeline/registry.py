@@ -6,6 +6,7 @@ Loads and queries the registry of dangerous callable modules/targets.
 from __future__ import annotations
 
 import os
+import sys
 import yaml
 from typing import Any
 
@@ -42,6 +43,14 @@ def load_registry(yaml_path: str | None = None) -> None:
         data = yaml.safe_load(f)
         
     for entry in data.get("dangerous_callables", []):
+        # Skip platform-restricted entries that cannot load on this host
+        # (e.g. Windows-only nt.system would fail with ModuleNotFoundError
+        # when GLOBAL'd on Linux).
+        platform = entry.get("platform")
+        if platform == "windows" and not sys.platform.startswith("win"):
+            continue
+        if platform == "unix" and sys.platform.startswith("win"):
+            continue
         reg_entry = RegistryEntry(
             module=entry["module"],
             name=entry["name"],

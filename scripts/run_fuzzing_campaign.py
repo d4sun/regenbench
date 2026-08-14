@@ -106,7 +106,11 @@ def run_campaign(args: argparse.Namespace) -> int:
         base_abs, total_candidates, args.rounds,
     )
 
-    temp_dir = tempfile.mkdtemp(prefix=f"regenbench_{run_id}_")
+    # Candidates are persisted per-run so the DB filepaths never dangle and
+    # export_bypasses can copy real artifacts. Only the trigger files (used by
+    # the validity oracle, which mounts the system temp dir) are ephemeral.
+    candidates_root = os.path.join("data", "candidates", run_id)
+    temp_dir = tempfile.mkdtemp(prefix=f"regenbench_{run_id}_triggers_")
     try:
         generator = CandidateGenerator()
         oracle_val = ValidityOracle(container_backend=args.backend,
@@ -117,8 +121,8 @@ def run_campaign(args: argparse.Namespace) -> int:
         round_summaries = []
         for r in range(1, args.rounds + 1):
             print(f"\n--- Round {r} / {args.rounds} ---")
-            round_dir = os.path.join(temp_dir, f"round_{r}")
-            os.makedirs(round_dir)
+            round_dir = os.path.join(candidates_root, f"round_{r}")
+            os.makedirs(round_dir, exist_ok=True)
 
             if args.mode == "guided":
                 callable_weights_map = controller.get_callable_weights()
@@ -141,14 +145,28 @@ def run_campaign(args: argparse.Namespace) -> int:
                 trigger_file = os.path.join(temp_dir, f"trigger_{r}_{i}.txt")
                 payload = f"with open('{trigger_file}', 'w') as f: f.write('1')"
 
-                mut_prob = controller.op_swap_prob if args.mode == "guided" else 0.15
+                # Feedback-controlled mutation parameters. In guided mode the
+                # controller's probs (from the previous round's fitness) drive
+                # the operators; in unguided mode they stay at fixed baselines.
+                if args.mode == "guided":
+                    op_swap_prob = controller.op_swap_prob
+                    callable_sub_prob = controller.callable_sub_prob
+                    arg_fuzz_prob = controller.arg_fuzz_prob
+                else:
+                    op_swap_prob = 0.15
+                    callable_sub_prob = 0.15
+                    arg_fuzz_prob = 0.15
                 try:
                     cand_bytes = generator.generate_candidate_pt(
                         benign_pt_bytes=benign_pt_bytes,
                         payload_code=payload,
                         dangerous_callable=chosen_callable,
                         mutate_meta=True,
-                        mutation_prob=mut_prob,
+                        mutation_prob=0.15,
+                        op_swap_prob=op_swap_prob,
+                        callable_sub_prob=callable_sub_prob,
+                        arg_fuzz_prob=arg_fuzz_prob,
+                        stack_prob=0.05,
                     )
                 except ValueError as e:
                     # Unsupported callable (e.g. runpy.run_module cannot execute
@@ -161,7 +179,11 @@ def run_campaign(args: argparse.Namespace) -> int:
                         payload_code=payload,
                         dangerous_callable=chosen_callable,
                         mutate_meta=True,
-                        mutation_prob=mut_prob,
+                        mutation_prob=0.15,
+                        op_swap_prob=op_swap_prob,
+                        callable_sub_prob=callable_sub_prob,
+                        arg_fuzz_prob=arg_fuzz_prob,
+                        stack_prob=0.05,
                     )
 
                 cand_path = os.path.join(round_dir, f"candidate_{i}.pt")
@@ -198,7 +220,8 @@ def run_campaign(args: argparse.Namespace) -> int:
                 decision_score = 0.0
                 for r_scan in cand_results:
                     if r_scan.scanner == "dynahug":
-                        oracle_verdict = r_scan.verdict or "benign"
+                        # Fail-closed: an errored oracle is never "benign".
+                        oracle_verdict = r_scan.verdict or "error"
                         decision_score = r_scan.decision_score or 0.0
                     else:
                         # Fail-closed: a scanner that errors (parse failure, scan
@@ -229,6 +252,7 @@ def run_campaign(args: argparse.Namespace) -> int:
                     mutation_depth=r,
                     callables_used=f"{chosen_callable[0]}::{chosen_callable[1]}",
                     campaign_type=args.mode,
+                    run_id=run_id,
                 )
                 log_fitness(db_path, cand_id, fit_score, is_valid)
 

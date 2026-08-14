@@ -95,7 +95,12 @@ def main() -> int:
     elif proc.returncode == 1:
         verdict, exit_code = "malicious", 1
     elif proc.returncode == 3:
-        verdict, exit_code = "benign", 3
+        # ModelScan exit code 3 means "no supported file found to scan"
+        # (e.g. a torch .pt/.bin that ModelScan cannot process). The CLI treats
+        # this as a *benign* outcome, so we report benign -- but normalized to
+        # the documented schema exit code 0 (docs/verdict-schema.md) so the
+        # schema stays 0/1/2.
+        verdict, exit_code = "benign", 0
     else:
         verdict, exit_code = "benign", 0
 

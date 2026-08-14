@@ -129,6 +129,19 @@ assert isinstance(obj, dict)
 
             try:
                 proc = subprocess.run(cmd, capture_output=True, text=True, timeout=self.timeout)
+                if proc.returncode != 0 and "relabeling" in (proc.stderr or "").lower():
+                    # Some podman/SELinux setups refuse to relabel system /tmp
+                    # with :Z ("SELinux relabeling of /tmp is not allowed").
+                    # Retry the same mount without the relabel flag (the
+                    # trigger path is baked into the pickle as an absolute
+                    # /tmp/... path, so the mount target must stay /tmp).
+                    retry = [
+                        self.backend, "run", "--rm",
+                        "--security-opt", "label=disable",
+                        "-v", f"{temp_dir}:/tmp",
+                        self.image, "python3.13", "-c", container_script
+                    ]
+                    proc = subprocess.run(retry, capture_output=True, text=True, timeout=self.timeout)
                 success_load = (proc.returncode == 0)
                 if not success_load:
                     print(f"[validity-debug] Container failed with code {proc.returncode}")

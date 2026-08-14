@@ -41,13 +41,14 @@ oracle_validation:
   image: "regenbench/dynahug"
 
 campaign:
-  base_checkpoint: "real_benign_corpus/all/text-generation/roneneldan_TinyStories-1M/pytorch_model.bin"
+  base_checkpoint: "ci/corpus/torch/benign/benign.pt"
   rounds: 5
   candidates_per_round: 20
   backend: "podman"
   tag: ":latest"
   timeout_seconds: 120
   concurrency_limit: 2
+  time_budget_hours: 24
   # Static panel scanners; dynahug is appended as the behavioral oracle.
   panel_scanners:
     - "picklescan"

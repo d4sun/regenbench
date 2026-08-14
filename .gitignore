@@ -19,3 +19,8 @@ real_benign_corpus/oracle_negative/
 # Campaign runtime database
 data/regenbench_campaign.db
 data/campaign_results.db
+
+# Persisted campaign candidates (large, regenerable artifacts)
+data/candidates/
+data/bypasses/
+data/*.checkpoint.json

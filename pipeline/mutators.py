@@ -24,18 +24,20 @@ class PickleMutator:
         self.sample_floats = [0.0, 1.0, -1.0, 3.14159, 1e-5, float("inf"), float("-inf"), float("nan")]
 
     def mutate_opcode_swap(self, op: OpcodeClassification, arg: bytes) -> tuple[OpcodeClassification, bytes]:
-        """Swap an opcode for an equivalent one in the same category/stack behavior."""
+        """Swap an opcode for an equivalent one in the same category/stack behavior.
+
+        Only value-op swaps are performed (``NONE`` / ``NEWTRUE`` / ``NEWFALSE``).
+        Container-type swaps (``EMPTY_LIST``->``EMPTY_SET`` etc.) and build-op
+        swaps (``APPEND``<->``SETITEM``) are deliberately excluded: they change
+        the stack/container semantics that later opcodes depend on, producing
+        candidates that fail to unpickle and are discarded by the validity
+        oracle, which wastes campaign budget and corrupts the feedback signal.
+        """
         if op.category == OpcodeCategory.NO_ARG:
             equivalents = {
                 "NONE": ["NEWTRUE", "NEWFALSE"],
                 "NEWTRUE": ["NONE", "NEWFALSE"],
                 "NEWFALSE": ["NONE", "NEWTRUE"],
-                "EMPTY_LIST": ["EMPTY_TUPLE", "EMPTY_DICT", "EMPTY_SET"],
-                "EMPTY_TUPLE": ["EMPTY_LIST", "EMPTY_DICT", "EMPTY_SET"],
-                "EMPTY_DICT": ["EMPTY_LIST", "EMPTY_TUPLE", "EMPTY_SET"],
-                "EMPTY_SET": ["EMPTY_LIST", "EMPTY_TUPLE", "EMPTY_DICT"],
-                "APPEND": ["SETITEM"],
-                "SETITEM": ["APPEND"],
             }
             if op.name in equivalents:
                 new_name = random.choice(equivalents[op.name])

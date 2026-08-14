@@ -48,22 +48,48 @@ def call_api_with_retry(func, *args, **kwargs):
 def get_model_file_info(api: HfApi, repo_id: str, filename: str) -> dict[str, Any] | None:
     """Query repository file metadata safely with retries and rate limit pacing.
 
-    Uses repo_info(files_metadata=True) which returns sizes in a single call.
+    Uses repo_info(files_metadata=True) which returns sizes in a single call,
+    plus securityStatus=True so T2.4's "exclude known-unsafe models" filter can
+    be enforced without an extra API round-trip.
     """
     # Small delay before call to reduce API pressure
     time.sleep(0.5)
     try:
-        info = call_api_with_retry(api.repo_info, repo_id, files_metadata=True)
+        info = call_api_with_retry(api.repo_info, repo_id, files_metadata=True, securityStatus=True)
         for sib in (info.siblings or []):
             if getattr(sib, "rfilename", None) == filename:
                 return {
                     "path": sib.rfilename,
                     "size": getattr(sib, "size", None),
                     "lfs": getattr(sib, "lfs", None),
+                    "security": getattr(info, "security", None),
                 }
     except Exception as e:
         print(f"  [info] Could not get file tree for {repo_id}: {e}")
     return None
+
+
+def is_security_unsafe(security) -> bool:
+    """True when HuggingFace flags any pickle/torch artifact in the repo.
+
+    T2.4 requires excluding models whose checkpoints are known-unsafe, so the
+    crawled corpus is a trustworthy *benign* baseline. `security` is the
+    SecurityInfo object returned by repo_info(securityStatus=True): when HF
+    flagged a pickle/torch/unsafe artifact, `security.repository` is non-empty
+    and `security.downloadable` is False.
+    """
+    if security is None:
+        return False
+    if getattr(security, "downloadable", True) is False:
+        return True
+    repository = getattr(security, "repository", None) or {}
+    if not isinstance(repository, dict):
+        return False
+    for category in ("pickle", "torch", "unsafe"):
+        flagged = repository.get(category)
+        if flagged:
+            return True
+    return False
 
 
 def has_pytorch_model_bin(model) -> bool:
@@ -117,6 +143,12 @@ def crawl_cluster(
         # Look up file info for pytorch_model.bin
         finfo = get_model_file_info(api, m.id, "pytorch_model.bin")
         if not finfo:
+            continue
+
+        # T2.4: exclude models HuggingFace flags as security-unsafe (known
+        # pickle/torch malware), so the corpus stays a genuine benign baseline.
+        if is_security_unsafe(finfo.get("security")):
+            print(f"  [skip] {m.id} flagged security-unsafe by HuggingFace; excluding")
             continue
 
         # Memory-safety size check

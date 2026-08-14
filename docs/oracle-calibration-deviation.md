@@ -55,20 +55,24 @@ Artifacts: `real_benign_corpus/oracle-calibrated/text-generation/`.
 
 ## Validation gate outcome (recalibrated)
 
-30 real text-generation checkpoints (seed 99), scored with the calibrated
-model:
+The authoritative, committed gate result is `real_benign_corpus/oracle-validation.json`
+(seed 1337, `scripts/validate_oracle.py`, 56 real text-generation checkpoints):
 
-- spread `0.0776` (vs `0.0` collapsed), `collapse_flag=false` — **gate passes**
-- `score_distribution`: min -0.054, median +0.0053, max +0.0237
-- verdicts: 21 benign / 5 malicious / 4 error (deserialization failures)
-- `positive_rate` (score > 0): 0.70
+- `n=56`, `scored=50`, `spread=0.1032` (vs `0.0` collapsed),
+  `collapse_flag=false` — **gate passes**
+- verdicts: **9 benign / 41 malicious / 6 error** (deserialization failures,
+  exit code 2)
+- `score_distribution`: min -0.0813, median -0.0489, max +0.0219
+- `positive_rate` (score > 0): 0.16
 
 ### Known limitation: benign false-positive rate
 
-The calibrated oracle still flags a substantial share of *real benign*
-checkpoints as malicious (~16-30% across validation/calibration holdouts).
-Causes: only ~40 training traces (small support region, boundary near 0) and
-the OCSVM's one-class objective. Consequences for the experiment:
+On the committed validation set, **82% of scored benign checkpoints
+(41/50) are flagged malicious** by the calibrated oracle; only 9/50 (18%) get
+a benign verdict. Earlier drafts of this document quoted "~16-30%"; the
+committed measurement supersedes that figure. Causes: only ~40 training
+traces (small support region, boundary near 0) and the OCSVM's one-class
+objective. Consequences for the experiment:
 
 - **RQ3 (benign FP study)** reports this honestly: the oracle's FP rate on
   the real corpus is measured and reported, not hidden.
@@ -79,24 +83,23 @@ the OCSVM's one-class objective. Consequences for the experiment:
 - Do **not** filter the benign corpus by oracle verdict (provenance-based
   ground truth, per methodology).
 
-### Known limitation: weak discrimination (measured 2026-08-13)
+### Known limitation: weak discrimination (2026-08-13)
 
-A direct A/B discrimination test on `roneneldan/TinyStories-1M`:
+The committed gate result itself demonstrates low discrimination: the benign
+checkpoints that DO pass (e.g. `roneneldan/TinyStories-1M` at `+0.0179`,
+`Norod78/TinyStories-3M-val-Hebrew` at `+0.0156`) sit just above the zero
+boundary, while the vast majority of benign models score well below it
+(median -0.0489, min -0.0813). Earlier A/B measurements that reported
+TinyStories-1M at `-0.0733` were superseded by this committed validation run
+(the same artifact is `benign`, score `+0.0179`, index 1 of
+`oracle-validation.json`) and must not be cited.
 
-| sample | verdict | decision_score | exec/fork syscalls |
-| :--- | :--- | :--- | :--- |
-| benign base | malicious | -0.0733 | execve=1, clone3=7 |
-| + `os.system` injected payload | malicious | -0.0823 | execve=3, vfork=1, wait4=3, write=3, getpid/getppid |
-
-The injected candidate produces clear observable behavioral deltas (the
-subprocess syscalls — vfork/wait4/getpid/write — are absent in the base, and
-~500 extra syscalls overall), but the calibrated OCSVM compresses the delta
-to ~0.009 in decision score, so both land below zero ("malicious"). Cause:
-the trace is dominated by the loader's Python/torch startup baseline
-(e.g. newfstatat=13432, read=2344, identical across all models); the
-payload's contribution is a small additive shift that the 10-support-vector
-boundary does not separate. The oracle therefore has **low discriminative
-power in this environment**, independent of its FP rate.
+Cause of the weak separation: the trace is dominated by the loader's
+Python/torch startup baseline (e.g. newfstatat=13432, read=2344, identical
+across all models); a payload's subprocess syscalls are a small additive
+shift that the 10-support-vector boundary does not separate. The oracle
+therefore has **low discriminative power in this environment**, independent
+of its FP rate.
 
 Consequences for RQ2: the oracle cannot serve as a strong independent
 corroborator of individual bypasses. "Confirmed bypass" must therefore be

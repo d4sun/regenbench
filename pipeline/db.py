@@ -49,7 +49,8 @@ def init_db(db_path: str) -> None:
                 mutation_template TEXT,
                 mutation_depth INTEGER,
                 callables_used TEXT,
-                campaign_type TEXT
+                campaign_type TEXT,
+                run_id TEXT
             )
         """)
 
@@ -112,6 +113,11 @@ def init_db(db_path: str) -> None:
                 timestamp TEXT
             )
         """)
+
+        # Migration: add run_id to candidates for pre-existing databases.
+        cols = {row[1] for row in cursor.execute("PRAGMA table_info(candidates)").fetchall()}
+        if "run_id" not in cols:
+            cursor.execute("ALTER TABLE candidates ADD COLUMN run_id TEXT")
     # _session() commits and closes on exit.
 
 
@@ -126,6 +132,7 @@ def log_candidate(
     mutation_depth: int | None = None,
     callables_used: str | None = None,
     campaign_type: str | None = None,
+    run_id: str | None = None,
 ) -> None:
     """Insert a candidate; on conflict, fill in any newly-provided metadata fields.
 
@@ -138,8 +145,8 @@ def log_candidate(
         cursor.execute(
             """INSERT INTO candidates 
             (candidate_id, filepath, source, created_at, round_num, seed_model, 
-             mutation_template, mutation_depth, callables_used, campaign_type) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             mutation_template, mutation_depth, callables_used, campaign_type, run_id) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(candidate_id) DO UPDATE SET
                 filepath = COALESCE(excluded.filepath, candidates.filepath),
                 source = COALESCE(excluded.source, candidates.source),
@@ -148,7 +155,8 @@ def log_candidate(
                 mutation_template = COALESCE(excluded.mutation_template, candidates.mutation_template),
                 mutation_depth = COALESCE(excluded.mutation_depth, candidates.mutation_depth),
                 callables_used = COALESCE(excluded.callables_used, candidates.callables_used),
-                campaign_type = COALESCE(excluded.campaign_type, candidates.campaign_type)
+                campaign_type = COALESCE(excluded.campaign_type, candidates.campaign_type),
+                run_id = COALESCE(excluded.run_id, candidates.run_id)
             """,
             (
                 candidate_id,
@@ -161,6 +169,7 @@ def log_candidate(
                 mutation_depth,
                 callables_used,
                 campaign_type,
+                run_id,
             ),
         )
 

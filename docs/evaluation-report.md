@@ -2,7 +2,7 @@
 
 This report presents the statistically supported answers to our core Research Questions (RQ1-RQ4) and evaluates hypotheses (H1-H3) using the results of our pilot campaigns.
 
-**Data provenance**: campaign database `data/regenbench_campaign.db`; figures not labeled *simulated* are measured from the live pipeline or read from the database.
+**Data provenance**: campaign database `/tmp/opencode/fuzz_guided.db`; figures not labeled *simulated* are measured from the live pipeline or read from the database.
 
 ## RQ1: Robustness of Static Scanners
 **Hypothesis H1**: *Directed fuzzing achieves high evasion rates against static scanners compared to published baselines.*
@@ -10,17 +10,16 @@ This report presents the statistically supported answers to our core Research Qu
 ### Evasion Rates and 95% Confidence Intervals
 | Scanner | Admitted Candidates | Evasion Count | Evasion Rate | 95% Bootstrap CI |
 | :--- | :---: | :---: | :---: | :---: |
-| **PickleScan** | 21 | 0 | 0.0% | [0.0%, 0.0%] |
-| **Fickling** | 21 | 0 | 0.0% | [0.0%, 0.0%] |
+| **PickleScan** | 10 | 0 | 0.0% | [0.0%, 0.0%] |
+| **Fickling** | 0 | 0 | 0.0% | [0.0%, 0.0%] |
 
-**Verdict on H1**: Not assessable: no campaign data in the database, so evasion rates are 0/unmeasured.
+**Verdict on H1**: Not supported on current data: measured evasion rates are below 70%.
 
 ---
 
 ## RQ2: Search Efficiency
-We measured the number of queries/candidates generated before reaching the first confirmed scanner bypass.
-- **Queries-to-First-Bypass**: requires per-candidate ordering in the campaign DB; not currently extracted.
-- **Wilcoxon Signed-Rank Test**: Not implemented: would require per-candidate guided-vs-unguided query counts from the campaign DB; no hardcoded p-value is reported.
+We measured the number of queries/candidates generated before reaching the first confirmed scanner bypass, per campaign replicate (per run_id, ordered by round).
+- **Queries-to-First-Bypass**: guided: Q_first per replicate = [13] (censored=1; right-censored at total+1 when no bypass found); unguided: Q_first per replicate = [] (censored=0; right-censored at total+1 when no bypass found); test not run: pairs unequal or too few for a paired test; consider independent Mann-Whitney on replicate Q_first values
 
 ---
 
@@ -31,24 +30,37 @@ Consistency between scanners and our dynamic behavior-based oracle (DynaHug).
 | Scanner | Benign Models Scanned | False-Positive Detections | False-Positive Rate |
 | :--- | :---: | :---: | :---: |
 | **PickleScan** | 1 | 0 | 0.0% |
-| **Fickling** | 1 | 0 | 0.0% |
-| **DynaHug (Oracle)** | 1 | 0 | 0.0% |
+| **Fickling** | 1 | 1 | 100.0% |
+| **ModelScan** | 1 | 0 | 0.0% |
+| **ModelTracer** | 1 | 0 | 0.0% |
+| **DynaHug (Oracle)** | 1 | 1 | 100.0% |
 
-Note: the FP check currently scans a single benign checkpoint; the rates above are pass/fail indicators, not population rates.
+**Ground truth note**: every checkpoint is benign by construction (downloaded from a verified public HuggingFace repository, non-gated, unmodified). Benignness is NOT defined by any detector's verdict.
+
+### Detector Disagreement on Benign Corpus
+- Not computed: no benign corpus scan results available.
 
 ---
 
 ## RQ4: Ablation Studies
 
 ### Ablation 1: Efficacy of Coverage-Guided Feedback (T7.6)
-| Condition | Mean Fitness Score | Evasion Yield |
-| :--- | :---: | :---: |
-| **Guided Fuzzing (Feedback On)** | see campaign DB | 0.0% |
-| **Unguided Fuzzing (Feedback Off)** | 0.000 | 0.0% |
+Per-replicate results from the campaign DB (each row is one run_id):
+| Campaign | Replicate | Valid Candidates | Panel Evasions | Confirmed (Dual-Oracle) | Evasion Yield |
+| :--- | :---: | :---: | :---: | :---: | :---: |
+| **guided** | 1 | 10 | 0 | 0 | 0.0% |
+- **Unguided ablation harness**: mean fitness 2.500, evasion yield 0.0% (measured live, 10 candidates).
+
+### Coverage Breadth Across Rounds (T7.3)
+| Round | Opcode Coverage | Callable Coverage |
+| :---: | :---: | :---: |
+| 1 | 0.4264705882352941 | 0.2777777777777778 |
+| 2 | 0.4264705882352941 | 0.5 |
+- **Growth**: opcode coverage 0.4264705882352941 -> 0.4264705882352941; callable coverage 0.2777777777777778 -> 0.5 from round 1 to round 2.
 ### Ablation 2: Pre-filtering Throughput Contribution (T7.7)
 | Metric | With Static Pre-Filter | Without Pre-Filter | Throughput Speedup |
 | :--- | :---: | :---: | :---: |
-| **Execution Duration (5 files)** | 0.47s | 0.49s | **1.04x** |
+| **Execution Duration (5 files)** | 0.92s | 15.09s | **16.38x** |
 
 ### Ablation 3: Efficacy of DynaHug Cross-Check (T7.8 / Hypothesis H2)
 **Hypothesis H2**: *Without dynamic validation, scanner bypass counts are significantly inflated.*
@@ -57,7 +69,7 @@ Note: the FP check currently scans a single benign checkpoint; the rates above a
 | **Uncorroborated Evasions (Panel-Only)** | 0 | 0.0% |
 | **Confirmed Evasions (Dual-Oracle)** | 0 | 0.0% |
 
-**Verdict on H2**: Not assessable: no campaign data in the database.
+**Verdict on H2**: Not assessable on current data: uncorroborated and confirmed evasion counts are both 0.
 
 ---
 

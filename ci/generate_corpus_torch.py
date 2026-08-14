@@ -21,6 +21,10 @@ import os
 import sys
 import torch
 
+# Deterministic regeneration: the committed .pt bytes must be reproducible
+# (torch.randn below is seeded), so CI and local runs produce identical files.
+torch.manual_seed(1337)
+
 OUT = sys.argv[1] if len(sys.argv) > 1 else "ci/corpus/torch"
 BEN = os.path.join(OUT, "benign")
 MAL = os.path.join(OUT, "malicious")

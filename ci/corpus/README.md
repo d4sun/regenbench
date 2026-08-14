@@ -33,9 +33,11 @@ Scanners are assigned per format based on what each can actually scan:
 | torch| modelscan  | benign / 0  | malicious / 1 |
 | torch| dynahug    | malicious / 1 | malicious / 1 |
 
-- **modelscan** indexes ML model formats (`.keras`, `.h5`, SavedModel, `.pt`).
-  On a bare `.pkl` it reports 0 files scanned, so it is asserted only on the
-  torch half.
+- **modelscan** indexes ML model formats (`.keras`, `.h5`, SavedModel, `.pt`)
+  and, via its pickle scan, also inspects raw pickle content directly (magic
+  bytes, not extension). It would therefore scan `pkl/` too; the corpus
+  asserts it only on the torch half to keep the panel-to-format mapping
+  disjoint and the expectations simple.
 - **dynahug** is the T0.7 behavioral oracle: its One-Class SVM is trained on
   2000 real HuggingFace model loads, so the committed (out-of-distribution)
   torch files always fall outside the learned manifold -> `malicious / 1` for

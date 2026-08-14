@@ -43,6 +43,20 @@ RUN python3.13 -m pip install --no-cache-dir \
         torch==2.13.0+cpu \
         numpy==2.3.5
 
+# PyYAML: required at import time by pipeline/registry.py (dangerous-callable
+# registry) and scripts/run_pilot_campaign.py, which run in this base image.
+# Installed from PyPI (the torch CPU index above does not host it).
+RUN python3.13 -m pip install --no-cache-dir pyyaml==6.0.3
+
+# pandas, sympy, IPython: modules referenced by registry callables
+# (pandas.eval, sympy.sympify, IPython.utils.process.system). The base image
+# is the validity-load sandbox, so torch.load of candidates that GLOBAL these
+# must not fail with ModuleNotFoundError. From PyPI, pinned for reproducibility.
+RUN python3.13 -m pip install --no-cache-dir \
+        pandas==2.2.3 \
+        sympy==1.13.3 \
+        ipython==8.30.0
+
 # Verify the base surface: torch + pickletools import, strace present.
 RUN python3.13 -c "import torch, pickletools; print('torch', torch.__version__)" \
     && strace --version | head -n1

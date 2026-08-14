@@ -17,6 +17,7 @@ dangerous_callables:
     category: "command_execution"
     description: "Executes the command on Windows systems."
     genuine_code_exec: true
+    platform: "windows"
 
   - module: "subprocess"
     name: "Popen"
