@@ -11,15 +11,30 @@ import zipfile
 from typing import Any
 
 from pipeline.opcodes import parse_pickle, OPCODES_BY_BYTE
-from pipeline.registry import get_all_entries, is_dangerous
+from pipeline.registry import get_armable_entries, get_all_entries, is_dangerous
 from pipeline.db import log_coverage
+
+
+def _string_value(op, arg: bytes) -> str | None:
+    """Extract the string pushed by a string opcode (for STACK_GLOBAL)."""
+    name = op.name
+    if name == "SHORT_BINUNICODE":
+        return arg[1:].decode("utf-8", "replace")
+    if name == "BINUNICODE":
+        return arg[4:].decode("utf-8", "replace")
+    if name == "UNICODE":
+        return arg.strip(b"\r\n").decode("utf-8", "replace").strip("'\"")
+    if name in ("SHORT_BINSTRING", "BINSTRING"):
+        return arg[1:].decode("latin1") if name == "SHORT_BINSTRING" else arg[4:].decode("latin1")
+    return None
 
 
 class CoverageTracker:
     """Logs non-decreasing opcode and dangerous-callable coverage over rounds."""
 
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str, run_id: str = ""):
         self.db_path = db_path
+        self.run_id = run_id
         self.seen_opcodes: set[str] = set()
         self.seen_callables: set[tuple[str, str]] = set()
         
@@ -56,10 +71,10 @@ class CoverageTracker:
             pass
 
     def _track_parsed(self, parsed: list[tuple[Any, bytes]]) -> None:
-        for op, arg in parsed:
+        for i, (op, arg) in enumerate(parsed):
             # Add opcode to coverage
             self.seen_opcodes.add(op.name)
-            
+
             # Check for dangerous imports
             if op.name in ("GLOBAL", "INST"):
                 parts = arg.decode("latin1").split("\n")
@@ -67,9 +82,22 @@ class CoverageTracker:
                     module, name = parts[0], parts[1]
                     if is_dangerous(module, name):
                         self.seen_callables.add((module, name))
-                        
+
+            # Protocol >= 4: module and name are pushed as two strings
+            # (with MEMOIZE ops between them) before STACK_GLOBAL.
+            elif op.name == "STACK_GLOBAL":
+                strings = []
+                for j in range(i - 1, max(-1, i - 6), -1):
+                    value = _string_value(parsed[j][0], parsed[j][1])
+                    if value is not None:
+                        strings.append(value)
+                        if len(strings) == 2:
+                            break
+                if len(strings) == 2 and is_dangerous(strings[1], strings[0]):
+                    self.seen_callables.add((strings[1], strings[0]))
+
             # Recursively track nested pickle payloads in string/bytes arguments
-            if op.name in ("SHORT_BINSTRING", "BINSTRING", "UNICODE", "SHORT_BINBYTES", "BINBYTES"):
+            if op.name in ("SHORT_BINSTRING", "BINSTRING", "UNICODE", "SHORT_BINBYTES", "BINBYTES", "BINBYTES8"):
                 val = arg
                 if op.name == "SHORT_BINSTRING":
                     val = arg[1:]
@@ -81,9 +109,11 @@ class CoverageTracker:
                     val = arg[1:]
                 elif op.name == "BINBYTES":
                     val = arg[4:]
-                
-                # Check if it starts with standard pickle magic
-                if val and val.startswith(b"\x80"):
+                elif op.name == "BINBYTES8":
+                    val = arg[8:]
+
+                # Check if it looks like a nested pickle stream
+                if val and (val.startswith(b"\x80") or val.startswith(b"c") or val.startswith(b"(")):
                     try:
                         nested_parsed = parse_pickle(val)
                         self._track_parsed(nested_parsed)
@@ -95,7 +125,7 @@ class CoverageTracker:
         opcode_cov = len(self.seen_opcodes) / self.total_opcodes
         callable_cov = len(self.seen_callables) / self.total_callables
         
-        log_coverage(self.db_path, round_num, opcode_cov, callable_cov)
+        log_coverage(self.db_path, round_num, opcode_cov, callable_cov, run_id=self.run_id)
         return opcode_cov, callable_cov
 
 
@@ -103,8 +133,10 @@ class FeedbackController:
     """Adjusts selection weights and mutation parameters using round results."""
 
     def __init__(self):
-        # Fetch all registered dangerous callables
-        self.callables = [(entry.module, entry.name) for entry in get_all_entries()]
+        # Fetch all registered dangerous callables (armable subset only: the
+        # non-armable sinks cannot carry the inline payload, so selecting them
+        # would waste campaign budget on candidates that can never trigger).
+        self.callables = [(entry.module, entry.name) for entry in get_armable_entries()]
         # Equal initial weighting
         self.weights = {c: 1.0 for c in self.callables}
         

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """T6.4 — Bypass Triage Script.
 
-Parses exported confirmed bypasses in data/bypasses/v0.1/, analyzes execution
-evasion profiles, and compiles a triage report in docs/triage-report.md.
+Parses exported confirmed bypasses under data/bypasses/<run_id>/ (written by
+pipeline.corpus_manager.export_bypasses), analyzes execution evasion
+profiles, and compiles a triage report in docs/triage-report.md.
 """
 
 from __future__ import annotations
@@ -18,8 +19,8 @@ def compile_triage_report():
     print("STARTING BYPASS TRIAGE AND COMPILATION (T6.4)")
     print("====================================================")
 
-    bypass_dir = "data/bypasses/v0.1"
-    meta_pattern = os.path.join(bypass_dir, "*.json")
+    bypass_dir = "data/bypasses"
+    meta_pattern = os.path.join(bypass_dir, "*", "*.json")
     meta_files = glob.glob(meta_pattern)
 
     print(f"Found {len(meta_files)} exported bypass metadata records.")
@@ -46,14 +47,17 @@ def compile_triage_report():
             if scan.get("verdict") == "benign":
                 failure_scanners[scan.get("scanner")] += 1
 
-        # Locate the dangerous callable from metadata if present
-        # In our E2E runner, the malicious payload is nested inside the data.pkl.
-        # Let's find the callable imported in metadata:
-        # In the campaign runner, we log the fuzzer campaign parameters.
-        # Let's look for "fitness" or scanner failure profiles
-        # We can extract the module/name if they are in candidate metadata or files
-        # Let's inspect the files to see if we can read their raw code
-        checkpoint_path = path.replace(".json", ".pt")
+        # Locate the checkpoint sibling sharing the metadata basename.
+        checkpoint_path = None
+        meta_base = path[:-len(".json")]
+        meta_dir = os.path.dirname(path)
+        try:
+            for f in os.listdir(meta_dir):
+                if f.startswith(os.path.basename(meta_base)) and not f.endswith(".json"):
+                    checkpoint_path = os.path.join(meta_dir, f)
+                    break
+        except OSError:
+            pass
         if os.path.exists(checkpoint_path):
             import zipfile
             try:

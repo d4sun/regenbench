@@ -11,10 +11,12 @@ import pickle
 import random
 import struct
 import base64
+import tempfile
+import uuid
 from typing import Any
 
 from pipeline.opcodes import parse_pickle, OPCODES_BY_BYTE, OPCODES_BY_NAME, OpcodeCategory, OpcodeClassification
-from pipeline.registry import get_all_entries, is_dangerous
+from pipeline.registry import get_armable_entries, is_dangerous
 from pipeline.templates import inject_payload_into_torch
 
 
@@ -117,10 +119,7 @@ class CandidateGenerator:
 
         # 2. Curate and select a dangerous callable
         if dangerous_callable is None:
-            entries = [
-                e for e in get_all_entries()
-                if not (e.module == "runpy" and e.name == "run_module")
-            ]
+            entries = get_armable_entries()
             if not entries:
                 raise ValueError("Dangerous callable registry is empty")
             entry = random.choice(entries)
@@ -151,8 +150,14 @@ class CandidateGenerator:
         elif name == "system" and module in ("os", "posix", "nt", "IPython.utils.process"):
             args = (f"python3 -c {payload_code!r}",)
         elif module == "runpy" and name == "run_path":
-            # Write payload to a shared /tmp file so the container can execute it
-            path = "/tmp/regenbench_payload.py"
+            # Write the payload to a unique per-candidate file (host /tmp is
+            # mounted at container /tmp by the validity oracle). A shared file
+            # would be overwritten by later candidates, so every run_path
+            # candidate would execute the last one written.
+            path = os.path.join(
+                tempfile.gettempdir(),
+                f"regenbench_payload_{os.getpid()}_{uuid.uuid4().hex}.py",
+            )
             try:
                 with open(path, "w") as f:
                     f.write(payload_code)
@@ -207,6 +212,7 @@ class CandidateGenerator:
         callable_sub_prob: float = 0.0,
         arg_fuzz_prob: float = 0.0,
         stack_prob: float = 0.0,
+        attack_family: str = "gadget",
     ) -> bytes:
         """Inject a mutated pickle payload into a PyTorch checkpoint file.
 
@@ -220,6 +226,11 @@ class CandidateGenerator:
         * ``callable_sub_prob`` re-rolls the injected dangerous callable.
         * ``stack_prob`` appends an independent trailing pickle after the
           payload's STOP (torch.load reads the first object and ignores it).
+        * ``attack_family`` selects the seed attack family (Phase 1 element 1):
+          ``"gadget"`` (default) is the dangerous-callable GLOBAL/REDUCE
+          injection; ``"overwritten"`` / ``"pypi_injected"`` / ``"external"``
+          build a self-contained ShadowPickle-family stream via
+          :mod:`pipeline.templates` (see ``FAMILY_LABELS``).
 
         Raises ``ValueError`` when the callable cannot carry an inline payload
         (e.g. ``runpy.run_module``) or when mutation produces an unparseable
@@ -228,6 +239,7 @@ class CandidateGenerator:
         import tempfile
 
         from pipeline.mutators import PickleMutator
+        from pipeline.templates import family_template
 
         # A benign model-like base so the mutation operators have real
         # structure to operate on while staying torch-loadable as a dict.
@@ -256,27 +268,36 @@ class CandidateGenerator:
         )
 
         # Callable substitution: re-roll the injected dangerous callable.
-        # runpy.run_module is excluded: it cannot carry an inline payload, so
-        # choosing it would raise ValueError from mutate_pickle_bytes.
+        # Non-armable entries (runpy.run_module, pandas.eval, sympy.sympify,
+        # yaml.unsafe_load) cannot carry the inline payload and are excluded.
         if callable_sub_prob and dangerous_callable is not None and random.random() < callable_sub_prob:
-            entries = get_all_entries()
+            entries = get_armable_entries()
             alternatives = [
                 e for e in entries
                 if (e.module, e.name) != dangerous_callable
-                and not (e.module == "runpy" and e.name == "run_module")
             ]
             if alternatives:
                 entry = random.choice(alternatives)
                 dangerous_callable = (entry.module, entry.name)
 
         # Metadata mutation + payload injection into the mutated base.
-        malicious_pkl = self.mutate_pickle_bytes(
-            pkl_bytes=base_pkl,
-            payload_code=payload_code,
-            dangerous_callable=dangerous_callable,
-            mutate_meta=mutate_meta,
-            mutation_prob=mutation_prob,
-        )
+        if attack_family == "gadget":
+            malicious_pkl = self.mutate_pickle_bytes(
+                pkl_bytes=base_pkl,
+                payload_code=payload_code,
+                dangerous_callable=dangerous_callable,
+                mutate_meta=mutate_meta,
+                mutation_prob=mutation_prob,
+            )
+        else:
+            # ShadowPickle-family stream: a self-contained malicious pickle
+            # whose trigger (exec/system/runstring) fires the payload side
+            # effect. Metadata mutation is intentionally not applied -- the
+            # template stream is the attack itself.
+            template = family_template(attack_family)
+            if template is None:
+                raise ValueError(f"unknown attack_family: {attack_family}")
+            malicious_pkl = template.generate_pickle_payload(payload_code)
 
         # Structural stacking: an independent trailing pickle after the payload's
         # STOP. torch.load returns the first object and ignores the trailer, so

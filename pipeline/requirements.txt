@@ -2,3 +2,7 @@
 # pipeline orchestrator (pipeline.runner). The scanner/oracle containers do NOT
 # need this; only the host-side tracking does.
 mlflow>=2.10,<3
+
+# Host-side pipeline imports (pipeline.registry imports yaml at module load;
+# script/driver imports pull in the registry).
+PyYAML>=6.0

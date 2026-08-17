@@ -27,11 +27,14 @@ def export_bypasses(db_path: str, output_dir: str) -> int:
     
     # Confirmed bypass: oracle labeled it malicious, the panel has at least one
     # benign row, and no panel row is malicious or errored (an errored scanner
-    # is never "evaded", matching pipeline.comparator.check_bypass).
+    # is never "evaded", matching pipeline.comparator.check_bypass). The
+    # candidate must also be valid (loaded + sentinel fired) per the driver.
     query = """
         SELECT c.candidate_id, c.filepath FROM candidates c
         JOIN oracle_results o ON c.candidate_id = o.candidate_id
+        JOIN campaign_fitness f ON f.candidate_id = c.candidate_id
         WHERE o.verdict = 'malicious' AND o.pre_filtered = 0
+        AND f.is_valid = 1
         AND EXISTS (
             SELECT 1 FROM panel_results p
             WHERE p.candidate_id = c.candidate_id AND p.verdict = 'benign'

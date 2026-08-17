@@ -13,7 +13,23 @@ import sys
 import pickle
 import subprocess
 import tempfile
+import time
 from typing import Any
+
+
+def _trigger_exists(path: str, wait: float = 5.0) -> bool:
+    """Poll for the sentinel file.
+
+    The injected payload may launch an async child (e.g. subprocess.Popen)
+    that writes the trigger after ``pickle.load`` returns, so we wait briefly
+    instead of declaring the candidate non-executing on a race.
+    """
+    deadline = time.monotonic() + wait
+    while time.monotonic() < deadline:
+        if os.path.exists(path):
+            return True
+        time.sleep(0.05)
+    return False
 
 
 class ValidityOracle:
@@ -39,36 +55,76 @@ class ValidityOracle:
             f.write(pkl_bytes)
             temp_pkl_path = f.name
 
-        # Script to safely attempt loading in a separate subprocess
+        # Script to attempt loading inside the sandbox container (never on the
+        # host: the candidate bytes are untrusted and may execute arbitrary
+        # code during pickle.load). Falls back to a host subprocess only when
+        # no container runtime is available (e.g. running inside the image).
+        import shutil
+        has_container_tool = shutil.which(self.backend) is not None
         load_script = f"""
 import pickle
 with open({temp_pkl_path!r}, 'rb') as f:
     obj = pickle.load(f)
 assert obj is not None
 """
-        try:
-            proc = subprocess.run(
-                [sys.executable, "-c", load_script],
-                capture_output=True,
-                text=True,
-                timeout=10,
-            )
-            success_load = (proc.returncode == 0)
-            if not success_load:
-                print(f"[validity-debug] Subprocess failed with code {proc.returncode}")
-                print(f"[validity-debug] Stdout: {proc.stdout}")
-                print(f"[validity-debug] Stderr: {proc.stderr}")
-        except Exception as e:
-            print(f"[validity-debug] Subprocess exception: {e}")
-            success_load = False
-        finally:
+        success_load = False
+        if has_container_tool:
+            import os as _os
+            host_dir = _os.path.dirname(temp_pkl_path)
+            name = _os.path.basename(temp_pkl_path)
+            container_path = f"/tmp/{name}"
+            container_script = f"""
+import pickle
+with open({container_path!r}, 'rb') as f:
+    obj = pickle.load(f)
+assert obj is not None
+"""
+            cmd = [
+                self.backend, "run", "--rm",
+                "-v", f"{host_dir}:/tmp:Z",
+                self.image, "python3.13", "-c", container_script,
+            ]
             try:
-                os.remove(temp_pkl_path)
-            except OSError:
-                pass
+                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=self.timeout)
+                if proc.returncode != 0 and "relabeling" in (proc.stderr or "").lower():
+                    retry = [
+                        self.backend, "run", "--rm",
+                        "--security-opt", "label=disable",
+                        "-v", f"{host_dir}:/tmp",
+                        self.image, "python3.13", "-c", container_script,
+                    ]
+                    proc = subprocess.run(retry, capture_output=True, text=True, timeout=self.timeout)
+                success_load = (proc.returncode == 0)
+                if not success_load:
+                    print(f"[validity-debug] Container failed with code {proc.returncode}")
+                    print(f"[validity-debug] Container stdout: {proc.stdout}")
+                    print(f"[validity-debug] Container stderr: {proc.stderr}")
+            except Exception as e:
+                print(f"[validity-debug] Container run exception: {e}")
+                success_load = False
+        else:
+            try:
+                proc = subprocess.run(
+                    [sys.executable, "-c", load_script],
+                    capture_output=True,
+                    text=True,
+                    timeout=self.timeout,
+                )
+                success_load = (proc.returncode == 0)
+                if not success_load:
+                    print(f"[validity-debug] Subprocess failed with code {proc.returncode}")
+                    print(f"[validity-debug] Stdout: {proc.stdout}")
+                    print(f"[validity-debug] Stderr: {proc.stderr}")
+            except Exception as e:
+                print(f"[validity-debug] Subprocess exception: {e}")
+                success_load = False
+        try:
+            os.remove(temp_pkl_path)
+        except OSError:
+            pass
 
         # Validate both load success and payload execution trigger
-        executed = os.path.exists(trigger_file)
+        executed = _trigger_exists(trigger_file)
         
         # Clean up trigger file
         if executed:
@@ -156,7 +212,7 @@ assert isinstance(obj, dict)
                 except OSError:
                     pass
 
-        executed = os.path.exists(trigger_file)
+        executed = _trigger_exists(trigger_file)
         
         if executed:
             try:

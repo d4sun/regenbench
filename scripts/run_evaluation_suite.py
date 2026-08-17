@@ -77,7 +77,7 @@ def run_benign_fp_check(scanners: list[str], corpus_dir: str | None = None,
             print("[warning] benign corpus unavailable; FP rates set to 0.0 (unmeasured)")
             return {s: 0.0 for s in scanners}
 
-    config = Config(backend="podman", tag=":latest", max_workers=2, timeout=45,
+    config = Config(backend="podman", tag=":latest", max_workers=4, timeout=60,
                     oracle=True, pre_filter=False)
     runner = Runner(config, scanners=scanners)
     results = runner.run(artifacts)
@@ -124,21 +124,26 @@ def detector_agreement(results_per_artifact: list[tuple[str, dict[str, str]]],
                        scanners: list[str]) -> dict:
     """Pairwise disagreement rates among detectors on benign corpus.
 
-    `results_per_artifact` is [(artifact, {scanner: verdict})]. Only artifacts
-    with a verdict for every scanner are included in the pairwise analysis.
+    `results_per_artifact` is [(artifact, {scanner: verdict})]. Detectors often
+    fail (error) on torch checkpoints, so pairwise agreement is computed over
+    the artifacts where BOTH members of the pair produced a verdict.
     """
     from itertools import combinations
-    valid = [d for _, d in results_per_artifact
-             if all(s in d and d[s] in ("benign", "malicious") for s in scanners)]
     pairs = {}
     for a, b in combinations(scanners, 2):
-        both = [d for d in valid if d[a] == d[b]]  # agreement counts
+        both = [d for _, d in results_per_artifact
+                if d.get(a) in ("benign", "malicious")
+                and d.get(b) in ("benign", "malicious")]
+        n = len(both)
+        agree = sum(1 for d in both if d[a] == d[b])
         pairs[f"{a}~{b}"] = {
-            "n": len(valid),
-            "agreement": round(len(both) / max(1, len(valid)), 4),
-            "disagreement": round(1 - len(both) / max(1, len(valid)), 4),
+            "n": n,
+            "agreement": round(agree / max(1, n), 4),
+            "disagreement": round(1 - agree / max(1, n), 4),
         }
-    return {"scanned": len(valid), "pairs": pairs}
+    scanned = sum(1 for _, d in results_per_artifact
+                  if any(d.get(s) in ("benign", "malicious") for s in scanners))
+    return {"scanned": scanned, "pairs": pairs}
 
 
 def run_ablation_unguided() -> tuple[float | None, float | None]:
@@ -240,7 +245,7 @@ def run_ablation_unguided() -> tuple[float | None, float | None]:
         if not candidates:
             return None, None
 
-        mean_fitness = total_fitness / len(candidates)
+        mean_fitness = total_fitness / max(1, valid_count)
         evasion_rate = total_evaded / max(1, valid_count)
         print(f"[ablation] unguided: valid={valid_count}/{len(candidates)}, mean_fitness={mean_fitness:.3f}, evasion={evasion_rate * 100:.1f}%")
         return mean_fitness, evasion_rate
@@ -347,6 +352,7 @@ def query_bypass_queries(db_path: str) -> dict[str, dict[str, float | int | list
                 panel = cursor.execute(
                     """
                     SELECT
+                        COUNT(*) FILTER (WHERE verdict = 'benign') AS benign_n,
                         COUNT(*) FILTER (WHERE verdict = 'malicious') AS malicious_n,
                         COUNT(*) FILTER (WHERE verdict = 'error') AS error_n
                     FROM panel_results
@@ -354,8 +360,9 @@ def query_bypass_queries(db_path: str) -> dict[str, dict[str, float | int | list
                     """,
                     (row["candidate_id"],),
                 ).fetchone()
-                # Confirmed bypass: whole panel benign (no malicious, no error).
-                if panel and panel["malicious_n"] == 0 and panel["error_n"] == 0:
+                # Confirmed bypass: whole panel benign (>=1 benign row, no
+                # malicious, no error).
+                if panel and panel["benign_n"] > 0 and panel["malicious_n"] == 0 and panel["error_n"] == 0:
                     first = q
                     break
 
@@ -404,7 +411,6 @@ def wilcoxon_test(guided: list[int], unguided: list[int],
         res["note"] = "all paired differences are zero; test not informative"
         return res
 
-    obs_stat = sum(abs(d) for d in nonzero)
     try:
         from scipy import stats
         stat, p = stats.wilcoxon(guided, unguided, alternative="two-sided")
@@ -412,21 +418,121 @@ def wilcoxon_test(guided: list[int], unguided: list[int],
         res["p_value"] = float(p)
         res["method"] = "scipy.stats.wilcoxon (signed-rank, paired)"
     except ImportError:
-        # Monte-Carlo permutation fallback over sign flips of the differences.
+        # Monte-Carlo permutation fallback over sign flips of the nonzero
+        # paired differences, using the signed-rank statistic with average
+        # ties for the two-sided p-value.
+        values = [d for d in diffs if d != 0]
+        m = len(values)
+        if m == 0:
+            res["note"] = "all paired differences are zero; test not informative"
+            return res
+
+        # Average ranks for tied absolute differences (1-based).
+        order = sorted(range(m), key=lambda i: abs(values[i]))
+        ranks = [0.0] * m
+        k = 0
+        while k < m:
+            j = k
+            while j + 1 < m and abs(values[order[j + 1]]) == abs(values[order[k]]):
+                j += 1
+            avg = (k + j + 2) / 2.0
+            for t in range(k, j + 1):
+                ranks[order[t]] = avg
+            k = j + 1
+
+        obs_stat = sum(r for r, v in zip(ranks, values) if v > 0)
+        mean_stat = sum(ranks) / 2.0
         rng = random.Random(seed)
         n_perm = 10000
-        count = 0
+        extreme = 0
         for _ in range(n_perm):
-            perm_diffs = [abs(d) * (1 if rng.random() < 0.5 else -1)
-                          for d in diffs if d != 0]
-            perm_stat = sum(d for d in perm_diffs if d > 0)
-            if perm_stat <= obs_stat:
-                count += 1
+            perm_stat = sum(
+                r for r, v in zip(ranks, values)
+                if v * (1 if rng.random() < 0.5 else -1) > 0
+            )
+            if abs(perm_stat - mean_stat) >= abs(obs_stat - mean_stat):
+                extreme += 1
         res["statistic"] = float(obs_stat)
-        res["p_value"] = float(count / n_perm)
-        res["method"] = f"Monte-Carlo permutation of signed ranks (n={n_perm})"
+        res["p_value"] = float(extreme / n_perm)
+        res["method"] = f"Monte-Carlo signed-rank permutation (n={n_perm})"
     except Exception as e:
         res["note"] = f"wilcoxon failed: {e}"
+    return res
+
+
+def _normal_tail_p(z: float) -> float:
+    """Two-sided normal tail probability from the stdlib only (no scipy)."""
+    from math import erfc, sqrt
+
+    return erfc(abs(z) / sqrt(2))
+
+
+def two_proportion_test(evaded_a: int, admitted_a: int,
+                        evaded_b: int, admitted_b: int,
+                        seed: int | None = None) -> dict:
+    """Two-proportion z-test and Fisher's exact test (T7.10).
+
+    Compares two independent evasion proportions p_A = evaded_A / admitted_A
+    and p_B = evaded_B / admitted_B (e.g. guided vs unguided campaigns on the
+    same scanner). Uses scipy when available; otherwise the z-test tail comes
+    from the stdlib erfc and Fisher's exact degrades to a seeded Monte-Carlo
+    permutation test. Never fabricates results: degenerate inputs yield an
+    explicit "not computed" note instead of a number.
+    """
+    res = {
+        "a_evaded": evaded_a, "a_admitted": admitted_a,
+        "b_evaded": evaded_b, "b_admitted": admitted_b,
+        "z": None, "p_ztest": None,
+        "odds_ratio": None, "p_fisher": None,
+        "method": None, "note": None,
+    }
+    if admitted_a <= 0 or admitted_b <= 0:
+        res["note"] = "not computed: one group has no admitted candidates (0 denominator)"
+        return res
+    pa = evaded_a / admitted_a
+    pb = evaded_b / admitted_b
+    pooled = (evaded_a + evaded_b) / (admitted_a + admitted_b)
+    if pooled in (0.0, 1.0):
+        res["note"] = "not computed: pooled proportion is 0 or 1, standard error is undefined"
+        return res
+    se = (pooled * (1 - pooled) * (1 / admitted_a + 1 / admitted_b)) ** 0.5
+    res["z"] = float((pa - pb) / se)
+    try:
+        from scipy import stats
+        res["p_ztest"] = float(stats.norm.sf(abs(res["z"])) * 2)
+        try:
+            or_, p_fisher = stats.fisher_exact(
+                [[evaded_a, admitted_a - evaded_a],
+                 [evaded_b, admitted_b - evaded_b]],
+                alternative="two-sided",
+            )
+            res["odds_ratio"] = float(or_)
+            res["p_fisher"] = float(p_fisher)
+        except Exception as fe:
+            res["note"] = f"fisher_exact failed: {fe}"
+        res["method"] = "scipy.stats (normal z-test + fisher_exact)"
+    except ImportError:
+        res["p_ztest"] = float(_normal_tail_p(res["z"]))
+        # Seeded Monte-Carlo two-sided Fisher p-value: shuffle the pooled
+        # "evaded" labels, count group A evasions, and compare the distance
+        # of that count from its expectation against the observed distance.
+        rng = random.Random(seed)
+        n_perm = 10000
+        total = admitted_a + admitted_b
+        evaded_total = evaded_a + evaded_b
+        expected_a = evaded_total * (admitted_a / total)
+        obs_dev = abs(evaded_a - expected_a)
+        extreme = 0
+        for _ in range(n_perm):
+            perm = [1] * evaded_total + [0] * (total - evaded_total)
+            rng.shuffle(perm)
+            evaded_a_perm = sum(perm[:admitted_a])
+            if abs(evaded_a_perm - expected_a) >= obs_dev:
+                extreme += 1
+        res["p_fisher"] = float(extreme / n_perm)
+        res["method"] = "z-test via stdlib erfc; Fisher via seeded Monte-Carlo permutation"
+    except Exception as e:
+        res["note"] = f"proportion test failed: {e}"
     return res
 
 
@@ -487,7 +593,10 @@ def query_campaign_stats(db_path: str) -> dict:
                  AND f.is_valid = 1"""
         ).fetchone()[0] or 0
         dh_detected = cursor.execute(
-            "SELECT COUNT(*) FROM oracle_results WHERE verdict = 'malicious' AND pre_filtered = 0"
+            """SELECT COUNT(*) FROM oracle_results o
+               JOIN campaign_fitness f ON f.candidate_id = o.candidate_id
+               WHERE o.verdict = 'malicious' AND o.pre_filtered = 0
+                 AND f.is_valid = 1"""
         ).fetchone()[0] or 0
 
         # Confirmed bypass (strict, matches pipeline.comparator.check_bypass):
@@ -499,8 +608,10 @@ def query_campaign_stats(db_path: str) -> dict:
             SELECT COUNT(*)
             FROM oracle_results o
             JOIN candidates c ON c.candidate_id = o.candidate_id
+            JOIN campaign_fitness f ON f.candidate_id = o.candidate_id
             WHERE o.verdict = 'malicious'
               AND o.pre_filtered = 0
+              AND f.is_valid = 1
               AND EXISTS (
                   SELECT 1 FROM panel_results p
                   WHERE p.candidate_id = o.candidate_id AND p.verdict = 'benign'
@@ -594,8 +705,10 @@ def query_run_evasion(db_path: str) -> list[dict]:
                 SELECT COUNT(*)
                 FROM oracle_results o
                 JOIN candidates c ON c.candidate_id = o.candidate_id
+                JOIN campaign_fitness f ON f.candidate_id = o.candidate_id
                 WHERE c.run_id = ?
                   AND o.verdict = 'malicious' AND o.pre_filtered = 0
+                  AND f.is_valid = 1
                   AND EXISTS (SELECT 1 FROM panel_results p
                               WHERE p.candidate_id = o.candidate_id
                                 AND p.verdict = 'benign')
@@ -633,8 +746,8 @@ def query_coverage_history(db_path: str) -> list[dict]:
     conn.row_factory = sqlite3.Row
     try:
         rows = conn.execute(
-            "SELECT round_num, opcode_coverage, callable_coverage, timestamp "
-            "FROM campaign_coverage ORDER BY round_num"
+            "SELECT run_id, round_num, opcode_coverage, callable_coverage, timestamp "
+            "FROM campaign_coverage ORDER BY run_id, round_num"
         ).fetchall()
         return [dict(r) for r in rows]
     except sqlite3.Error as e:
@@ -733,6 +846,21 @@ def main(argv: list[str] | None = None) -> int:
     run_evasion = query_run_evasion(args.db)
     coverage_history = query_coverage_history(args.db)
 
+    # T7.10: two-proportion z-test / Fisher's exact comparing guided vs
+    # unguided confirmed-bypass rates (per-run valid-candidate denominators).
+    def _aggregate_confirmed(campaign_type: str) -> tuple[int, int]:
+        rows = [r for r in run_evasion if r["campaign_type"] == campaign_type]
+        return (sum(r["confirmed"] for r in rows),
+                sum(r["valid_candidates"] for r in rows))
+
+    prop_test = None
+    if run_evasion:
+        g_evaded, g_admitted = _aggregate_confirmed("guided")
+        u_evaded, u_admitted = _aggregate_confirmed("unguided")
+        if g_admitted or u_admitted:
+            prop_test = two_proportion_test(
+                g_evaded, g_admitted, u_evaded, u_admitted, seed=args.seed)
+
     if guided_q or unguided_q:
         rq2_parts = []
         for name, qs in (("guided", guided_q), ("unguided", unguided_q)):
@@ -773,7 +901,7 @@ def main(argv: list[str] | None = None) -> int:
     report_lines = [
         "# ReGenBench Quantitative Evaluation & Ablation Report",
         "",
-        "This report presents the statistically supported answers to our core Research Questions (RQ1-RQ4) and evaluates hypotheses (H1-H3) using the results of our pilot campaigns.",
+        "This report presents the statistically supported answers to our core Research Questions (RQ1-RQ4) and evaluates hypotheses (H1-H3) using the measured results of the five-campaign evaluation set (pilot + 2 guided + 2 unguided replicates).",
         "",
         f"**Data provenance**: campaign database `{args.db}`; figures not labeled *simulated* are measured from the live pipeline or read from the database.",
         "",
@@ -789,7 +917,7 @@ def main(argv: list[str] | None = None) -> int:
         "**Verdict on H1**: "
         + (
             "Supported. Evasion rates exceed 70% across both scanners, demonstrating that directed structural fuzzing creates high-impact evasion candidates."
-            if stats["has_data"] and pk_evasion >= 0.7
+            if stats["has_data"] and pk_evasion >= 0.7 and fk_evasion >= 0.7
             else (
                 "Not assessable: the campaign database is empty, so evasion rates are 0/unmeasured."
                 if not stats["has_data"]
@@ -820,6 +948,17 @@ def main(argv: list[str] | None = None) -> int:
         "**Ground truth note**: every checkpoint is benign by construction "
         "(downloaded from a verified public HuggingFace repository, non-gated, "
         "unmodified). Benignness is NOT defined by any detector's verdict.",
+        "",
+        "**DynaHug oracle characterization**: the embedded text-generation OCSVM "
+        "(upstream DynaHug 8ff8174, gamma=0.1 kernel=rbf nu=0.01) returns a "
+        "constant decision score of approximately -rho (-1.349) for every "
+        "loadable checkpoint in this environment -- real benign files and "
+        "payload-carrying fuzz candidates alike -- so its binary verdict is not "
+        "discriminative and it reports ~97% false positives on the benign "
+        "corpus. Only its deserialization success/failure (error vs non-error) "
+        "is informative. This faithfully reproduces the pretrained model's "
+        "behavior (see containers/dynahug/wrapper.py); the collapse was "
+        "detected by the validation gate in scripts/validate_oracle.py.",
         "",
         "### Detector Disagreement on Benign Corpus",
     ]
@@ -857,6 +996,22 @@ def main(argv: list[str] | None = None) -> int:
             f"- **Unguided ablation harness**: mean fitness {unguided_fit:.3f}, "
             f"evasion yield {unguided_evasion * 100:.1f}% (measured live, 10 candidates)."
         )
+    if prop_test is not None:
+        p_vals = ", ".join(
+            f"{k}={v}" for k, v in (
+                ("z", prop_test["z"]), ("p_ztest", prop_test["p_ztest"]),
+                ("odds_ratio", prop_test["odds_ratio"]),
+                ("p_fisher", prop_test["p_fisher"]),
+            ) if v is not None
+        )
+        method_note = f"method: {prop_test['method']}" if prop_test.get("method") else ""
+        report_lines.append(
+            f"- **Guided vs unguided confirmed-bypass rates (T7.10)**: "
+            f"guided {prop_test['a_evaded']}/{prop_test['a_admitted']} vs "
+            f"unguided {prop_test['b_evaded']}/{prop_test['b_admitted']} "
+            f"({p_vals or prop_test.get('note') or 'not computed'}"
+            f"{'; ' if method_note else ''}{method_note})"
+        )
 
     # T7.3: coverage breadth growth across rounds (from the campaign DB).
     report_lines.extend([
@@ -865,12 +1020,12 @@ def main(argv: list[str] | None = None) -> int:
     ])
     if coverage_history:
         report_lines.append(
-            "| Round | Opcode Coverage | Callable Coverage |"
+            "| Run | Round | Opcode Coverage | Callable Coverage |"
         )
-        report_lines.append("| :---: | :---: | :---: |")
+        report_lines.append("| :--- | :---: | :---: | :---: |")
         for row in coverage_history:
             report_lines.append(
-                f"| {row['round_num']} | {row['opcode_coverage']} | {row['callable_coverage']} |"
+                f"| {row.get('run_id', '')[:24]} | {row['round_num']} | {row['opcode_coverage']} | {row['callable_coverage']} |"
             )
         first = coverage_history[0]
         last = coverage_history[-1]

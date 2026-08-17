@@ -104,13 +104,16 @@ def init_db(db_path: str) -> None:
             )
         """)
 
-        # 5. Campaign coverage table
+        # 5. Campaign coverage table (keyed per run so replicates/campaigns
+        #    do not overwrite each other's per-round coverage rows).
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS campaign_coverage (
-                round_num INTEGER PRIMARY KEY,
+                run_id TEXT NOT NULL DEFAULT '',
+                round_num INTEGER,
                 opcode_coverage REAL,
                 callable_coverage REAL,
-                timestamp TEXT
+                timestamp TEXT,
+                PRIMARY KEY (run_id, round_num)
             )
         """)
 
@@ -118,6 +121,11 @@ def init_db(db_path: str) -> None:
         cols = {row[1] for row in cursor.execute("PRAGMA table_info(candidates)").fetchall()}
         if "run_id" not in cols:
             cursor.execute("ALTER TABLE candidates ADD COLUMN run_id TEXT")
+
+        # Migration: add run_id to campaign_coverage for pre-existing databases.
+        cov_cols = {row[1] for row in cursor.execute("PRAGMA table_info(campaign_coverage)").fetchall()}
+        if "run_id" not in cov_cols:
+            cursor.execute("ALTER TABLE campaign_coverage ADD COLUMN run_id TEXT DEFAULT ''")
     # _session() commits and closes on exit.
 
 
@@ -291,12 +299,14 @@ def get_candidate_summary(db_path: str, candidate_id: str) -> dict[str, Any] | N
         conn.close()
 
 
-def log_coverage(db_path: str, round_num: int, opcode_cov: float, callable_cov: float) -> None:
-    """Insert or replace round coverage statistics."""
+def log_coverage(db_path: str, round_num: int, opcode_cov: float, callable_cov: float,
+                 run_id: str = "") -> None:
+    """Insert or replace round coverage statistics for a campaign run."""
     with _session(db_path) as (cursor, _):
         cursor.execute(
             """INSERT OR REPLACE INTO campaign_coverage 
-            (round_num, opcode_coverage, callable_coverage, timestamp) 
-            VALUES (?, ?, ?, ?)""",
-            (round_num, opcode_cov, callable_cov, time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),
+            (run_id, round_num, opcode_coverage, callable_coverage, timestamp) 
+            VALUES (?, ?, ?, ?, ?)""",
+            (run_id, round_num, opcode_cov, callable_cov,
+             time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),
         )

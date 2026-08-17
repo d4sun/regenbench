@@ -41,7 +41,10 @@ oracle_validation:
   image: "regenbench/dynahug"
 
 campaign:
-  base_checkpoint: "ci/corpus/torch/benign/benign.pt"
+  # Real task-cluster seed (text-generation) rather than the synthetic toy
+  # checkpoint, so the bounded pilot matches the Phase-1 methodology
+  # ("benign Hugging Face models, one task cluster").
+  base_checkpoint: "real_benign_corpus/all/text-generation__HuggingFaceM4_tiny-random-LlamaForCausalLM.bin"
   rounds: 5
   candidates_per_round: 20
   backend: "podman"

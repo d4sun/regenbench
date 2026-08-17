@@ -37,7 +37,7 @@ from pipeline.scanners import (
     run_scan,
 )
 
-DEFAULT_EXTS = {".pkl", ".pt", ".pth", ".onnx", ".keras", ".h5", ".hdf5", ".joblib", ".model"}
+DEFAULT_EXTS = {".pkl", ".pt", ".pth", ".onnx", ".keras", ".h5", ".hdf5", ".joblib", ".model", ".bin"}
 
 
 class TrackingSink:
@@ -131,8 +131,8 @@ class Runner:
         out, err = run_scan(
             self.config.backend, self.images[scanner], src, self.config.timeout)
         dur = time.time() - t0
-        if err:
-            res = ScanResult(scanner, src, None, None, error=err, duration=dur)
+        if err or out is None:
+            res = ScanResult(scanner, src, None, None, error=err or "no output", duration=dur)
         else:
             res = ScanResult(
                 scanner, src,
@@ -204,6 +204,8 @@ class Runner:
             results.append(res)
 
         results.sort(key=lambda r: (r.artifact, r.scanner))
+        if self.sink is not None:
+            self.sink.log_scans(results)
         return results
 
 

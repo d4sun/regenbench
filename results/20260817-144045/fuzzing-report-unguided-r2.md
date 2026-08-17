@@ -1,4 +1,4 @@
-# ReGenBench Fuzzing Report (unguided, replicate 1)
+# ReGenBench Fuzzing Report (unguided, replicate 2)
 
 - Mode: **unguided**  
 - Base checkpoint: `ci/corpus/torch/benign/benign.pt`  
@@ -7,8 +7,8 @@
 
 | Round | Valid / Generated | Confirmed Bypasses | Mean Fitness | Opcode Coverage | Callable Coverage |
 | :---: | :---: | :---: | :---: | :---: | :---: |
-| 1 | 20 / 20 | 0 | 2.863 | 42.6% | 66.7% |
-| 2 | 20 / 20 | 0 | 3.105 | 42.6% | 72.2% |
-| 3 | 20 / 20 | 0 | 3.234 | 44.1% | 77.8% |
-| 4 | 20 / 20 | 0 | 2.834 | 44.1% | 77.8% |
-| 5 | 20 / 20 | 0 | 2.855 | 44.1% | 77.8% |
+| 1 | 20 / 20 | 0 | 3.320 | 44.1% | 66.7% |
+| 2 | 20 / 20 | 0 | 2.748 | 44.1% | 77.8% |
+| 3 | 20 / 20 | 0 | 3.384 | 44.1% | 77.8% |
+| 4 | 20 / 20 | 0 | 3.070 | 44.1% | 77.8% |
+| 5 | 20 / 20 | 0 | 2.977 | 44.1% | 77.8% |

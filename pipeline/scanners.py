@@ -27,7 +27,7 @@ SCANNERS: dict[str, dict] = {
 # Artifact formats sent to the behavioral oracle. The DynaHug oracle (T0.7)
 # deserializes torch checkpoints; non-torch inputs cannot be loaded and so
 # yield no behavioral signal.
-ORACLE_EXTENSIONS = {".pt", ".pth"}
+ORACLE_EXTENSIONS = {".pt", ".pth", ".bin"}
 
 # If set, the dynahug container mounts this directory and points
 # DYNAHUG_MODEL_DIR at it, so a locally-recalibrated OCSVM (fit on this
@@ -67,6 +67,10 @@ def run_scan(backend: str, image_full: str, src: str,
     DynaHug model dir and sets DYNAHUG_MODEL_DIR inside the container."""
     cmd = [
         backend, "run", "--rm",
+        # Container-side timeout: conmon SIGKILLs the container after N
+        # seconds. Without this, the subprocess timeout below only kills the
+        # podman client, orphaning the container which keeps consuming CPU.
+        "--timeout", str(timeout),
         "-v", f"{os.path.abspath(src)}:/artifact:ro,Z",
     ]
     model_dir = oracle_model_dir or os.environ.get(ORACLE_MODEL_DIR_ENV)
@@ -77,7 +81,8 @@ def run_scan(backend: str, image_full: str, src: str,
                 "-v", f"{os.path.abspath(model_dir)}:/opt/dynahug/recalibrated:ro,Z"]
     cmd += [image_full, "/artifact"]
     try:
-        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+        proc = subprocess.run(cmd, capture_output=True, text=True,
+                              timeout=timeout + 15)
     except subprocess.TimeoutExpired:
         return None, f"timeout running {image_full} on {src}"
     try:

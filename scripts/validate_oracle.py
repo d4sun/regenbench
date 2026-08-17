@@ -79,8 +79,16 @@ def find_checkpoints(root: str, sample: int) -> list[dict]:
         for n in names:
             if n.endswith(ORACLE_EXTS):
                 p = os.path.join(dirpath, n)
-                cluster = os.path.basename(os.path.dirname(dirpath))
-                files.append({"path": p, "cluster": cluster})
+                # Flat layout: <cluster>__<repo>.bin  (e.g. crawled output).
+                base = n[: -(len(".bin"))] if n.endswith(".bin") else n
+                if "__" in base:
+                    cluster, repo = base.split("__", 1)
+                    repo_id = repo
+                else:
+                    # Nested layout: <corpus>/<cluster>/<repo>/model.bin
+                    cluster = os.path.basename(os.path.dirname(dirpath))
+                    repo_id = os.path.basename(os.path.dirname(p))
+                files.append({"path": p, "cluster": cluster, "repo_id": repo_id})
     if len(files) > sample:
         files = random.sample(files, sample)
     return files
@@ -203,15 +211,15 @@ def main() -> int:
 
     results = []
     for i, cp in enumerate(checkpoints, 1):
-        repo_dir = os.path.basename(os.path.dirname(cp["path"]))
+        repo_id = cp.get("repo_id") or os.path.basename(os.path.dirname(cp["path"]))
         size = os.path.getsize(cp["path"])
         sha = sha256_of(cp["path"])
         res = run_oracle(args.backend, image_full, cp["path"], args.timeout)
         rec = {
             "index": i,
-            "repo_id": repo_dir,
+            "repo_id": repo_id,
             "cluster": cp["cluster"],
-            "arch": arch_family(repo_dir),
+            "arch": arch_family(repo_id),
             "path": cp["path"],
             "sha256": sha,
             "size_bytes": size,
@@ -222,7 +230,7 @@ def main() -> int:
         verdict = rec.get("verdict")
         score = rec.get("decision_score")
         score_str = f"{score:+.3f}" if score is not None else "  n/a "
-        print(f"  [{i}/{len(checkpoints)}] {repo_dir:<50} {verdict:<10} {score_str} "
+        print(f"  [{i}/{len(checkpoints)}] {repo_id:<50} {verdict:<10} {score_str} "
               f"({rec['size_bucket']}, {round(rec['duration'], 1)}s)")
         sys.stdout.flush()
 

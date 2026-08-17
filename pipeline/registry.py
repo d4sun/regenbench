@@ -80,3 +80,25 @@ def get_all_entries() -> list[RegistryEntry]:
     if not _REGISTRY:
         load_registry()
     return list(_REGISTRY.values())
+
+
+# Callables that cannot carry the inline trigger payload in this environment:
+#   - runpy.run_module     : takes a module *name*, no inline code slot
+#   - pandas.eval          : pandas expression engine rejects __import__ calls
+#   - sympy.sympify        : raises SympifyError on the empty shell output
+#   - yaml.unsafe_load     : parses YAML; a Python code string never constructs
+#                            an object graph that executes it
+# They stay in the registry (they ARE dangerous sinks) but must not be selected
+# for candidate generation, or every candidate carrying them fails validity.
+NON_ARMABLE: set[tuple[str, str]] = {
+    ("runpy", "run_module"),
+    ("pandas", "eval"),
+    ("sympy", "sympify"),
+    ("yaml", "unsafe_load"),
+}
+
+
+def get_armable_entries() -> list[RegistryEntry]:
+    """Get registry entries that can carry the inline payload."""
+    return [e for e in get_all_entries()
+            if (e.module, e.name) not in NON_ARMABLE]

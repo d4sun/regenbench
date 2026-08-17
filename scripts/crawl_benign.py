@@ -55,14 +55,14 @@ def get_model_file_info(api: HfApi, repo_id: str, filename: str) -> dict[str, An
     # Small delay before call to reduce API pressure
     time.sleep(0.5)
     try:
-        info = call_api_with_retry(api.repo_info, repo_id, files_metadata=True, securityStatus=True)
+        info = call_api_with_retry(api.repo_info, repo_id, files_metadata=True)
         for sib in (info.siblings or []):
             if getattr(sib, "rfilename", None) == filename:
                 return {
                     "path": sib.rfilename,
                     "size": getattr(sib, "size", None),
                     "lfs": getattr(sib, "lfs", None),
-                    "security": getattr(info, "security", None),
+                    "security": None,
                 }
     except Exception as e:
         print(f"  [info] Could not get file tree for {repo_id}: {e}")
@@ -168,6 +168,16 @@ def crawl_cluster(
         os.makedirs(dest_dir, exist_ok=True)
         dest_path = os.path.join(dest_dir, "pytorch_model.bin")
 
+        if os.path.exists(dest_path):
+            print(f"  [skip] {m.id} already downloaded at {dest_path}; reusing")
+            sha = hashlib.sha256()
+            with open(dest_path, "rb") as f:
+                for chunk in iter(lambda: f.read(1 << 20), b""):
+                    sha.update(chunk)
+            if sha.hexdigest() not in seen_hashes:
+                seen_hashes.add(sha.hexdigest())
+            continue
+
         print(f"[crawl] Downloading {m.id} ({size / (1024*1024):.2f} MB)...")
         try:
             # Paced download
@@ -177,7 +187,6 @@ def crawl_cluster(
                 repo_id=m.id,
                 filename="pytorch_model.bin",
                 local_dir=dest_dir,
-                local_dir_use_symlinks=False,
             )
         except Exception as e:
             print(f"  [warning] Failed to download {m.id}: {e}")
@@ -242,9 +251,22 @@ def main() -> int:
 
     api = HfApi()
     clusters = [c.strip() for c in args.clusters.split(",") if c.strip()]
-    
+
     seen_hashes = set()
     all_metadata = []
+    manifest_path = os.path.join(args.out_dir, "seed_manifest.json")
+    if os.path.exists(manifest_path):
+        try:
+            with open(manifest_path) as f:
+                existing = json.load(f)
+            for m in existing.get("models", []):
+                if m.get("sha256"):
+                    seen_hashes.add(m["sha256"])
+            all_metadata = existing.get("models", [])
+            print(f"[crawl] Resuming: {len(all_metadata)} models already in manifest, "
+                  f"{len(seen_hashes)} known hashes")
+        except Exception as e:
+            print(f"[warning] Could not read existing manifest {manifest_path}: {e}")
     
     for cluster in clusters:
         cluster_metadata = crawl_cluster(

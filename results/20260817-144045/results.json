@@ -1,0 +1,207 @@
+{
+  "generated_at": "20260817-144045",
+  "corpus": {
+    "files": 96
+  },
+  "runs": [
+    {
+      "run_id": "pilot-20260816T030153Z",
+      "campaign_type": "guided",
+      "replicate_num": 1,
+      "total_candidates": 100,
+      "total_rounds": 5,
+      "started_at": "2026-08-16T03:01:53Z",
+      "completed_at": "2026-08-16T04:16:05Z",
+      "valid_candidates": 93,
+      "confirmed_bypasses": 0
+    },
+    {
+      "run_id": "guided-r1",
+      "campaign_type": "guided",
+      "replicate_num": 1,
+      "total_candidates": 100,
+      "total_rounds": 5,
+      "started_at": "2026-08-16T04:39:50Z",
+      "completed_at": "2026-08-16T05:01:52Z",
+      "valid_candidates": 100,
+      "confirmed_bypasses": 0
+    },
+    {
+      "run_id": "guided-r2",
+      "campaign_type": "guided",
+      "replicate_num": 2,
+      "total_candidates": 100,
+      "total_rounds": 5,
+      "started_at": "2026-08-16T05:01:52Z",
+      "completed_at": "2026-08-16T05:22:54Z",
+      "valid_candidates": 100,
+      "confirmed_bypasses": 0
+    },
+    {
+      "run_id": "unguided-r1",
+      "campaign_type": "unguided",
+      "replicate_num": 1,
+      "total_candidates": 100,
+      "total_rounds": 5,
+      "started_at": "2026-08-16T05:22:54Z",
+      "completed_at": "2026-08-16T05:42:12Z",
+      "valid_candidates": 100,
+      "confirmed_bypasses": 0
+    },
+    {
+      "run_id": "unguided-r2",
+      "campaign_type": "unguided",
+      "replicate_num": 2,
+      "total_candidates": 100,
+      "total_rounds": 5,
+      "started_at": "2026-08-16T05:42:12Z",
+      "completed_at": "2026-08-16T06:01:15Z",
+      "valid_candidates": 100,
+      "confirmed_bypasses": 0
+    }
+  ],
+  "tables": {
+    "candidates": 500,
+    "panel_results": 2000,
+    "oracle_results": 500,
+    "campaign_fitness": 500,
+    "campaign_coverage": 25
+  },
+  "panel_verdicts": {
+    "fickling": {
+      "error": 426,
+      "malicious": 74
+    },
+    "modelscan": {
+      "error": 123,
+      "malicious": 377
+    },
+    "modeltracer": {
+      "benign": 1,
+      "error": 484,
+      "malicious": 15
+    },
+    "picklescan": {
+      "error": 76,
+      "malicious": 424
+    }
+  },
+  "oracle_verdicts": {
+    "error": 209,
+    "malicious": 291
+  },
+  "oracle_validation": {
+    "n": 60,
+    "scored": 60,
+    "positive_rate": 0.0,
+    "negative_rate": 1.0,
+    "verdict_benign": 0,
+    "verdict_malicious": 60,
+    "verdict_error": 0,
+    "score_distribution": {
+      "min": -1.3489,
+      "q25": -1.3489,
+      "median": -1.3489,
+      "q75": -1.3489,
+      "max": -1.3489,
+      "mean": -1.3489,
+      "std": 0.0
+    },
+    "by_size_bucket": {
+      "1-10MB": {
+        "n": 5,
+        "mean": -1.3489,
+        "median": -1.3489,
+        "min": -1.3489,
+        "max": -1.3489,
+        "positive": 0.0
+      },
+      "10-50MB": {
+        "n": 16,
+        "mean": -1.3489,
+        "median": -1.3489,
+        "min": -1.3489,
+        "max": -1.3489,
+        "positive": 0.0
+      },
+      "100-500MB": {
+        "n": 11,
+        "mean": -1.3489,
+        "median": -1.3489,
+        "min": -1.3489,
+        "max": -1.3489,
+        "positive": 0.0
+      },
+      "50-100MB": {
+        "n": 28,
+        "mean": -1.3489,
+        "median": -1.3489,
+        "min": -1.3489,
+        "max": -1.3489,
+        "positive": 0.0
+      }
+    },
+    "by_cluster": {
+      "feature-extraction": {
+        "n": 27,
+        "mean": -1.3489,
+        "median": -1.3489,
+        "min": -1.3489,
+        "max": -1.3489,
+        "positive": 0.0
+      },
+      "text-classification": {
+        "n": 23,
+        "mean": -1.3489,
+        "median": -1.3489,
+        "min": -1.3489,
+        "max": -1.3489,
+        "positive": 0.0
+      },
+      "text-generation": {
+        "n": 10,
+        "mean": -1.3489,
+        "median": -1.3489,
+        "min": -1.3489,
+        "max": -1.3489,
+        "positive": 0.0
+      }
+    },
+    "by_arch": {
+      "bert": {
+        "n": 16,
+        "mean": -1.3489,
+        "median": -1.3489,
+        "min": -1.3489,
+        "max": -1.3489,
+        "positive": 0.0
+      },
+      "gpt": {
+        "n": 1,
+        "mean": -1.3489,
+        "median": -1.3489,
+        "min": -1.3489,
+        "max": -1.3489,
+        "positive": 0.0
+      },
+      "llama": {
+        "n": 4,
+        "mean": -1.3489,
+        "median": -1.3489,
+        "min": -1.3489,
+        "max": -1.3489,
+        "positive": 0.0
+      },
+      "other": {
+        "n": 39,
+        "mean": -1.3489,
+        "median": -1.3489,
+        "min": -1.3489,
+        "max": -1.3489,
+        "positive": 0.0
+      }
+    },
+    "spread": 0.0,
+    "collapse_flag": true
+  }
+}

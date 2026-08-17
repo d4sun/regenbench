@@ -29,6 +29,7 @@ from pipeline.fitness import compute_fitness
 from pipeline.feedback import CoverageTracker, FeedbackController
 from pipeline.corpus_manager import export_bypasses
 from pipeline.registry import load_registry
+from pipeline.templates import FAMILIES, FAMILY_LABELS
 
 
 def _default_scanners(panel: list[str], oracle: list[str]) -> list[str]:
@@ -42,6 +43,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--quick", action="store_true", help="run a quick campaign validation instead of the full run")
     ap.add_argument("--resume", default=None, metavar="RUN_ID",
                     help="resume a previously interrupted campaign run_id (skips completed rounds)")
+    ap.add_argument("--attack-families", default=",".join(FAMILIES),
+                    help="comma-separated seed attack families to sample across "
+                         f"(default: {','.join(FAMILIES)})")
     args = ap.parse_args(argv)
 
     print("====================================================")
@@ -114,8 +118,14 @@ def main(argv: list[str] | None = None) -> int:
     # Core fuzzing engines
     generator = CandidateGenerator()
     oracle_val = ValidityOracle(container_backend="podman")
-    tracker = CoverageTracker(args.db)
+    tracker = CoverageTracker(args.db, run_id=run_id)
     controller = FeedbackController()
+
+    families = [f.strip() for f in args.attack_families.split(",") if f.strip()]
+    unknown = set(families) - set(FAMILIES)
+    if unknown:
+        print(f"Error: unknown attack families {sorted(unknown)} (valid: {FAMILIES}).")
+        return 1
 
     # Load benign PyTorch model base (task-cluster seed representation)
     if not os.path.exists(base_checkpoint):
@@ -160,8 +170,14 @@ def main(argv: list[str] | None = None) -> int:
             weights = list(callable_weights_map.values())
 
             candidates = []
+            family_counts = {f: 0 for f in families}
             for i in range(candidates_per_round):
-                chosen_callable = random.choices(population, weights=weights, k=1)[0]
+                attack_family = random.choice(families)
+                family_counts[attack_family] += 1
+                if attack_family == "gadget":
+                    chosen_callable = random.choices(population, weights=weights, k=1)[0]
+                else:
+                    chosen_callable = None
 
                 trigger_file = os.path.join(trigger_temp, f"trigger_{r}_{i}.txt")
                 payload = f"with open('{trigger_file}', 'w') as f: f.write('1')"
@@ -179,11 +195,13 @@ def main(argv: list[str] | None = None) -> int:
                             callable_sub_prob=controller.callable_sub_prob,
                             arg_fuzz_prob=controller.arg_fuzz_prob,
                             stack_prob=0.05,
+                            attack_family=attack_family,
                         )
                         break
                     except ValueError as e:
                         print(f"[warning] candidate generation failed for {chosen_callable}: {e}; resampling")
-                        chosen_callable = random.choices(population, weights=weights, k=1)[0]
+                        if attack_family == "gadget":
+                            chosen_callable = random.choices(population, weights=weights, k=1)[0]
                 if cand_bytes is None:
                     continue
 
@@ -191,7 +209,7 @@ def main(argv: list[str] | None = None) -> int:
                 with open(cand_path, "wb") as f:
                     f.write(cand_bytes)
 
-                candidates.append((cand_path, cand_bytes, chosen_callable, trigger_file))
+                candidates.append((cand_path, cand_bytes, chosen_callable, trigger_file, attack_family))
 
             # 2. Run scanners and dynahug oracle
             config = Config(backend="podman", tag=":latest", max_workers=concurrency_limit,
@@ -210,7 +228,7 @@ def main(argv: list[str] | None = None) -> int:
             bypasses_cnt = 0
             valid_cnt = 0
 
-            for filepath, cand_bytes, chosen_callable, trigger_file in candidates:
+            for filepath, cand_bytes, chosen_callable, trigger_file, attack_family in candidates:
                 cand_results = results_by_file.get(filepath, [])
 
                 is_valid = oracle_val.validate_torch(cand_bytes, trigger_file)
@@ -244,6 +262,7 @@ def main(argv: list[str] | None = None) -> int:
                 cand_id = hashlib.md5(filepath.encode("utf-8")).hexdigest()
                 log_candidate(args.db, cand_id, filepath, source="pilot",
                               round_num=r, seed_model=base_checkpoint,
+                              mutation_template=FAMILY_LABELS[attack_family],
                               campaign_type="guided", run_id=run_id)
                 log_fitness(args.db, cand_id, fit_score, is_valid)
 

@@ -90,7 +90,9 @@ def main() -> int:
         "errors": len(report.get("errors", [])),
     }
 
-    if proc.returncode == 2:
+    if proc.returncode == 0:
+        verdict, exit_code = "benign", 0
+    elif proc.returncode == 2:
         verdict, exit_code = "error", 2
     elif proc.returncode == 1:
         verdict, exit_code = "malicious", 1
@@ -102,7 +104,10 @@ def main() -> int:
         # schema stays 0/1/2.
         verdict, exit_code = "benign", 0
     else:
-        verdict, exit_code = "benign", 0
+        # Fail-closed: any unexpected return code (crash, signal, unknown CLI
+        # code) must not be reported as benign. 0/1/2/3 are the only ModelScan
+        # codes; anything else means the scan did not complete.
+        verdict, exit_code = "error", 2
 
     return emit({
         "scanner": "modelscan",

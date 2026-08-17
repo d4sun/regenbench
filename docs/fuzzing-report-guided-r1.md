@@ -1,11 +1,21 @@
 # ReGenBench Fuzzing Report (guided, replicate 1)
 
 - Mode: **guided**  
-- Base checkpoint: `ci/corpus/torch/benign/benign.pt`  
-- Rounds: 2, candidates/round: 6
-- DB: `/tmp/opencode/fuzz_guided.db`
+- Base checkpoint: `/home/d4sun/Projects/PhD/regenbench/real_benign_corpus/all/text-generation__HuggingFaceM4_tiny-random-LlamaForCausalLM.bin`  
+- Attack families: gadget, overwritten, pypi_injected, external  
+- Rounds: 1, candidates/round: 4
+- Time budget: 24.0h
+- DB: `regenbench_campaign.db`
 
 | Round | Valid / Generated | Confirmed Bypasses | Mean Fitness | Opcode Coverage | Callable Coverage |
 | :---: | :---: | :---: | :---: | :---: | :---: |
-| 1 | 4 / 6 | 0 | 1.142 | 42.6% | 27.8% |
-| 2 | 6 / 6 | 0 | 1.617 | 42.6% | 50.0% |
+| 1 | 4 / 4 | 0 | 3.500 | 30.9% | 11.1% |
+
+## Attack-family distribution
+
+| Family | Candidates |
+| :--- | :---: |
+| gadget | 0 |
+| overwritten | 0 |
+| pypi_injected | 2 |
+| external | 2 |

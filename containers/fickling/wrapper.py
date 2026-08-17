@@ -77,6 +77,21 @@ def main() -> int:
             "raw_output": f"Path {target} does not exist",
         })
 
+    # fickling reads the target as a file; a directory would raise an uncaught
+    # IsADirectoryError -> process exit 1 -> a false `malicious` verdict.
+    if os.path.isdir(target):
+        return emit({
+            "scanner": "fickling",
+            "version": VERSION,
+            "commit": COMMIT,
+            "target": target,
+            "verdict": "error",
+            "exit_code": 2,
+            "findings": [],
+            "summary": {"scanned": 0, "dangerous": 0, "suspicious": 0},
+            "raw_output": f"Path {target} is a directory, not a pickle file",
+        })
+
     if os.path.exists(REPORT_FILE):
         os.remove(REPORT_FILE)
 
@@ -127,8 +142,12 @@ def main() -> int:
         verdict, exit_code = "error", 2
     elif proc.returncode == 1:
         verdict, exit_code = "malicious", 1
-    else:
+    elif proc.returncode == 0:
         verdict, exit_code = "benign", 0
+    else:
+        # Fail-closed: an unexpected exit code (crash/signal) means the scan did
+        # not complete; never report it as benign.
+        verdict, exit_code = "error", 2
 
     return emit({
         "scanner": "fickling",
