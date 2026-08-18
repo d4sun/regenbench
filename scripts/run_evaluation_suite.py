@@ -16,8 +16,11 @@ import json
 import os
 import random
 import statistics
+import sys
 import time
 import sqlite3
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from pipeline.generator import CandidateGenerator
 from pipeline.runner import Runner, Config
@@ -901,7 +904,7 @@ def main(argv: list[str] | None = None) -> int:
     report_lines = [
         "# ReGenBench Quantitative Evaluation & Ablation Report",
         "",
-        "This report presents the statistically supported answers to our core Research Questions (RQ1-RQ4) and evaluates hypotheses (H1-H3) using the measured results of the five-campaign evaluation set (pilot + 2 guided + 2 unguided replicates).",
+        f"This report presents the statistically supported answers to our core Research Questions (RQ1-RQ4) and evaluates hypotheses (H1-H3) using the measured results of the campaign database `{args.db}` ({len(run_evasion)} campaign runs, {valid_candidates} valid candidates).",
         "",
         f"**Data provenance**: campaign database `{args.db}`; figures not labeled *simulated* are measured from the live pipeline or read from the database.",
         "",

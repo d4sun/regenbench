@@ -135,14 +135,44 @@ def compile_triage_report():
     report_lines.extend([
         "",
         "## Syscall Analysis & Oracle Validation",
-        "DynaHug identifies anomalous model behavior by tracking system calls inside the container runtime environment. During triage of the stratified sample, we confirmed the following indicators of malicious execution:",
-        "1. **Process Spawning (`execve`)**: Injections using `os.system` or `subprocess.Popen` trigger subshells executing `python3 -c` commands to write sentinel files.",
-        "2. **Dynamic Compilation (`eval`/`exec`)**: Python code execution sinks construct file writers directly within the active interpreter process context.",
-        "3. **Network Connection Attempt (`connect`)**: In a full campaign configuration, reverse shell payloads attempt TCP connection handshakes to external ports (caught and logged by strace).",
+    ])
+    if total_bypasses > 0:
+        report_lines.extend([
+            "DynaHug identifies anomalous model behavior by tracking system calls inside the container runtime environment. During triage of the confirmed bypasses, we observed the following indicators of malicious execution:",
+            "1. **Process Spawning (`execve`)**: Injections using `os.system` or `subprocess.Popen` trigger subshells executing `python3 -c` commands to write sentinel files.",
+            "2. **Dynamic Compilation (`eval`/`exec`)**: Python code execution sinks construct file writers directly within the active interpreter process context.",
+            "3. **Network Connection Attempt (`connect`)**: In a full campaign configuration, reverse shell payloads attempt TCP connection handshakes to external ports (caught and logged by strace).",
+        ])
+    else:
+        report_lines.append(
+            "No confirmed bypasses were found in the campaign database, so there "
+            "are no oracle-corroborated execution profiles to triage. The syscall "
+            "profile below describes what DynaHug would log for each payload class "
+            "in a run that produces bypasses; it is **not** a report of observed "
+            "behavior in the current data."
+        )
+        report_lines.extend([
+            "- **Process Spawning (`execve`)**: `os.system` / `subprocess.Popen` payloads trigger subshells executing `python3 -c` to write sentinel files.",
+            "- **Dynamic Compilation (`eval`/`exec`)**: code-execution sinks construct file writers within the active interpreter process.",
+            "- **Network Connection Attempt (`connect`)**: reverse-shell payloads attempt TCP handshakes to external ports (caught by strace).",
+        ])
+    report_lines.extend([
         "",
         "## Conclusion",
-        "Triage of the bypass corpus indicates that all confirmed bypass entries exhibit **genuine malicious capabilities** resulting from the successful unpickling of execution payloads. The static scanners (Fickling, PickleScan) failed to detect these configurations, proving the benchmark's utility in exposing detection boundaries.",
     ])
+    if total_bypasses > 0:
+        report_lines.append(
+            "Triage of the bypass corpus indicates that all confirmed bypass entries exhibit "
+            "**genuine malicious capabilities** resulting from the successful unpickling of "
+            "execution payloads. The static scanners (Fickling, PickleScan) failed to detect "
+            "these configurations, proving the benchmark's utility in exposing detection boundaries."
+        )
+    else:
+        report_lines.append(
+            "No confirmed bypasses were found in the current campaign data, so there is no "
+            "bypass corpus to triage. The static scanners did not miss any oracle-corroborated "
+            "malicious candidate in the completed runs."
+        )
 
     with open(report_path, "w") as f:
         f.write("\n".join(report_lines))

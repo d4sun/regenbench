@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import os
 import sys
+import json
 import pickle
 import subprocess
 import tempfile
@@ -221,3 +222,51 @@ assert isinstance(obj, dict)
                 pass
                 
         return success_load and executed
+
+    def validate_gguf(self, gguf_bytes: bytes) -> bool:
+        """Confirm that a GGUF artifact parses with the reference reader
+        (ggml-org/gguf) inside the Task-3 sandbox.
+
+        Ground truth for the demo corpus: malformed-header attacks are rejected
+        by the reference reader (their whole point), so ``False`` is the
+        expected result for those families; the SSTI chat-template payload is
+        structurally valid and renders (executing the Jinja2 gadget), so it
+        must return ``True``.
+        """
+        import shutil
+        has_container_tool = shutil.which(self.backend) is not None
+        if not has_container_tool:
+            print("[validity-debug] validate_gguf requires the gguf container")
+            return False
+
+        with tempfile.NamedTemporaryFile(suffix=".gguf", delete=False) as f:
+            f.write(gguf_bytes)
+            host_path = f.name
+
+        cmd = [
+            self.backend, "run", "--rm",
+            "--security-opt", "label=disable",
+            "-v", f"{os.path.dirname(host_path)}:/art:ro",
+            "-v", f"{tempfile.gettempdir()}:/tmp",
+            "localhost/regenbench/gguf:latest",
+            f"/art/{os.path.basename(host_path)}",
+        ]
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True,
+                                  timeout=self.timeout)
+        except subprocess.TimeoutExpired:
+            print("[validity-debug] gguf oracle timed out")
+            ok = False
+        else:
+            try:
+                detail = json.loads((proc.stdout or "").strip().splitlines()[-1])
+                ok = bool((detail.get("summary") or {}).get("load_ok"))
+            except (json.JSONDecodeError, IndexError):
+                print("[validity-debug] gguf oracle emitted no JSON verdict")
+                ok = False
+        finally:
+            try:
+                os.remove(host_path)
+            except OSError:
+                pass
+        return ok

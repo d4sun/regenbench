@@ -15,9 +15,12 @@ import hashlib
 import json
 import os
 import random
+import sys
 import tempfile
 import time
 import yaml
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from pipeline.generator import CandidateGenerator
 from pipeline.runner import Runner, Config

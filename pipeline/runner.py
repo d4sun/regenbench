@@ -29,6 +29,7 @@ from dataclasses import dataclass, field
 from typing import Callable, Iterable
 
 from pipeline.scanners import (
+    GGUF_EXTENSIONS,
     ORACLE_EXTENSIONS,
     SCANNERS,
     ScanResult,
@@ -37,7 +38,7 @@ from pipeline.scanners import (
     run_scan,
 )
 
-DEFAULT_EXTS = {".pkl", ".pt", ".pth", ".onnx", ".keras", ".h5", ".hdf5", ".joblib", ".model", ".bin"}
+DEFAULT_EXTS = {".pkl", ".pt", ".pth", ".onnx", ".keras", ".h5", ".hdf5", ".joblib", ".model", ".bin", ".gguf"}
 
 
 class TrackingSink:
@@ -115,14 +116,20 @@ class Runner:
 
     def _scanners_for(self, src: str) -> list[str]:
         names = []
+        ext = os.path.splitext(src)[1].lower()
         for name, meta in self.spec.items():
             if meta.get("mount_only_pt") and not self.config.oracle:
                 continue
             if name == "dynahug":
                 if not self.config.oracle:
                     continue
-                if os.path.splitext(src)[1].lower() not in ORACLE_EXTENSIONS:
+                if ext not in ORACLE_EXTENSIONS:
                     continue  # oracle only deserializes torch checkpoints
+            if name == "ggufref":
+                if not self.config.oracle:
+                    continue
+                if ext not in GGUF_EXTENSIONS:
+                    continue  # reference parser only reads GGUF files
             names.append(name)
         return names
 

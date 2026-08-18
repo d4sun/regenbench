@@ -5,6 +5,15 @@ model artifacts. Each scanner (and a behavioral oracle) is packaged as a
 reproducible container and wrapped behind a single
 [unified verdict schema](docs/verdict-schema.md).
 
+> **License**: [MIT](LICENSE).
+>
+> **Warning**: this is a security-research benchmark. It contains, generates,
+> and downloads **real malicious and malformed ML artifacts** (code-executing
+> Pickle/PyTorch checkpoints, real malicious Hugging Face models, GGUF
+> malformed-header attacks and a Jinja2 SSTI payload). Only run artifacts
+> inside the provided containers. See [DISCLAIMER.md](DISCLAIMER.md) before
+> using this repository.
+
 ## Components
 
 | Task | Component | Container / Path | Status |
@@ -35,6 +44,11 @@ reproducible container and wrapped behind a single
 | T3.4 | Implement mutation operators | — | [`pipeline/mutators.py`](pipeline/mutators.py) |
 | T3.5 | Implement validity oracle | — | [`pipeline/validity.py`](pipeline/validity.py) |
 | T3.6 | Unit/property tests for generator | — | [`scripts/test_generator_suite.py`](scripts/test_generator_suite.py) |
+| T3.7 | GGUF parser/writer & attack generators | — | [`pipeline/gguf_tools.py`](pipeline/gguf_tools.py) |
+| T3.8 | GGUF reference oracle container | `regenbench/gguf` | `containers/gguf` |
+| T3.9 | Real GGUF benign crawler & corpus | — | [`scripts/crawl_gguf.py`](scripts/crawl_gguf.py), `data/gguf_benign_corpus/` |
+| T3.10| MalHug real malicious corpus crawler | — | [`scripts/crawl_malhug.py`](scripts/crawl_malhug.py), `data/malhug/` |
+| T3.11| GGUF attack surface demo & report | — | [`scripts/run_task3_demo.py`](scripts/run_task3_demo.py), [`docs/task3-demo.md`](docs/task3-demo.md) |
 | T4.1 | Implement static pre-filter | — | [`pipeline/pre_filter.py`](pipeline/pre_filter.py) |
 | T4.2 | Implement scanner panel runner | — | [`pipeline/runner.py`](pipeline/runner.py) |
 | T4.3 | Implement behavioral oracle runner | — | [`pipeline/runner.py`](pipeline/runner.py) |
@@ -47,7 +61,7 @@ reproducible container and wrapped behind a single
 | T5.4 | Wire feedback into mutation weighting | — | [`pipeline/feedback.py`](pipeline/feedback.py) |
 | T5.5 | Directed E2E fuzzing campaign | — | [`scripts/run_fuzzing_campaign.py`](scripts/run_fuzzing_campaign.py) |
 
-Each `containers/<name>/` holds a `Dockerfile`, `wrapper.py`, and `build.sh`
+Each `containers/<name>/` holds a `Dockerfile`, `wrapper.py` (or `validator.py`), and `build.sh`
 (produces `regenbench/<name>:<version>` and `:latest`).
 
 ---
@@ -72,7 +86,7 @@ torch/sklearn installs.
 Build order matters (each scanner `FROM` the base image):
 
 ```sh
-for d in base picklescan modelscan fickling modeltracer dynahug; do
+for d in base picklescan modelscan fickling modeltracer dynahug gguf; do
   containers/$d/build.sh
 done
 ```
@@ -196,7 +210,25 @@ python3 scripts/run_evaluation_suite.py \
   --corpus-dir real_benign_corpus/all
 ```
 
-### 5. Supplementary reports
+### 5. Task 3: GGUF attack surface demo & MalHug real malicious corpus
+
+Crawl the real benign GGUF corpus (TinyLlama series + llama.cpp tokenizers)
+and the MalHug malicious dataset (ASE 2024, real Hugging Face malicious models):
+
+```sh
+python3 scripts/crawl_gguf.py       # -> data/gguf_benign_corpus/ (~24 GGUF models)
+python3 scripts/crawl_malhug.py     # -> data/malhug/ (~73 malicious models + manifest.json)
+```
+
+Run the Task 3 GGUF demo to scan 7 malicious attack families (Jinja2 SSTI
+`tokenizer.chat_template` CVE-2024-34359 + 6 vellaveto malformed-header attacks)
+and 24 real benign GGUFs across all scanners and the `ggufref` oracle:
+
+```sh
+python3 scripts/run_task3_demo.py --corpus data/gguf_benign_corpus  # -> docs/task3-demo.md
+```
+
+### 6. Supplementary reports
 
 Throughput/latency benchmark (T4.6) and bypass triage (T6.4):
 
@@ -218,9 +250,12 @@ bypasses are also exported to `data/bypasses/` as standalone, replayable JSON.
 | Campaign database | `data/regenbench_campaign.db` | SQLite: candidates, panel/oracle results, fitness, coverage, run metadata |
 | Exported confirmed bypasses | `data/bypasses/<run_id>/` | Written by the pilot campaign driver (T6.3); empty if no bypasses confirmed |
 | Generated candidates | `data/candidates/<run_id>/` | Per-round candidate checkpoints |
-| Crawled benign corpus | `data/crawled/` + `seed_manifest.json` | Raw weights + SHA-256 provenance manifest |
+| Crawled benign torch corpus | `data/crawled/` + `seed_manifest.json` | Raw weights + SHA-256 provenance manifest |
 | Benign corpus + views | `real_benign_corpus/all`, `oracle_positive/`, `oracle_negative/` | Hard links; `oracle-validation.json` holds the DynaHug scores |
+| Benign GGUF corpus | `data/gguf_benign_corpus/` | Crawled TinyLlama + llama.cpp vocab GGUF models |
+| MalHug malicious corpus | `data/malhug/` + `manifest.json` | Crawled real malicious Hugging Face models (ASE 2024) |
 | Evaluation report | `docs/evaluation-report.md` | RQ1-RQ4 tables, FP rates, hypothesis verdicts |
+| Task 3 GGUF demo report | `docs/task3-demo.md` | Scanner detection matrix on GGUF attack surface & blind spots |
 | Fuzzing reports | `docs/fuzzing-report-<run_id>.md` | Per-campaign round tables |
 | Perf report | `docs/perf-report.md` | Pre-filter throughput speedup |
 | Triage report | `docs/triage-report.md` | Bypass profiles by dangerous callable |
@@ -232,14 +267,15 @@ To archive a complete run for the record:
 tar czf regenbench-results-$(date +%Y%m%d-%H%M%S).tar.gz \
   data/regenbench_campaign.db \
   data/bypasses data/candidates data/crawled \
+  data/gguf_benign_corpus data/malhug \
   real_benign_corpus \
-  docs/evaluation-report.md docs/fuzzing-report-*.md \
+  docs/evaluation-report.md docs/task3-demo.md docs/fuzzing-report-*.md \
   docs/perf-report.md docs/triage-report.md
 ```
 
 Or snapshot everything into a versioned `results/<timestamp>/` directory with
 a machine-readable summary (campaign DB, all reports, bypass exports, corpus
-metadata, plus `results.md` / `results.json`):
+metadata, GGUF/MalHug inventories, plus `results.md` / `results.json`):
 
 ```sh
 python3 scripts/save_results.py \
@@ -255,10 +291,11 @@ python3 scripts/save_results.py \
 
 ## Latest results
 
-Snapshot: `results/20260817-144045/` (see `results.md` / `results.json`).
-Full detail: [`docs/evaluation-report.md`](docs/evaluation-report.md).
+Snapshot: `results/20260818-141227/` (see `results.md` / `results.json`).
+Full detail: [`docs/evaluation-report.md`](docs/evaluation-report.md) and
+[`docs/task3-demo.md`](docs/task3-demo.md).
 
-**Campaigns** (5 runs, 500 candidates in `data/regenbench_campaign.db`):
+**Campaigns** (7 runs, 700 candidates in `data/regenbench_campaign.db`):
 
 | Run | Type | Replicate | Candidates | Valid | Confirmed Bypasses |
 | :--- | :--- | :---: | :---: | :---: | :---: |
@@ -267,8 +304,10 @@ Full detail: [`docs/evaluation-report.md`](docs/evaluation-report.md).
 | guided-r2 | guided | 2 | 100 | 100 | 0 |
 | unguided-r1 | unguided | 1 | 100 | 100 | 0 |
 | unguided-r2 | unguided | 2 | 100 | 100 | 0 |
+| pilot-20260817T101219Z | guided | 1 | 100 | 100 | 0 |
+| guided-r3 | guided | 3 | 100 | 100 | 0 |
 
-**RQ1 evasion**: 0/493 scanner evasions across all valid candidates →
+**RQ1 evasion**: 0/693 scanner evasions across all valid candidates →
 `H1 not supported` on current data (evasion below the 70% threshold).
 
 **RQ3 benign false positives** over 96 real HuggingFace checkpoints:
@@ -278,7 +317,7 @@ Full detail: [`docs/evaluation-report.md`](docs/evaluation-report.md).
 | PickleScan | 0 | 0.0% |
 | ModelScan | 0 | 0.0% |
 | ModelTracer | 0 | 0.0% |
-| Fickling | 18 | 18.8% |
+| Fickling | 9 | 9.4% |
 | DynaHug (Oracle) | 94 | 97.9% |
 
 > **DynaHug caveat**: the embedded text-generation OCSVM
@@ -286,9 +325,14 @@ Full detail: [`docs/evaluation-report.md`](docs/evaluation-report.md).
 > loadable checkpoint, so its binary verdict is non-discriminative and its FP
 > rate is ~97% by construction. See the RQ3 note in the evaluation report.
 
-**RQ4 ablations**: pre-filter throughput speedup **12.60x** (1.46s vs 18.44s
-over 5 files); guided vs unguided confirmed-bypass rates 0/293 vs 0/200
+**RQ4 ablations**: pre-filter throughput speedup **16.92x** (1.03s vs 17.47s
+over 5 files); guided vs unguided confirmed-bypass rates 0/493 vs 0/200
 (test not computable — both pooled proportions are 0).
+
+**Task 3 (GGUF attack surface)**: `ggufref` detects 7/7 GGUF attacks
+(6 malformed-header families + Jinja2 SSTI CVE-2024-34359) with 0 FP on
+24 real benign GGUFs, while modelscan 0.8.8 misses all 7 (0/7) and fickling
+flags every benign GGUF as malicious (24/24 FP).
 
 **Hypotheses**: H2 not assessable (uncorroborated and confirmed evasions are
 both 0); H3 is a simulated extrapolation (0.0% remaining efficacy, no

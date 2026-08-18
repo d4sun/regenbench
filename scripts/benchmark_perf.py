@@ -9,8 +9,11 @@ from __future__ import annotations
 
 import os
 import shutil
+import sys
 import tempfile
 import time
+
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from pipeline.runner import Runner, Config
 from pipeline.registry import load_registry

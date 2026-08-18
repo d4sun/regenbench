@@ -25,6 +25,7 @@ REPORTS = [
     "docs/perf-report.md",
     "docs/triage-report.md",
     "docs/comparison-methodology.md",
+    "docs/task3-demo.md",
 ]
 
 
@@ -62,6 +63,8 @@ def main() -> int:
     ap.add_argument("--db", default="data/regenbench_campaign.db")
     ap.add_argument("--out", default="results")
     ap.add_argument("--corpus-dir", default="real_benign_corpus/all")
+    ap.add_argument("--gguf-corpus-dir", default="data/gguf_benign_corpus")
+    ap.add_argument("--malhug-dir", default="data/malhug")
     args = ap.parse_args()
 
     stamp = time.strftime("%Y%m%d-%H%M%S")
@@ -79,6 +82,7 @@ def main() -> int:
     copy(args.db, "regenbench_campaign.db")
     copy("data/crawled/seed_manifest.json")
     copy("real_benign_corpus/oracle-validation.json")
+    copy(os.path.join(args.malhug_dir, "manifest.json"), "malhug_manifest.json")
     for rep in REPORTS:
         copy(rep)
     for fz in sorted(os.listdir("docs")):
@@ -95,8 +99,42 @@ def main() -> int:
         corpus_count = len([n for n in os.listdir(args.corpus_dir)
                             if n.endswith((".pt", ".pth", ".bin"))])
 
+    # GGUF corpus inventory
+    gguf_count = 0
+    if os.path.isdir(args.gguf_corpus_dir):
+        for _r, _d, names in os.walk(args.gguf_corpus_dir):
+            gguf_count += sum(1 for n in names if n.endswith(".gguf"))
+
+    # MalHug inventory
+    malhug_count = 0
+    malhug_meta = None
+    malhug_manifest = os.path.join(args.malhug_dir, "manifest.json")
+    if os.path.isfile(malhug_manifest):
+        try:
+            with open(malhug_manifest) as f:
+                malhug_meta = json.load(f)
+                malhug_count = malhug_meta.get("count", 0)
+        except Exception:
+            pass
+    elif os.path.isdir(args.malhug_dir):
+        malhug_count = len([n for n in os.listdir(args.malhug_dir) if not n.endswith(".json")])
+
     # Structured summary
-    summary: dict = {"generated_at": stamp, "corpus": {"files": corpus_count}}
+    summary: dict = {
+        "generated_at": stamp,
+        "corpus": {
+            "torch_benign_files": corpus_count,
+            "gguf_benign_files": gguf_count,
+            "malhug_malicious_files": malhug_count,
+        }
+    }
+    if malhug_meta:
+        summary["malhug"] = {
+            "count": malhug_count,
+            "total_size_mb": malhug_meta.get("total_size_mb"),
+            "paper": malhug_meta.get("paper"),
+        }
+
     if os.path.isfile(args.db):
         conn = sqlite3.connect(args.db)
         cur = conn.cursor()
@@ -137,7 +175,9 @@ def main() -> int:
         "# ReGenBench Results", "",
         f"- Generated: {stamp}",
         f"- Campaign DB: `{args.db}`",
-        f"- Benign corpus files: {corpus_count}",
+        f"- Benign PyTorch/SafeTensors corpus files: {corpus_count}",
+        f"- Benign GGUF corpus files: {gguf_count}",
+        f"- MalHug real malicious corpus files: {malhug_count}",
         "",
         "## Campaigns", "",
         "| Run | Type | Replicate | Candidates | Valid | Confirmed Bypasses |",
@@ -157,6 +197,17 @@ def main() -> int:
     lines += ["", "## Oracle verdicts (all runs)", ""]
     for verdict, n in sorted(summary.get("oracle_verdicts", {}).items()):
         lines.append(f"- {verdict}: {n}")
+
+    if gguf_count > 0 or os.path.isfile("docs/task3-demo.md"):
+        lines += [
+            "",
+            "## Task 3: GGUF Attack Surface & MalHug Corpus",
+            "",
+            f"- **Benign GGUF Models**: {gguf_count} real crawled models (TinyLlama series + llama.cpp tokenizers)",
+            f"- **MalHug Real Malicious Models**: {malhug_count} artifacts from Hugging Face repositories (ASE 2024)",
+            "- **Task 3 Report**: [`task3-demo.md`](task3-demo.md)",
+        ]
+
     with open(os.path.join(out_dir, "results.md"), "w") as f:
         f.write("\n".join(lines) + "\n")
 

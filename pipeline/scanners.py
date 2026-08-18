@@ -22,12 +22,16 @@ SCANNERS: dict[str, dict] = {
     "fickling": {"image": "regenbench/fickling", "kind": "panel"},
     "modeltracer": {"image": "regenbench/modeltracer", "kind": "panel"},
     "dynahug": {"image": "regenbench/dynahug", "kind": "oracle", "mount_only_pt": True},
+    "ggufref": {"image": "regenbench/gguf", "kind": "oracle", "mount_only_gguf": True},
 }
 
 # Artifact formats sent to the behavioral oracle. The DynaHug oracle (T0.7)
 # deserializes torch checkpoints; non-torch inputs cannot be loaded and so
-# yield no behavioral signal.
+# yield no behavioral signal. The ggufref oracle (Task 3) parses GGUF files
+# with the ggml-org reference reader and renders chat templates through the
+# unsandboxed Jinja2 path (CVE-2024-34359).
 ORACLE_EXTENSIONS = {".pt", ".pth", ".bin"}
+GGUF_EXTENSIONS = {".gguf"}
 
 # If set, the dynahug container mounts this directory and points
 # DYNAHUG_MODEL_DIR at it, so a locally-recalibrated OCSVM (fit on this

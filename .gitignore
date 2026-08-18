@@ -11,6 +11,13 @@ mlruns/
 # Seed corpus model files
 data/crawled/*/
 
+# Crawled GGUF corpus (large model binaries, regenerable via scripts/crawl_gguf.py)
+data/gguf_benign_corpus/
+
+# MalHug real malicious corpus (large model binaries; manifest is committed)
+data/malhug/*
+!data/malhug/manifest.json
+
 # Crawled real-model corpus (large downloaded checkpoints)
 real_benign_corpus/all/
 real_benign_corpus/oracle_positive/
