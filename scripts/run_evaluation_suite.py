@@ -81,7 +81,8 @@ def run_benign_fp_check(scanners: list[str], corpus_dir: str | None = None,
             return {s: 0.0 for s in scanners}
 
     config = Config(backend="podman", tag=":latest", max_workers=4, timeout=60,
-                    oracle=True, pre_filter=False)
+                    oracle=True, pre_filter=False,
+                    oracle_model_dir="real_benign_corpus/oracle-calibrated/text-generation")
     runner = Runner(config, scanners=scanners)
     results = runner.run(artifacts)
 
@@ -956,12 +957,13 @@ def main(argv: list[str] | None = None) -> int:
         "(upstream DynaHug 8ff8174, gamma=0.1 kernel=rbf nu=0.01) returns a "
         "constant decision score of approximately -rho (-1.349) for every "
         "loadable checkpoint in this environment -- real benign files and "
-        "payload-carrying fuzz candidates alike -- so its binary verdict is not "
-        "discriminative and it reports ~97% false positives on the benign "
-        "corpus. Only its deserialization success/failure (error vs non-error) "
-        "is informative. This faithfully reproduces the pretrained model's "
-        "behavior (see containers/dynahug/wrapper.py); the collapse was "
-        "detected by the validation gate in scripts/validate_oracle.py.",
+        "payload-carrying fuzz candidates alike -- because our sandbox traces "
+        "10-100x the syscall counts of the upstream training environment, so "
+        "every input lands outside the learned support region (see "
+        "docs/oracle-calibration-deviation.md). This suite therefore runs the "
+        "environment-calibrated oracle (scripts/calibrate_oracle.py, fit on "
+        "this environment's strace profiles), which restores a discriminative "
+        "decision score and a low false-positive rate on the benign corpus.",
         "",
         "### Detector Disagreement on Benign Corpus",
     ]

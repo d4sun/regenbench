@@ -89,12 +89,12 @@ def scan_all(backend: str, images: dict[str, str], targets: list[str]) -> list[d
             if scanner == "ggufref":
                 cmd = [backend, "run", "--rm", "--timeout", "90",
                        "--security-opt", "label=disable",
-                       "-v", f"{os.path.abspath(path)}:/artifact:ro,Z",
+                       "-v", f"{os.path.abspath(path)}:/artifact:ro,z",
                        "-v", "/tmp:/tmp",
                        images[scanner], "/artifact"]
             else:
                 cmd = [backend, "run", "--rm", "--timeout", "90",
-                       "-v", f"{os.path.abspath(path)}:/artifact:ro,Z",
+                       "-v", f"{os.path.abspath(path)}:/artifact:ro,z",
                        images[scanner], "/artifact"]
             try:
                 proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)

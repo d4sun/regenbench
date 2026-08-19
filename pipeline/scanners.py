@@ -75,14 +75,14 @@ def run_scan(backend: str, image_full: str, src: str,
         # seconds. Without this, the subprocess timeout below only kills the
         # podman client, orphaning the container which keeps consuming CPU.
         "--timeout", str(timeout),
-        "-v", f"{os.path.abspath(src)}:/artifact:ro,Z",
+        "-v", f"{os.path.abspath(src)}:/artifact:ro,z",
     ]
     model_dir = oracle_model_dir or os.environ.get(ORACLE_MODEL_DIR_ENV)
     if model_dir:
         if not os.path.isdir(model_dir):
             return None, f"oracle model dir does not exist: {model_dir}"
         cmd += ["-e", "DYNAHUG_MODEL_DIR=/opt/dynahug/recalibrated",
-                "-v", f"{os.path.abspath(model_dir)}:/opt/dynahug/recalibrated:ro,Z"]
+                "-v", f"{os.path.abspath(model_dir)}:/opt/dynahug/recalibrated:ro,z"]
     cmd += [image_full, "/artifact"]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True,

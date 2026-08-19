@@ -62,6 +62,7 @@ class Config:
     skip: set[str] = field(default_factory=set)
     oracle: bool = True
     pre_filter: bool = True
+    oracle_model_dir: str | None = None
 
 
 def make_generator(paths: list[str]) -> tuple[list[str], Callable[[], list[str]]]:
@@ -136,7 +137,8 @@ class Runner:
     def _one(self, src: str, scanner: str) -> ScanResult:
         t0 = time.time()
         out, err = run_scan(
-            self.config.backend, self.images[scanner], src, self.config.timeout)
+            self.config.backend, self.images[scanner], src, self.config.timeout,
+            oracle_model_dir=self.config.oracle_model_dir)
         dur = time.time() - t0
         if err or out is None:
             res = ScanResult(scanner, src, None, None, error=err or "no output", duration=dur)

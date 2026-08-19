@@ -93,7 +93,7 @@ def collect_trace(backend: str, image_full: str, path: str,
     t0 = time.time()
     cmd = [
         backend, "run", "--rm",
-        "-v", f"{os.path.abspath(path)}:/artifact:ro,Z",
+        "-v", f"{os.path.abspath(path)}:/artifact:ro,z",
         image_full, "/artifact",
     ]
     try:

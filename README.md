@@ -317,13 +317,20 @@ Full detail: [`docs/evaluation-report.md`](docs/evaluation-report.md) and
 | PickleScan | 0 | 0.0% |
 | ModelScan | 0 | 0.0% |
 | ModelTracer | 0 | 0.0% |
-| Fickling | 9 | 9.4% |
-| DynaHug (Oracle) | 94 | 97.9% |
+| Fickling | 6 | 6.2% |
+| DynaHug (Calibrated Oracle) | 61 | 63.5% |
 
-> **DynaHug caveat**: the embedded text-generation OCSVM
-> (upstream 8ff8174) returns a constant decision score (≈ -rho) for every
-> loadable checkpoint, so its binary verdict is non-discriminative and its FP
-> rate is ~97% by construction. See the RQ3 note in the evaluation report.
+> **DynaHug caveat**: the upstream pretrained text-generation OCSVM
+> (8ff8174) collapses in this container environment — every loadable
+> checkpoint, benign or malicious, scores a constant ≈ -rho, so its verdict
+> is non-discriminative (97.9% FP on this corpus). We therefore run the
+> environment-calibrated oracle fit by `scripts/calibrate_oracle.py` on this
+> host's syscall profiles (see `docs/oracle-calibration-deviation.md`). It
+> restores a discriminative decision score but still has a **measured 63.5%
+> FP rate** on real benign checkpoints — its traces are dominated by the
+> loader's Python/torch startup baseline, so the OCSVM boundary sits close to
+> zero. RQ3 reports this honestly rather than filtering the corpus by oracle
+> verdict (ground truth is provenance-based).
 
 **RQ4 ablations**: pre-filter throughput speedup **16.92x** (1.03s vs 17.47s
 over 5 files); guided vs unguided confirmed-bypass rates 0/493 vs 0/200
@@ -337,6 +344,27 @@ flags every benign GGUF as malicious (24/24 FP).
 **Hypotheses**: H2 not assessable (uncorroborated and confirmed evasions are
 both 0); H3 is a simulated extrapolation (0.0% remaining efficacy, no
 version-delta data).
+
+### Evaluation correctness fixes (2026-08-19)
+
+Two measurement bugs were found and fixed before this snapshot, and the RQ3
+FP table above is the corrected measurement:
+
+1. **SELinux mount race** (`pipeline/scanners.py`): every scan mounted the
+   artifact with `:ro,Z` (a *private* SELinux relabel). When multiple
+   scanners mount the *same* checkpoint concurrently — which the runner does
+   by default — the relabels race and containers intermittently crash with
+   `PermissionError` before reading the artifact. Fickling reports such a
+   crash (exit 1) as *malicious*, so its FP rate was nondeterministic
+   (measured 9.4%–43.8% across runs). The fix switches to `:ro,z` (shared,
+   idempotent relabel); Fickling is now deterministic at **6.2% FP**.
+2. **Calibrated DynaHug oracle not wired in** (`pipeline/runner.py`,
+   `scripts/run_evaluation_suite.py`): the environment-calibrated OCSVM
+   existed but the runner never passed `DYNAHUG_MODEL_DIR`, so the FP study
+   silently used the collapsed upstream model (97.9% FP by construction).
+   The runner now threads `Config.oracle_model_dir` through to the oracle
+   container; the FP study uses the calibrated oracle and reports its genuine
+   **63.5% FP rate** instead of the constant-score artifact.
 
 ---
 

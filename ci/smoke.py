@@ -37,7 +37,7 @@ def run_image(backend, image, target, tag):
     src = os.path.abspath(os.path.join(CORPUS, target))
     cmd = [
         backend, "run", "--rm",
-        "-v", f"{src}:/artifact:ro,Z",
+        "-v", f"{src}:/artifact:ro,z",
         full, "/artifact",
     ]
     try:

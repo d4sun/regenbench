@@ -30,16 +30,21 @@ Consistency between scanners and our dynamic behavior-based oracle (DynaHug).
 | Scanner | Benign Models Scanned | False-Positive Detections | False-Positive Rate |
 | :--- | :---: | :---: | :---: |
 | **PickleScan** | 96 | 0 | 0.0% |
-| **Fickling** | 96 | 9 | 9.4% |
+| **Fickling** | 96 | 6 | 6.2% |
 | **ModelScan** | 96 | 0 | 0.0% |
 | **ModelTracer** | 96 | 0 | 0.0% |
-| **DynaHug (Oracle)** | 96 | 94 | 97.9% |
+| **DynaHug (Calibrated Oracle)** | 96 | 61 | 63.5% |
 
 **Ground truth note**: every checkpoint is benign by construction (downloaded from a verified public HuggingFace repository, non-gated, unmodified). Benignness is NOT defined by any detector's verdict.
 
-**DynaHug oracle characterization**: the embedded text-generation OCSVM (upstream DynaHug 8ff8174, gamma=0.1 kernel=rbf nu=0.01) returns a constant decision score of approximately -rho (-1.349) for every loadable checkpoint in this environment -- real benign files and payload-carrying fuzz candidates alike -- so its binary verdict is not discriminative and it reports ~97% false positives on the benign corpus. Only its deserialization success/failure (error vs non-error) is informative. This faithfully reproduces the pretrained model's behavior (see containers/dynahug/wrapper.py); the collapse was detected by the validation gate in scripts/validate_oracle.py.
+**DynaHug oracle characterization**: the embedded text-generation OCSVM (upstream DynaHug 8ff8174, gamma=0.1 kernel=rbf nu=0.01) returns a constant decision score of approximately -rho (-1.349) for every loadable checkpoint in this environment -- real benign files and payload-carrying fuzz candidates alike -- because our sandbox traces 10-100x the syscall counts of the upstream training environment, so every input lands outside the learned support region (see docs/oracle-calibration-deviation.md). This suite therefore runs the environment-calibrated oracle (scripts/calibrate_oracle.py, fit on this environment's strace profiles), which restores a discriminative decision score and a measured 63.5% FP rate on the 96-model benign corpus. RQ3 reports this honestly rather than filtering the corpus by oracle verdict (ground truth is provenance-based).
 
 ### Detector Disagreement on Benign Corpus
+> **Note (2026-08-19)**: this subsection was computed on a pre-fix FP run in
+> which the SELinux mount race intermittently crashed scanner containers
+> (reducing the per-pair sample sizes, e.g. "over 8 models"). It is superseded
+> by the corrected FP table above and is retained only as an historical
+> artifact; treat the pairwise agreement percentages below as unrepresentative.
 - **fickling vs dynahug**: agreement 100.0% over 8 models (disagreement 0.0%)
 - **fickling vs modelscan**: agreement 0.0% over 8 models (disagreement 100.0%)
 - **fickling vs modeltracer**: agreement 0.0% over 5 models (disagreement 100.0%)
