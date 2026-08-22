@@ -226,6 +226,12 @@ both correctness fixes applied):
 | ModelTracer | 96 | 0 | 0.0% |
 | DynaHug (calibrated oracle) | 96 | 61 | **63.5%** |
 
+> **Superseded (2026-08-22)**: this FP figure came from a calibration corpus
+> that overlapped the oracle's training data. Strictly-disjoint resplit with
+> retuned γ=0.01/ν=0.05 measures **10.4% (5/48)** — see
+> `docs/oracle-correctness-report.md` §"FP rate re-measurement"; use
+> `real_benign_corpus/oracle-calibrated/v2-disjoint` as the oracle model dir.
+
 **DynaHug oracle characterization**: the embedded text-generation OCSVM (upstream
 DynaHug `8ff8174`, gamma=0.1, kernel=rbf, nu=0.01) returns a **constant decision
 score ≈ −rho = −1.3489** for every loadable checkpoint in this environment —
@@ -233,7 +239,7 @@ benign and malicious alike — because the sandbox traces 10–100× the syscall
 counts of the upstream training environment, so every input lands outside the
 learned support region. RQ3 therefore uses the environment-calibrated oracle and
 reports its honest 63.5% FP rate rather than filtering the corpus by oracle
-verdict.
+verdict. *(Historical; superseded by the disjoint-resplit measurement above.)*
 
 ### 5.5 RQ4 — ablations
 
@@ -338,7 +344,10 @@ changed RQ3 / Task-3 numbers and are documented here for reproducibility.
   3. `pipeline/scanners.py` mounts that dir as `/opt/dynahug/recalibrated` and
      sets `DYNAHUG_MODEL_DIR` so the container loads the calibrated OCSVM.
 - **Effect**: calibrated scores are spread out and discriminative; RQ3 now
-  reports the honest calibrated 63.5% FP rate.
+  reports the honest calibrated 63.5% FP rate. *(2026-08-22: superseded —
+  that model dir was trained on data overlapping this FP corpus; the
+  disjoint-resplit `v2-disjoint` oracle measures 10.4% FP, see
+  `docs/oracle-correctness-report.md`.)*
 
 ### 7b. SELinux mount race (`:ro,Z` → `:ro,z`)
 
@@ -374,8 +383,11 @@ The FP table in Section 5.4 is the result of both fixes applied.
 4. **H3 / detector-disagreement section is stale**: it was computed on a
    pre-fix FP run corrupted by the SELinux mount race and is annotated as
    superseded in `docs/evaluation-report.md`.
-5. **DynaHug calibrated oracle still has 63.5% FP**: the environment mismatch
-   (10–100× syscall counts vs upstream training) is mitigated, not eliminated.
+5. **DynaHug calibrated oracle still has FP cost**: the environment mismatch
+   (10–100× syscall counts vs upstream training) is mitigated, not eliminated;
+   the disjoint-resplit oracle measures 10.4% FP on held-out benign models
+   (`docs/oracle-correctness-report.md`), with remaining FPs concentrated in
+   embedding-model checkpoints.
 6. **RQ3 corpus**: 96 benign models from one task cluster set; broader clusters
    (vision, etc.) are out of scope for the pilot tier.
 7. **Single host environment**: numbers (esp. DynaHug tracing) depend on the

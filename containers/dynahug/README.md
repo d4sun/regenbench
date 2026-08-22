@@ -43,7 +43,7 @@ pre-trained One-Class SVM.
 ## Usage
 
 ```sh
-podman run --rm -v "$PWD/artifact.pt:/target.pt:Z" regenbench/dynahug /target.pt
+podman run --rm -v "$PWD/artifact.pt:/target.pt:ro,z" regenbench/dynahug /target.pt
 ```
 
 Reads one target artifact path (argv[1]) and prints one JSON object to stdout

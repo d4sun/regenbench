@@ -1,0 +1,63 @@
+{
+  "task": "oracle-hyperparameter-sweep",
+  "traces": "real_benign_corpus/oracle-calibrated/text-generation-v2/traces.json",
+  "seed": 1337,
+  "split": {
+    "train_n": 38,
+    "holdout_n": 9
+  },
+  "results": [
+    {
+      "gamma": 0.01,
+      "nu": 0.05,
+      "n_support": 4,
+      "rho": 1.1911,
+      "train": {
+        "n": 38,
+        "min": -0.0003,
+        "median": 0.0702,
+        "max": 0.1402,
+        "mean": 0.0663,
+        "std": 0.0398,
+        "spread": 0.1405,
+        "positive_rate": 0.9474
+      },
+      "holdout": {
+        "n": 9,
+        "min": -0.0164,
+        "median": 0.0393,
+        "max": 0.1965,
+        "mean": 0.0578,
+        "std": 0.0654,
+        "spread": 0.213,
+        "positive_rate": 0.7778
+      }
+    }
+  ],
+  "recommended": {
+    "gamma": 0.01,
+    "nu": 0.05,
+    "n_support": 4,
+    "rho": 1.1911,
+    "train": {
+      "n": 38,
+      "min": -0.0003,
+      "median": 0.0702,
+      "max": 0.1402,
+      "mean": 0.0663,
+      "std": 0.0398,
+      "spread": 0.1405,
+      "positive_rate": 0.9474
+    },
+    "holdout": {
+      "n": 9,
+      "min": -0.0164,
+      "median": 0.0393,
+      "max": 0.1965,
+      "mean": 0.0578,
+      "std": 0.0654,
+      "spread": 0.213,
+      "positive_rate": 0.7778
+    }
+  }
+}

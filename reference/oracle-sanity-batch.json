@@ -1,0 +1,76 @@
+{
+  "task": "oracle-sanity-batch",
+  "generated_at": "2026-08-22T06:16:32Z",
+  "model_dir": "real_benign_corpus/oracle-calibrated/v2-disjoint",
+  "image": "regenbench/dynahug:latest",
+  "batch": 8,
+  "check": {
+    "n_scored": 8,
+    "min": -0.009529,
+    "max": 0.134744,
+    "spread": 0.144273,
+    "std": 0.046238,
+    "positive_rate": 0.875,
+    "collapsed_constant": false,
+    "collapsed_all_negative": false,
+    "verdict": "HEALTHY"
+  },
+  "results": [
+    {
+      "artifact": "feature-extraction__BAAI_bge-small-en.bin",
+      "sha256": "662afbeea6d658f743f3fc11b0e710a0a092837b220eaa7ca0bde604df562153",
+      "verdict": "benign",
+      "exit_code": 0,
+      "decision_score": 0.07890164834409319
+    },
+    {
+      "artifact": "feature-extraction__TaylorAI_bge-micro-v2.bin",
+      "sha256": "f154c669357b11c1af1843c444d97f9bd3de06b2e95f277970baaa0f1a9e3437",
+      "verdict": "benign",
+      "exit_code": 0,
+      "decision_score": 0.0836852325209505
+    },
+    {
+      "artifact": "text-classification__bergum_xtremedistil-l6-h384-go-emotion.bin",
+      "sha256": "eae90d975c0243e7be4ab1783285613639fc86a11d077ad09924b8a0069ced42",
+      "verdict": "benign",
+      "exit_code": 0,
+      "decision_score": 0.12902807121255688
+    },
+    {
+      "artifact": "feature-extraction__facebook_encodec_48khz.bin",
+      "sha256": "0a6bd2506e38ec181c7aa65ef8314d7165fe8fac131c213bb1ad9b6ab4505232",
+      "verdict": "benign",
+      "exit_code": 0,
+      "decision_score": 0.1347443628644447
+    },
+    {
+      "artifact": "feature-extraction__jinaai_jina-embeddings-v2-small-en.bin",
+      "sha256": "54c94f036922a64af7912b14358b79051d269dc43a049189362f291ba33491b9",
+      "verdict": "malicious",
+      "exit_code": 1,
+      "decision_score": -0.009528933633491832
+    },
+    {
+      "artifact": "text-classification__mrm8488_bert-mini-finetuned-age_news-classification.bin",
+      "sha256": "1a5001bf5af86af84a07a2e7a986062643cf47297a8c632195483e3d4bde31ce",
+      "verdict": "benign",
+      "exit_code": 0,
+      "decision_score": 0.12144317943794469
+    },
+    {
+      "artifact": "feature-extraction__sentence-transformers_all-MiniLM-L12-v1.bin",
+      "sha256": "5be981f4605f0c2918efd0db60e8273ac0de60cb8d39eb1a874a5b7a7ceb36aa",
+      "verdict": "benign",
+      "exit_code": 0,
+      "decision_score": 0.07843125998087652
+    },
+    {
+      "artifact": "text-classification__shahrukhx01_bert-mini-finetune-question-detection.bin",
+      "sha256": "21c75d631b9856288316df0751a1a29bcc1e204cfc48968eab2bde760ae9c72a",
+      "verdict": "benign",
+      "exit_code": 0,
+      "decision_score": 0.07039579927198925
+    }
+  ]
+}

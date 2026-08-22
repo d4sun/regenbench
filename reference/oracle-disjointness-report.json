@@ -1,0 +1,391 @@
+{
+  "task": "oracle-corpus-disjointness",
+  "generated_at": "2026-08-22T05:37:58Z",
+  "fp_corpus_n": 96,
+  "calibration_traced_total": 50,
+  "calibration_holdout_n": 10,
+  "overlap_evidence_count": 64,
+  "overlap_evidence": [
+    {
+      "kind": "calibration-holdout-in-fp-corpus",
+      "repo": "google_reformer-crime-and-punishment",
+      "note": "model scored by the FP study was part of the calibration trace pool (recorded holdout list)"
+    },
+    {
+      "kind": "calibration-holdout-in-fp-corpus",
+      "repo": "concedo_OPT-19M-ChatSalad",
+      "note": "model scored by the FP study was part of the calibration trace pool (recorded holdout list)"
+    },
+    {
+      "kind": "calibration-holdout-in-fp-corpus",
+      "repo": "junnyu_roformer_chinese_sim_char_small",
+      "note": "model scored by the FP study was part of the calibration trace pool (recorded holdout list)"
+    },
+    {
+      "kind": "calibration-holdout-in-fp-corpus",
+      "repo": "EleutherAI_pythia-14m-deduped",
+      "note": "model scored by the FP study was part of the calibration trace pool (recorded holdout list)"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "BAAI_bge-small-zh",
+      "sha256": "5cc750eb4f5412313aba1482e53aeccd1ed0b97bc213f2962e0c80e6c8809319",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "jinaai_jina-reranker-v1-turbo-en",
+      "sha256": "865db4f93a28237be5d32299e35e6c442ea3435a3c845866c6b43ffb3b7ed35e",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "sentence-transformers_multi-qa-MiniLM-L6-dot-v1",
+      "sha256": "22e95efafbb3f10b927a619a54ba41603f7e8dc40c1ea54739b80b9a7592d8e5",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "mrm8488_bert-tiny-finetuned-enron-spam-detection",
+      "sha256": "fbdd7442a8ca1f3b855d58633c81a3fe4e3fd05ca85230923ea886b93cc4232b",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "ntu-spml_distilhubert",
+      "sha256": "6d7fb982c1365c60aae4e1a7af329ec0bbe50aec47ffafa9647e17e375009de6",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "facebook_encodec_48khz",
+      "sha256": "0a6bd2506e38ec181c7aa65ef8314d7165fe8fac131c213bb1ad9b6ab4505232",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "cross-encoder_ms-marco-MiniLM-L4-v2",
+      "sha256": "943560a8b409a98f7b1addf7f93d0c09efb2a3027daa12680ab3cf07b7298fe7",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "somosnlp-hackathon-2022_electricidad-small-discriminator-finetuned-clasificacion-comentarios-suicidas",
+      "sha256": "575dbc65509b7a571891f2219fa562b45af587548bc2dc67c2044df0bfad2775",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "mrsinghania_asr-question-detection",
+      "sha256": "59649b62c063971e8e2461149154c53d2d25d68596a5c0eca13dc4679104a691",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "jinaai_jina-reranker-v1-tiny-en",
+      "sha256": "77bbb3421aa3dca1886e8adcd0731bc1ca529a233266a4183278e43dffcaced8",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "mlsa-iai-msu-lab_sci-rus-tiny",
+      "sha256": "dd458621f93431d6c82a09f21445da0a5c12dc656229738b6187fdede7e5c039",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "shahrukhx01_bert-multitask-query-classifiers",
+      "sha256": "ed8aea328e22296918b975bca90304798accaf3be889199675cef0782d09652d",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "tomaarsen_setfit-all-MiniLM-L6-v2-sst2-32-shot",
+      "sha256": "28307aa11df3ffd2adec2a1e787390c05ef12f7841f998f08923adf587c1ee49",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "cointegrated_rubert-tiny-sentiment-balanced",
+      "sha256": "a934e2a785ab24e55cf1dd532f51daff7b91a18867683ab80475d89ee67ca867",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "Vsevolod_company-names-similarity-sentence-transformer",
+      "sha256": "0a3c3e91d161afe446411f86753e946234f06c640daed0670e368a92d27e004c",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "cross-encoder_ms-marco-MiniLM-L12-v2",
+      "sha256": "207bb14d184b7728b7c2a68c685678aab636ae301a46f99fe05e5ffdae89e4d8",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "cointegrated_rubert-tiny2",
+      "sha256": "137fa2b1d944dae19c74456dfe8fac2f780d9acf34e037f5d1e37acba1157768",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "sentence-transformers_all-MiniLM-L6-v2",
+      "sha256": "c3a85f238711653950f6a79ece63eb0ea93d76f6a6284be04019c53733baf256",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "nickypro_tinyllama-15M",
+      "sha256": "f3e720da97064941f725446e0232da8b368417aa09d633d7d0b9a468fe46080c",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "BAAI_bge-small-zh-v1.5",
+      "sha256": "7c5fe667bbed05dc10e246e229b701ad266fe4d95ab946e9e5aa402056611b88",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "bergum_xtremedistil-l6-h384-go-emotion",
+      "sha256": "eae90d975c0243e7be4ab1783285613639fc86a11d077ad09924b8a0069ced42",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "ibm-granite_granite-embedding-30m-english",
+      "sha256": "75c8fffb9eed339923271999acc56019c9382db20234fa4a0e9c41c417c2c17b",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "sentence-transformers_all-MiniLM-L12-v1",
+      "sha256": "5be981f4605f0c2918efd0db60e8273ac0de60cb8d39eb1a874a5b7a7ceb36aa",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "nghuyong_ernie-3.0-nano-zh",
+      "sha256": "513bc520119d9d9f7fbecced215b618691e4dff3ec65b83658024f5018cacd50",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "sshleifer_tiny-gpt2",
+      "sha256": "b706b24034032bdfe765ded5ab6403d201d295a995b790cb24c74becca5c04e6",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "cointegrated_rubert-tiny-bilingual-nli",
+      "sha256": "48b1f5e89858ef1025c0be4324a47e0853b5efb6b96e51b4a2a2aa4f116d9e02",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "cointegrated_rubert-tiny-toxicity",
+      "sha256": "3acf3c98b1f80cfd8cdbf45178993636be89c320df713cbcac0f25d31ab36b3d",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "RajuKandasamy_tamillama_tiny_30m",
+      "sha256": "02b793d3d6f1d73841208077c361fb41b1d87cba8c957537ff61c69f884246a6",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "typeform_mobilebert-uncased-mnli",
+      "sha256": "23665b8297e7dd121f8a6380566c9214b3c9705f25c00c34c9972c4b9f9ea961",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "sentence-transformers_all-MiniLM-L6-v1",
+      "sha256": "1c32ef85f7d91b0c792be77e8ba461b216ed9500f641f51415733b6b90fe4d05",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "MoritzLaurer_xtremedistil-l6-h256-zeroshot-v1.1-all-33",
+      "sha256": "98b31cbc8fabf656af6c1e2225527a024a5ffa62e0e8796184d0091870d935a2",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "Lihuchen_pearl_small",
+      "sha256": "dd1867e18b7eb11086668e591c725ea5de8716e8998c8f477b244067c1c6df8b",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "Aniemore_rubert-tiny2-russian-emotion-detection",
+      "sha256": "c4dd562e8e2b5e6e4f22ef8d8c819de2fb94ca9ba9c9233b5dd3c34aa0f82618",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "sentence-transformers_msmarco-MiniLM-L6-v3",
+      "sha256": "5e3a29b2fc7bce0f6b0bdd35dcd6e6d1c1dd5fc191561d0b9c5d3aadf3891e0b",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "microsoft_MiniLM-L12-H384-uncased",
+      "sha256": "bcc275fe3e183a68e629c55355be77ef51c2ee780990173ca8f8edc65152fae7",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "amedvedev_bert-tiny-cognitive-bias",
+      "sha256": "fce267317649e8f40bf3952094cecada2c178d6bf1c3c79401ced957c15923bc",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "HuggingFaceM4_tiny-random-LlamaForCausalLM",
+      "sha256": "ead8d18a1b6d6948761f23fec1647cda5b6af3dbdd23a30769824ab26f4c30b8",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "Supabase_gte-small",
+      "sha256": "344099675ecefb2dc886e6dcc1fba7ccc0c66dbf455e8aa289035ee8d688f125",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "sentence-transformers_multi-qa-MiniLM-L6-cos-v1",
+      "sha256": "df507ec1743de52aa0a1b401183c5fd8ca18e846689421ea6c94cae014d9b26b",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "nreimers_MiniLM-L6-H384-uncased",
+      "sha256": "ab5048f3effe06bccb318ee923df90cba4e918b309a0ac6b00c654ede0768b87",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "Titeiiko_OTIS-Official-Spam-Model",
+      "sha256": "834c4b5dbc4a8aa3cbe5b56e380932c0e152e43ceeaf219a36ae98d66fbbfacb",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "edbeeching_decision-transformer-gym-hopper-expert",
+      "sha256": "4c16a90bfc8bcca09a015021250df79d6d1450e85ac01b7ca5ac549318695893",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "cointegrated_rubert-tiny",
+      "sha256": "7b46f70960011906bf9be3c46ad7490bada3845ddb5c2d7a8830c9517ee66071",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "TristanBehrens_js-fakes-4bars",
+      "sha256": "45ee67cbca1e3005006503fbd2068873b8b1a064ece8880edcc7300a3e221ae1",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "magic-leap-community_superpoint",
+      "sha256": "ee46dc3eaf52d1f65d15a4953f30573526e34031a4c26268fa3867614ef1b65c",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "mrm8488_bert-mini-finetuned-age_news-classification",
+      "sha256": "1a5001bf5af86af84a07a2e7a986062643cf47297a8c632195483e3d4bde31ce",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "ai-guru_lakhclean_mmmtrack_4bars_d-2048",
+      "sha256": "42bda0df7ff96166407c5c6602126716e103eba0a18614c247f6e2fc1d0e08b2",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "EleutherAI_pythia-14m-deduped",
+      "sha256": "2cc82c70e5ff5ec456c00ff3023e321546a04a1626806606057efb4f4d407f13",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "Djacon_rubert-tiny2-russian-emotion-detection",
+      "sha256": "5d8f3bf465322538b595ebf8c62847602d32921655b608305c42f502fc76dfcb",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "Maykeye_TinyLLama-v0",
+      "sha256": "ae959aaff509d66f9dd85c53f16481463286950a21e0349c7793f8412fc4a094",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "sentence-transformers_paraphrase-MiniLM-L3-v2",
+      "sha256": "6b0a1c48c2490f85381505b1d7c7327d0c4dc31c285880f37715a71514f5dd6c",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "jinaai_jina-embeddings-v2-small-en",
+      "sha256": "54c94f036922a64af7912b14358b79051d269dc43a049189362f291ba33491b9",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "avsolatorio_GIST-small-Embedding-v0",
+      "sha256": "b3fd40257aa407bb4e907d7cbd0ed617b825bef549bc2c0c00b5131618ab44e9",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "concedo_OPT-19M-ChatSalad",
+      "sha256": "7624a5951b915ed3e73acf2550985ae9531c5a3498716c53183d0b853e5e7821",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "cointegrated_rubert-tiny2-cedr-emotion-detection",
+      "sha256": "b43e25fc5e624a0b3d8b14bfb488f6939f23440e07adbf46b7deb1a0ed0cb309",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "cross-encoder_stsb-TinyBERT-L4",
+      "sha256": "c81276416deab713ab841b7d4afa2484270d5d23d735d1baa27a7bc1501080e2",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "shahrukhx01_bert-mini-finetune-question-detection",
+      "sha256": "21c75d631b9856288316df0751a1a29bcc1e204cfc48968eab2bde760ae9c72a",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "sentence-transformers_paraphrase-MiniLM-L6-v2",
+      "sha256": "5d716de760acbdc09e79a11e718c5606e0812b6aeb76c6664cba876d174e3ecd",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "microsoft_xtremedistil-l6-h256-uncased",
+      "sha256": "5530fdc0e6626d8fb88f29173fa6c8c40b96a21263beb9f38ec2e9fb58062dd7",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    },
+    {
+      "kind": "legacy-validation-sha-in-fp-corpus",
+      "repo": "roneneldan_TinyStories-1M",
+      "sha256": "07f9609ea882b8163ff3b23d40e2b82cb715d409631beb15c84b164f3877dae7",
+      "note": "same file bytes were traced by the legacy oracle validation and appear in the FP corpus"
+    }
+  ],
+  "verdict": "OVERLAP"
+}

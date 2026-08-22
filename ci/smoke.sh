@@ -42,7 +42,7 @@ fi
 echo "==> generating torch corpus"
 mkdir -p ci/corpus/torch/benign ci/corpus/torch/malicious
 "$BACKEND" run --rm \
-  -v "$PWD:/repo:Z" \
+  -v "$PWD:/repo:z" \
   --entrypoint python3.13 \
   regenbench/base:latest \
   /repo/ci/generate_corpus_torch.py /repo/ci/corpus/torch

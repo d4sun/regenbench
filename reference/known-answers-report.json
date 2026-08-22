@@ -1,0 +1,201 @@
+{
+  "generated_at": "2026-08-22T13:15:25Z",
+  "mode": "check",
+  "scanners": [
+    "picklescan",
+    "modelscan",
+    "fickling",
+    "modeltracer"
+  ],
+  "matrix": {
+    "benign_dict.pkl": {
+      "picklescan": "benign",
+      "modelscan": "benign",
+      "fickling": "benign",
+      "modeltracer": "benign"
+    },
+    "benign_strings.pkl": {
+      "picklescan": "benign",
+      "modelscan": "benign",
+      "fickling": "benign",
+      "modeltracer": "benign"
+    },
+    "benign_torch.pt": {
+      "picklescan": "benign",
+      "modelscan": "benign",
+      "fickling": "error",
+      "modeltracer": "benign"
+    },
+    "bypass_nested_loads.pkl": {
+      "picklescan": "malicious",
+      "modelscan": "benign",
+      "fickling": "malicious",
+      "modeltracer": "malicious"
+    },
+    "bypass_nested_loads_in_torch.pt": {
+      "picklescan": "malicious",
+      "modelscan": "malicious",
+      "fickling": "error",
+      "modeltracer": "malicious"
+    },
+    "evil_builtins_eval.pkl": {
+      "picklescan": "malicious",
+      "modelscan": "benign",
+      "fickling": "malicious",
+      "modeltracer": "malicious"
+    },
+    "evil_global_in_torch.pt": {
+      "picklescan": "malicious",
+      "modelscan": "malicious",
+      "fickling": "error",
+      "modeltracer": "malicious"
+    },
+    "evil_global_os_system.pkl": {
+      "picklescan": "malicious",
+      "modelscan": "benign",
+      "fickling": "malicious",
+      "modeltracer": "malicious"
+    },
+    "evil_inst_form.pkl": {
+      "picklescan": "malicious",
+      "modelscan": "benign",
+      "fickling": "malicious",
+      "modeltracer": "error"
+    },
+    "evil_stack_global.pkl": {
+      "picklescan": "malicious",
+      "modelscan": "benign",
+      "fickling": "malicious",
+      "modeltracer": "malicious"
+    },
+    "malformed_bad_opcode.pkl": {
+      "picklescan": "benign",
+      "modelscan": "benign",
+      "fickling": "malicious",
+      "modeltracer": "error"
+    },
+    "malformed_truncated.pkl": {
+      "picklescan": "benign",
+      "modelscan": "benign",
+      "fickling": "malicious",
+      "modeltracer": "error"
+    }
+  },
+  "upstream_crosscheck": {
+    "picklescan": {
+      "benign_dict.pkl": {
+        "upstream": "benign",
+        "upstream_rc": 0,
+        "wrapper": "benign",
+        "agree": true
+      },
+      "benign_strings.pkl": {
+        "upstream": "benign",
+        "upstream_rc": 0,
+        "wrapper": "benign",
+        "agree": true
+      },
+      "bypass_nested_loads.pkl": {
+        "upstream": "malicious",
+        "upstream_rc": 1,
+        "wrapper": "malicious",
+        "agree": true
+      },
+      "evil_builtins_eval.pkl": {
+        "upstream": "malicious",
+        "upstream_rc": 1,
+        "wrapper": "malicious",
+        "agree": true
+      },
+      "evil_global_os_system.pkl": {
+        "upstream": "malicious",
+        "upstream_rc": 1,
+        "wrapper": "malicious",
+        "agree": true
+      },
+      "evil_inst_form.pkl": {
+        "upstream": "malicious",
+        "upstream_rc": 1,
+        "wrapper": "malicious",
+        "agree": true
+      },
+      "evil_stack_global.pkl": {
+        "upstream": "malicious",
+        "upstream_rc": 1,
+        "wrapper": "malicious",
+        "agree": true
+      },
+      "malformed_bad_opcode.pkl": {
+        "upstream": "benign",
+        "upstream_rc": 0,
+        "wrapper": "benign",
+        "agree": true
+      },
+      "malformed_truncated.pkl": {
+        "upstream": "benign",
+        "upstream_rc": 0,
+        "wrapper": "benign",
+        "agree": true
+      }
+    },
+    "fickling": {
+      "benign_dict.pkl": {
+        "upstream": "benign",
+        "upstream_rc": 0,
+        "wrapper": "benign",
+        "agree": true
+      },
+      "benign_strings.pkl": {
+        "upstream": "benign",
+        "upstream_rc": 0,
+        "wrapper": "benign",
+        "agree": true
+      },
+      "bypass_nested_loads.pkl": {
+        "upstream": "malicious",
+        "upstream_rc": 1,
+        "wrapper": "malicious",
+        "agree": true
+      },
+      "evil_builtins_eval.pkl": {
+        "upstream": "malicious",
+        "upstream_rc": 1,
+        "wrapper": "malicious",
+        "agree": true
+      },
+      "evil_global_os_system.pkl": {
+        "upstream": "malicious",
+        "upstream_rc": 1,
+        "wrapper": "malicious",
+        "agree": true
+      },
+      "evil_inst_form.pkl": {
+        "upstream": "malicious",
+        "upstream_rc": 1,
+        "wrapper": "malicious",
+        "agree": true
+      },
+      "evil_stack_global.pkl": {
+        "upstream": "malicious",
+        "upstream_rc": 1,
+        "wrapper": "malicious",
+        "agree": true
+      },
+      "malformed_bad_opcode.pkl": {
+        "upstream": "malicious",
+        "upstream_rc": 1,
+        "wrapper": "malicious",
+        "agree": true
+      },
+      "malformed_truncated.pkl": {
+        "upstream": "malicious",
+        "upstream_rc": 1,
+        "wrapper": "malicious",
+        "agree": true
+      }
+    }
+  },
+  "gguf_holdout": [],
+  "failures": [],
+  "ok": true
+}

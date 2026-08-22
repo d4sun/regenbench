@@ -1,0 +1,310 @@
+{
+  "task": "oracle-fp-eval-disjoint",
+  "model_dir": "real_benign_corpus/oracle-calibrated/v2-disjoint",
+  "role": "eval",
+  "n": 48,
+  "false_positives": 5,
+  "errors": 1,
+  "fp_rate": 0.1042,
+  "score_stats": {
+    "n": 47,
+    "min": -0.514,
+    "median": 0.0904,
+    "max": 0.2136,
+    "mean": 0.0582,
+    "std": 0.1298,
+    "spread": 0.7276,
+    "positive_rate": 0.8936
+  },
+  "duration_s": 237.8,
+  "results": [
+    {
+      "artifact": "feature-extraction__BAAI_bge-small-en.bin",
+      "verdict": "benign",
+      "decision_score": 0.07890164834409319,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__BAAI_bge-small-zh.bin",
+      "verdict": "benign",
+      "decision_score": 0.0022814520256668747,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__EleutherAI_pythia-14m-deduped.bin",
+      "verdict": "benign",
+      "decision_score": 0.090392614217635,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__MoritzLaurer_xtremedistil-l6-h256-zeroshot-v1.1-all-33.bin",
+      "verdict": "benign",
+      "decision_score": 0.07786031273886351,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__RajuKandasamy_tamillama_tiny_30m.bin",
+      "verdict": "benign",
+      "decision_score": 0.1691054554535043,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__TaylorAI_bge-micro.bin",
+      "verdict": "benign",
+      "decision_score": 0.08292614933234543,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__TaylorAI_bge-micro-v2.bin",
+      "verdict": "benign",
+      "decision_score": 0.0836852325209505,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__TaylorAI_gte-tiny.bin",
+      "verdict": "benign",
+      "decision_score": 0.13203953028887883,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__Vsevolod_company-names-similarity-sentence-transformer.bin",
+      "verdict": "benign",
+      "decision_score": 0.0976290974303391,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__ai-guru_lakhclean_mmmtrack_4bars_d-2048.bin",
+      "verdict": "malicious",
+      "decision_score": -0.029512144974924714,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-classification__amedvedev_bert-tiny-cognitive-bias.bin",
+      "verdict": "benign",
+      "decision_score": 0.010938449574825704,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__arman-bd_guppylm-9M.bin",
+      "verdict": "benign",
+      "decision_score": 0.08901347493354406,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__bergum_xtremedistil-l6-h384-go-emotion.bin",
+      "verdict": "benign",
+      "decision_score": 0.11544576475756352,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__cointegrated_rubert-tiny.bin",
+      "verdict": "benign",
+      "decision_score": 0.0473847110193637,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__cointegrated_rubert-tiny-sentiment-balanced.bin",
+      "verdict": "benign",
+      "decision_score": 0.05483013996752395,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__cointegrated_rubert-tiny2-cedr-emotion-detection.bin",
+      "verdict": "benign",
+      "decision_score": 0.06616012403588867,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__cross-encoder_ms-marco-MiniLM-L12-v2.bin",
+      "verdict": "benign",
+      "decision_score": 0.12698176248417292,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__cross-encoder_ms-marco-TinyBERT-L2-v2.bin",
+      "verdict": "benign",
+      "decision_score": 0.04794254659413033,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__facebook_encodec_48khz.bin",
+      "verdict": "benign",
+      "decision_score": 0.13538349320105425,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__google_reformer-crime-and-punishment.bin",
+      "verdict": "benign",
+      "decision_score": 0.020686044369796264,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__ibm-granite_granite-embedding-30m-english.bin",
+      "verdict": "benign",
+      "decision_score": 0.1302727067722418,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__ibm-granite_granite-embedding-small-english-r2.bin",
+      "verdict": "malicious",
+      "decision_score": -0.009153778146264946,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__jhu-clsp_ettin-encoder-32m.bin",
+      "verdict": "benign",
+      "decision_score": 0.10239794118363754,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__jinaai_jina-embedding-t-en-v1.bin",
+      "verdict": "benign",
+      "decision_score": 0.10402255055388787,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__jinaai_jina-embeddings-v2-small-en.bin",
+      "verdict": "malicious",
+      "decision_score": -0.010355596526420374,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-generation__jploski_retnet-mini-shakespeare.bin",
+      "verdict": "benign",
+      "decision_score": 0.07736588528377286,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__microsoft_MiniLM-L12-H384-uncased.bin",
+      "verdict": "malicious",
+      "decision_score": -0.5010204863210053,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-classification__microsoft_xtremedistil-l12-h384-uncased.bin",
+      "verdict": "benign",
+      "decision_score": 0.0945325970883415,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__microsoft_xtremedistil-l6-h384-uncased.bin",
+      "verdict": "benign",
+      "decision_score": 0.15091215743246789,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__monsoon-nlp_hindi-bert.bin",
+      "verdict": "malicious",
+      "decision_score": -0.5139877982879644,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-classification__mrm8488_bert-mini-finetuned-age_news-classification.bin",
+      "verdict": "benign",
+      "decision_score": 0.09077539962429992,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__mrm8488_bert-tiny-finetuned-sms-spam-detection.bin",
+      "verdict": "benign",
+      "decision_score": 0.023329190980654557,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__mrsinghania_asr-question-detection.bin",
+      "verdict": "benign",
+      "decision_score": 0.11963230033938888,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__ncfrey_ChemGPT-4.7M.bin",
+      "verdict": "benign",
+      "decision_score": 0.21357339181564505,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__pandalla_datatager_E-Commerce_review_extraction.bin",
+      "verdict": "benign",
+      "decision_score": 0.01368225632943787,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__roneneldan_TinyStories-1M.bin",
+      "verdict": "benign",
+      "decision_score": 0.09207514523815985,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__sentence-transformers_all-MiniLM-L12-v1.bin",
+      "verdict": "benign",
+      "decision_score": 0.07843125998087652,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__sentence-transformers_all-MiniLM-L12-v2.bin",
+      "verdict": "benign",
+      "decision_score": 0.11177001278837384,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__sentence-transformers_all-MiniLM-L6-v2.bin",
+      "verdict": "benign",
+      "decision_score": 0.09694321409365503,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__sentence-transformers_msmarco-MiniLM-L6-v3.bin",
+      "verdict": "benign",
+      "decision_score": 0.09595182275174574,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__sentence-transformers_multi-qa-MiniLM-L6-cos-v1.bin",
+      "verdict": "benign",
+      "decision_score": 0.13481080664361555,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__sentence-transformers_paraphrase-MiniLM-L6-v2.bin",
+      "verdict": "benign",
+      "decision_score": 0.09624860915060096,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__shahrukhx01_bert-mini-finetune-question-detection.bin",
+      "verdict": "benign",
+      "decision_score": 0.1004766643188848,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__shahrukhx01_bert-multitask-query-classifiers.bin",
+      "verdict": "benign",
+      "decision_score": 0.08905828290138151,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__shahrukhx01_question-vs-statement-classifier.bin",
+      "verdict": "benign",
+      "decision_score": 0.10065059685912181,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__somosnlp-hackathon-2022_electricidad-small-discriminator-finetuned-clasificacion-comentarios-suicidas.bin",
+      "verdict": "benign",
+      "decision_score": 0.11059414158794789,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__ssary_XLM-RoBERTa-German-sentiment.bin",
+      "verdict": "error",
+      "decision_score": null,
+      "exit_code": 2
+    },
+    {
+      "artifact": "text-classification__vineetsharma_customer-support-intent-albert.bin",
+      "verdict": "benign",
+      "decision_score": 0.04068787811552932,
+      "exit_code": 0
+    }
+  ]
+}

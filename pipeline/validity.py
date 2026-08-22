@@ -82,7 +82,7 @@ assert obj is not None
 """
             cmd = [
                 self.backend, "run", "--rm",
-                "-v", f"{host_dir}:/tmp:Z",
+                "-v", f"{host_dir}:/tmp:z",
                 self.image, "python3.13", "-c", container_script,
             ]
             try:
@@ -180,7 +180,7 @@ assert isinstance(obj, dict)
 """
             cmd = [
                 self.backend, "run", "--rm",
-                "-v", f"{temp_dir}:/tmp:Z",
+                "-v", f"{temp_dir}:/tmp:z",
                 self.image, "python3.13", "-c", container_script
             ]
 

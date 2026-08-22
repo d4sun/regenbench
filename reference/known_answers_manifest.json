@@ -1,0 +1,114 @@
+{
+  "updated_at": "2026-08-22T12:23:33Z",
+  "note": "Pinned panel-verdict matrix for hand-built known-answer corpus; regenerate via scripts/run_known_answers.py.",
+  "artifacts": {
+    "benign_dict.pkl": {
+      "sha256": "96c3cc41d0968f6fa4af77e6aadbeb6e445aaaa438039db047e3605863487a70",
+      "expected": {
+        "picklescan": "benign",
+        "modelscan": "benign",
+        "fickling": "benign",
+        "modeltracer": "benign"
+      }
+    },
+    "benign_strings.pkl": {
+      "sha256": "10b308607062a4beba7e23b85cbc9c97404c9b26356b2b5f0152ed856cd8bf8c",
+      "expected": {
+        "picklescan": "benign",
+        "modelscan": "benign",
+        "fickling": "benign",
+        "modeltracer": "benign"
+      }
+    },
+    "benign_torch.pt": {
+      "sha256": "9ae0936889390918fa0847f3619482de03307237faab3c1ee56e620700d484a6",
+      "expected": {
+        "picklescan": "benign",
+        "modelscan": "benign",
+        "fickling": "error",
+        "modeltracer": "benign"
+      }
+    },
+    "bypass_nested_loads.pkl": {
+      "sha256": "65601ddc57a6be1cfdc504999717bbe98b11796edfd86f92dd523d102106082b",
+      "expected": {
+        "picklescan": "malicious",
+        "modelscan": "benign",
+        "fickling": "malicious",
+        "modeltracer": "malicious"
+      }
+    },
+    "bypass_nested_loads_in_torch.pt": {
+      "sha256": "86a920f34fc74f3a0045ee7666572860add43f25114c97182173fbe9111b1066",
+      "expected": {
+        "picklescan": "malicious",
+        "modelscan": "malicious",
+        "fickling": "error",
+        "modeltracer": "malicious"
+      }
+    },
+    "evil_builtins_eval.pkl": {
+      "sha256": "a2da07302e3e3194dc746a7bf9b2874dd40ad7899942e61b6c0cff955963c94b",
+      "expected": {
+        "picklescan": "malicious",
+        "modelscan": "benign",
+        "fickling": "malicious",
+        "modeltracer": "malicious"
+      }
+    },
+    "evil_global_in_torch.pt": {
+      "sha256": "e8ea6c3a7d5bf7f941939353716361aeb8db2c3620fbb4b2e9e1656849590798",
+      "expected": {
+        "picklescan": "malicious",
+        "modelscan": "malicious",
+        "fickling": "error",
+        "modeltracer": "malicious"
+      }
+    },
+    "evil_global_os_system.pkl": {
+      "sha256": "ce05624833ef9cd4827b0d8f7b34a658f8e275c604bcabf919c1350975fc35ca",
+      "expected": {
+        "picklescan": "malicious",
+        "modelscan": "benign",
+        "fickling": "malicious",
+        "modeltracer": "malicious"
+      }
+    },
+    "evil_inst_form.pkl": {
+      "sha256": "4f1d498c0fa55174adcbceddf21c286b840ea67e344785a29fb2eaad3b8587cb",
+      "expected": {
+        "picklescan": "malicious",
+        "modelscan": "benign",
+        "fickling": "malicious",
+        "modeltracer": "error"
+      }
+    },
+    "evil_stack_global.pkl": {
+      "sha256": "b152ae33a1d4a93245b1133d40f5c450474c410ed44bcd0af687ac24eeb6ef49",
+      "expected": {
+        "picklescan": "malicious",
+        "modelscan": "benign",
+        "fickling": "malicious",
+        "modeltracer": "malicious"
+      }
+    },
+    "malformed_bad_opcode.pkl": {
+      "sha256": "15f0c34c72cc59fe1903e580fc90ac28a73261b3016da86c5cfcaed07d464228",
+      "expected": {
+        "picklescan": "benign",
+        "modelscan": "benign",
+        "fickling": "malicious",
+        "modeltracer": "error"
+      }
+    },
+    "malformed_truncated.pkl": {
+      "sha256": "a72211a517a4ff6068164ab2f7ed6b8d4c7c770cf821522626c6db3d7793f933",
+      "expected": {
+        "picklescan": "benign",
+        "modelscan": "benign",
+        "fickling": "malicious",
+        "modeltracer": "error"
+      }
+    }
+  }
+}

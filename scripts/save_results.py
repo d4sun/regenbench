@@ -15,8 +15,10 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import platform
 import shutil
 import sqlite3
+import subprocess
 import sys
 import time
 
@@ -27,6 +29,57 @@ REPORTS = [
     "docs/comparison-methodology.md",
     "docs/task3-demo.md",
 ]
+
+# Images whose build determines scanner behavior; their IDs are recorded so
+# any result set can be tied to exact container builds (Phase 6 provenance).
+PROVENANCE_IMAGES = [
+    "localhost/regenbench/base:latest",
+    "localhost/regenbench/picklescan:latest",
+    "localhost/regenbench/modelscan:latest",
+    "localhost/regenbench/fickling:latest",
+    "localhost/regenbench/modeltracer:latest",
+    "localhost/regenbench/dynahug:latest",
+    "localhost/regenbench/gguf:latest",
+]
+
+
+def _git_provenance() -> dict:
+    def _git(*args: str) -> str | None:
+        try:
+            r = subprocess.run(["git", *args], capture_output=True,
+                               text=True, timeout=10)
+        except (OSError, subprocess.TimeoutExpired):
+            return None
+        return r.stdout.strip() if r.returncode == 0 else None
+
+    commit = _git("rev-parse", "HEAD")
+    if commit is None:
+        return {"git_available": False}
+    dirty = bool(_git("status", "--porcelain"))
+    return {
+        "git_available": True,
+        "commit": commit,
+        "describe": _git("describe", "--tags", "--always"),
+        "branch": _git("rev-parse", "--abbrev-ref", "HEAD"),
+        "dirty_worktree": dirty,
+    }
+
+
+def _image_provenance(backend: str = "podman") -> dict:
+    images = {}
+    for image in PROVENANCE_IMAGES:
+        try:
+            r = subprocess.run([backend, "images", "--format",
+                                "{{.ID}} {{.Created}}", image],
+                               capture_output=True, text=True, timeout=15)
+        except (OSError, subprocess.TimeoutExpired):
+            continue
+        if r.returncode != 0 or not r.stdout.strip():
+            images[image] = {"present": False}
+            continue
+        iid, _, created = r.stdout.strip().partition(" ")
+        images[image] = {"present": True, "id": iid, "created": created}
+    return images
 
 
 def _runs(conn: sqlite3.Connection) -> list[dict]:
@@ -122,6 +175,12 @@ def main() -> int:
     # Structured summary
     summary: dict = {
         "generated_at": stamp,
+        "provenance": {
+            "git": _git_provenance(),
+            "images": _image_provenance(),
+            "python": platform.python_version(),
+            "platform": platform.platform(),
+        },
         "corpus": {
             "torch_benign_files": corpus_count,
             "gguf_benign_files": gguf_count,
@@ -179,10 +238,26 @@ def main() -> int:
         f"- Benign GGUF corpus files: {gguf_count}",
         f"- MalHug real malicious corpus files: {malhug_count}",
         "",
-        "## Campaigns", "",
-        "| Run | Type | Replicate | Candidates | Valid | Confirmed Bypasses |",
-        "| :--- | :--- | :---: | :---: | :---: | :---: |",
+        "## Provenance", "",
     ]
+    prov = summary.get("provenance", {})
+    git = prov.get("git", {})
+    if git.get("git_available"):
+        lines.append(f"- Commit: `{git.get('commit')}`"
+                     + (" (dirty worktree)" if git.get("dirty_worktree") else ""))
+        if git.get("describe"):
+            lines.append(f"- Tag: `{git['describe']}`")
+    else:
+        lines.append("- Git metadata unavailable")
+    present_imgs = {k: v for k, v in prov.get("images", {}).items() if v.get("present")}
+    for image, meta in sorted(present_imgs.items()):
+        lines.append(f"- Image `{image}`: {meta['id'][:12]} (built {meta['created']})")
+    missing = [k for k, v in prov.get("images", {}).items() if not v.get("present")]
+    for image in missing:
+        lines.append(f"- Image `{image}`: **not built**")
+    lines += ["", "## Campaigns", "",
+              "| Run | Type | Replicate | Candidates | Valid | Confirmed Bypasses |",
+              "| :--- | :--- | :---: | :---: | :---: | :---: |"]
     for r in summary.get("runs", []):
         lines.append(
             f"| {r['run_id'][:28]} | {r['campaign_type']} | {r['replicate_num']} "

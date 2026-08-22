@@ -4,8 +4,51 @@ on:
   push:
     branches: [main]
   pull_request:
+  # Quarterly dependency re-pin review (verify_pins.py against upstream).
+  schedule:
+    - cron: "0 9 1 */3 *"
 
 jobs:
+  unit-tests:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      # Container-dependent validity tests are skipped automatically when
+      # podman/the images are absent; everything else runs hermetically.
+      - name: Run unit/property suite
+        run: python3 -m unittest discover -s tests -p "test_*.py" -v
+
+      - name: Mount-flag guard (:z/:Z static check)
+        run: python3 ci/check_mount_flags.py
+
+      - name: Known-answer verdict matrix
+        run: |
+          sudo apt-get update && sudo apt-get install -y podman
+          ./containers/base/build.sh
+          ./containers/picklescan/build.sh
+          ./containers/modelscan/build.sh
+          ./containers/fickling/build.sh
+          ./containers/modeltracer/build.sh
+          python3 scripts/run_known_answers.py --gguf-holdout 4
+
+  verify-pins:
+    # Network job: confirms pinned scanner commits/tags/env vars still match
+    # upstream. Scheduled quarterly via the trigger above.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    if: github.event_name == 'schedule'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Verify upstream pins
+        run: python3 scripts/verify_pins.py
+
   smoke:
     runs-on: ubuntu-24.04
     timeout-minutes: 90

@@ -150,6 +150,15 @@ def main() -> int:
     ap.add_argument("--nu", type=float, default=0.01)
     ap.add_argument("--holdout", type=float, default=0.2,
                     help="fraction held out for validation")
+    ap.add_argument("--split-file", default=None,
+                    help="oracle-split.json from check_oracle_disjointness.py; "
+                         "restrict tracing to its 'train' or 'eval' repo list")
+    ap.add_argument("--split-role", choices=["train", "eval"], default="train",
+                    help="which side of --split-file to trace")
+    ap.add_argument("--traces-only", action="store_true",
+                    help="collect and dump traces.json, then exit without "
+                         "fitting anything (use for diagnostics on eval-side "
+                         "data; guarantees no model is ever fit on it)")
     args = ap.parse_args()
 
     global SYSCALLS_NAMES
@@ -165,6 +174,28 @@ def main() -> int:
     if not files:
         print(f"[calibrate-oracle] no artifacts under {args.corpus_dir}")
         return 1
+
+    split_repos = None
+    if args.split_file:
+        with open(args.split_file) as f:
+            split = json.load(f)
+        split_repos = set(split[args.split_role])
+        # Flat layout: <cluster>__<repo>.bin; nested: .../<repo>/<file>
+        def repo_of(path: str) -> str:
+            stem = os.path.basename(path)
+            for ext in (".pt", ".pth", ".bin"):
+                if stem.endswith(ext):
+                    stem = stem[: -len(ext)]
+                    break
+            return stem.split("__", 1)[1] if "__" in stem else stem
+        before = len(files)
+        files = [p for p in files if repo_of(p) in split_repos]
+        print(f"[calibrate-oracle] split '{args.split_role}': {before} -> "
+              f"{len(files)} files ({len(split_repos)} repos listed)")
+        if not files:
+            print("[calibrate-oracle] no corpus files match the split role")
+            return 1
+
     random.seed(args.seed)
     random.shuffle(files)
     files = files[: args.sample]
@@ -179,7 +210,13 @@ def main() -> int:
             continue
         res["features"] = build_features(res["counts"])
         res["path"] = p
-        res["repo"] = os.path.basename(os.path.dirname(p))
+        stem = os.path.basename(p)
+        for ext in (".pt", ".pth", ".bin"):
+            if stem.endswith(ext):
+                stem = stem[: -len(ext)]
+                break
+        res["repo"] = stem.split("__", 1)[1] if "__" in stem else \
+            os.path.basename(os.path.dirname(p))
         traced.append(res)
         print(f"  [{i}/{len(files)}] {res['repo']:<52} ok "
               f"({round(res['duration'], 1)}s)")
@@ -191,6 +228,20 @@ def main() -> int:
         return 1
     print(f"[calibrate-oracle] collected {len(traced)} traces "
           f"({failed} failed/timed-out)")
+
+    # Persist raw traces so hyperparameter sweeps / feature diagnostics can be
+    # re-run offline without re-tracing containers (Plan Phase 4.2/4.3).
+    os.makedirs(args.out, exist_ok=True)
+    with open(os.path.join(args.out, "traces.json"), "w") as f:
+        json.dump([{"path": s["path"], "repo": s["repo"],
+                    "counts": s["counts"], "features": s["features"]}
+                   for s in traced], f)
+        f.write("\n")
+
+    if args.traces_only:
+        print(f"[calibrate-oracle] --traces-only: {len(traced)} traces written; "
+              f"no model fitted (out dir contains no OCSVM artifacts)")
+        return 0
 
     import joblib
     import numpy as np
@@ -248,11 +299,14 @@ def main() -> int:
         "backend": args.backend,
         "gamma": args.gamma,
         "nu": args.nu,
+        "split_file": args.split_file,
+        "split_role": args.split_role if args.split_file else None,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "corpus": args.corpus_dir,
         "traced_total": len(traced),
         "train_n": len(train),
         "holdout_n": len(hold),
+        "train_repos": sorted(s["repo"] for s in train),
         "train": summ(train_scores),
         "holdout": summ(hold_scores),
         "trace_duration_mean": round(

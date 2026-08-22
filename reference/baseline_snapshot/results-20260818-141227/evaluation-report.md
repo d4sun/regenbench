@@ -35,13 +35,6 @@ Consistency between scanners and our dynamic behavior-based oracle (DynaHug).
 | **ModelTracer** | 96 | 0 | 0.0% |
 | **DynaHug (Calibrated Oracle)** | 96 | 61 | 63.5% |
 
-> **Superseded (2026-08-22)**: the DynaHug row above was computed on a
-> calibration corpus that overlapped the oracle's own training data (4 models
-> shared with calibration holdout, 60 legacy-validation sha matches). On a
-> strictly disjoint resplit with retuned hyperparameters the FP rate is
-> **10.4% (5/48)**. See `docs/oracle-correctness-report.md` and use
-> `real_benign_corpus/oracle-calibrated/v2-disjoint` as the oracle model dir.
-
 **Ground truth note**: every checkpoint is benign by construction (downloaded from a verified public HuggingFace repository, non-gated, unmodified). Benignness is NOT defined by any detector's verdict.
 
 **DynaHug oracle characterization**: the embedded text-generation OCSVM (upstream DynaHug 8ff8174, gamma=0.1 kernel=rbf nu=0.01) returns a constant decision score of approximately -rho (-1.349) for every loadable checkpoint in this environment -- real benign files and payload-carrying fuzz candidates alike -- because our sandbox traces 10-100x the syscall counts of the upstream training environment, so every input lands outside the learned support region (see docs/oracle-calibration-deviation.md). This suite therefore runs the environment-calibrated oracle (scripts/calibrate_oracle.py, fit on this environment's strace profiles), which restores a discriminative decision score and a measured 63.5% FP rate on the 96-model benign corpus. RQ3 reports this honestly rather than filtering the corpus by oracle verdict (ground truth is provenance-based).

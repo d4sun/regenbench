@@ -46,9 +46,14 @@ def main() -> int:
         return emit({**base, "target": target, "raw_output": f"Path {target} does not exist"})
 
     try:
+        # 180s: the reference reader is O(n) in vocabulary size and real
+        # crawled tokenizers (e.g. gemma-4 vocab, 15MB string array) take
+        # >70s to parse+render. 60s produced spurious reference-loader-timeout
+        # errors on legitimate benign models; 180s keeps ~2.4x headroom while
+        # still catching true runaway loaders.
         proc = subprocess.run(
             ["python3.13", LOADER, target],
-            capture_output=True, text=True, timeout=60,
+            capture_output=True, text=True, timeout=180,
         )
     except subprocess.TimeoutExpired:
         return emit({**base, "target": target,

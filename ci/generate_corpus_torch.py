@@ -9,7 +9,7 @@ writes into the mounted repo path ci/corpus/torch/.
     malicious/malicious.pt  a __reduce__ payload invoking os.system (flagged)
 
 Run (from repo root), using the base image that ships torch:
-    podman run --rm -v "$PWD:/repo:Z" --entrypoint python3.13 \
+    podman run --rm -v "$PWD:/repo:z" --entrypoint python3.13 \
         regenbench/base:0.2.0 /repo/ci/generate_corpus_torch.py /repo/ci/corpus/torch
 
 The oracle asserts `malicious` (exit 1) on both, because the corpus is

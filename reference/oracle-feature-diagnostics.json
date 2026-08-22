@@ -1,0 +1,70 @@
+{
+  "task": "oracle-feature-diagnostics",
+  "train_traces": "real_benign_corpus/oracle-calibrated/text-generation-v2/traces.json",
+  "eval_traces": "real_benign_corpus/oracle-traces/eval-half/traces.json",
+  "volume_train": {
+    "n": 47,
+    "min": 25067.0,
+    "p25": 25163.0,
+    "median": 25236.0,
+    "mean": 25321.1,
+    "p75": 25334.0,
+    "max": 26734.0
+  },
+  "volume_eval": {
+    "n": 47,
+    "min": 25061.0,
+    "p25": 25184.0,
+    "median": 25264.0,
+    "mean": 25349.3,
+    "p75": 25431.0,
+    "max": 26779.0
+  },
+  "train_p05_p95_band": [
+    25070,
+    25955
+  ],
+  "eval_in_band_fraction": 0.8936,
+  "median_ratio_eval_over_train": 1.001,
+  "top_syscalls_train": {
+    "newfstatat": 13432,
+    "read": 2288,
+    "fstat": 2249,
+    "lseek": 2093,
+    "openat": 1287,
+    "close": 1243,
+    "ioctl": 1028,
+    "brk": 632
+  },
+  "top_syscalls_eval": {
+    "newfstatat": 13432,
+    "read": 2324,
+    "fstat": 2249,
+    "lseek": 2101,
+    "openat": 1287,
+    "close": 1243,
+    "ioctl": 1028,
+    "brk": 635
+  },
+  "score_vs_volume": {
+    "n_pairs": 47,
+    "spearman_volume_score": 0.3544,
+    "volume_p25": 25168,
+    "positive_volume_span": [
+      25061,
+      25717
+    ],
+    "nonpositive_volume_span": [
+      25066,
+      26779
+    ],
+    "positives_at_or_below_p25": 0.2143,
+    "fp_models": [
+      "ibm-granite_granite-embedding-small-english-r2",
+      "microsoft_MiniLM-L12-H384-uncased",
+      "jinaai_jina-embeddings-v2-small-en",
+      "ai-guru_lakhclean_mmmtrack_4bars_d-2048",
+      "monsoon-nlp_hindi-bert"
+    ]
+  }
+}
