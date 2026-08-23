@@ -32,6 +32,7 @@ import time
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+from pipeline.opcodes import parse_pickle
 from pipeline.generator import CandidateGenerator
 from pipeline.runner import Runner, Config
 from pipeline.validity import ValidityOracle
@@ -43,13 +44,17 @@ from pipeline.db import (
     log_fitness,
 )
 from pipeline.comparator import check_bypass
-from pipeline.fitness import compute_fitness
-from pipeline.feedback import CoverageTracker, FeedbackController
+from pipeline.evasion import select_strategies as select_evasion_strategies
+from pipeline.fitness import compute_fitness, compute_fitness_multi
+from pipeline.feedback import CoverageTracker, FeedbackController, NoveltyTracker
 from pipeline.registry import load_registry
 from pipeline.templates import FAMILIES, FAMILY_LABELS
 
 DEFAULT_BASE = "ci/corpus/torch/benign/benign.pt"
-PANEL_SCANNERS = ["picklescan", "fickling", "modelscan", "modeltracer"]
+# Static panel capable of analyzing torch-zip artifacts. ModelTracer is
+# dynamic (strace) and excluded from RQ1 static-evasion measurement; add it
+# explicitly via --panel-scanners when behavioral tracing is wanted.
+PANEL_SCANNERS = ["picklescan", "fickling", "modelscan"]
 
 
 def parse_args() -> argparse.Namespace:
@@ -89,6 +94,16 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--attack-families", default=",".join(FAMILIES),
                     help="comma-separated seed attack families to sample across "
                          f"(default: {','.join(FAMILIES)})")
+    ap.add_argument("--evasion-mode", choices=["adaptive", "random", "off"],
+                    default="off",
+                    help="Phase-1 signature-evasion pipeline: 'adaptive' lets "
+                         "guided feedback pick strategy subsets, 'random' "
+                         "samples uniformly (unguided ablation baseline), "
+                         "'off' disables (legacy behaviour)")
+    ap.add_argument("--evasion-strategies", default=None,
+                    help="comma-separated fixed strategy subset "
+                         "(stack_global_encoding,payload_obfuscation,"
+                         "indirect_chain,nested_loads_wrap); overrides mode")
     ap.add_argument("--time-budget-hours", type=float, default=24.0,
                     help="bounded-pilot time budget; the campaign stops after this "
                          "elapses even if rounds remain")
@@ -175,6 +190,31 @@ def run_campaign(args: argparse.Namespace) -> int:
                                     timeout=args.validity_timeout)
         tracker = CoverageTracker(db_path, run_id=run_id)
         controller = FeedbackController()
+        novelty = NoveltyTracker()
+
+        # Fixed strategy subset (--evasion-strategies) wins over mode logic.
+        fixed_strategies: list[str] | None = None
+        if args.evasion_strategies:
+            from pipeline.evasion import STRATEGIES as _S
+            requested = [s.strip() for s in args.evasion_strategies.split(",") if s.strip()]
+            unknown = [s for s in requested if s not in _S]
+            if unknown:
+                print(f"[campaign] error: unknown evasion strategies {unknown} "
+                      f"(valid: {sorted(_S)})")
+                return 1
+            fixed_strategies = requested
+
+        def _pick_strategies() -> list[str]:
+            if fixed_strategies is not None:
+                return list(fixed_strategies)
+            if args.evasion_mode == "off":
+                return []
+            import random as _r
+            if args.evasion_mode == "adaptive" and args.mode == "guided":
+                # Bias subset size upward as flagged-callable pressure grows.
+                base_k = 1 + (1 if controller.flagged_callables else 0)
+                return select_evasion_strategies(random, k=base_k)
+            return select_evasion_strategies(random)
 
         round_summaries = []
         budget_exhausted = False
@@ -218,6 +258,16 @@ def run_campaign(args: argparse.Namespace) -> int:
 
                 trigger_file = os.path.join(temp_dir, f"trigger_{r}_{i}.txt")
                 payload = f"with open('{trigger_file}', 'w') as f: f.write('1')"
+                cand_strategies = _pick_strategies()
+                # Splice transport whenever evasion research is active, even
+                # when the sampled strategy subset is empty: falling back to
+                # the legacy loads-wrap would re-introduce the flagged
+                # _pickle.loads signature at random.
+                cand_transport = (
+                    "splice"
+                    if (args.evasion_mode != "off" or fixed_strategies is not None)
+                    else None
+                )
 
                 # Feedback-controlled mutation parameters. In guided mode the
                 # controller's probs (from the previous round's fitness) drive
@@ -242,6 +292,8 @@ def run_campaign(args: argparse.Namespace) -> int:
                         arg_fuzz_prob=arg_fuzz_prob,
                         stack_prob=0.05,
                         attack_family=attack_family,
+                        evasion_strategies=cand_strategies,
+                        injection_transport=cand_transport,
                     )
                 except ValueError as e:
                     # Unsupported callable (e.g. runpy.run_module cannot execute
@@ -260,13 +312,15 @@ def run_campaign(args: argparse.Namespace) -> int:
                         arg_fuzz_prob=arg_fuzz_prob,
                         stack_prob=0.05,
                         attack_family=attack_family,
+                        evasion_strategies=cand_strategies,
+                        injection_transport=cand_transport,
                     )
 
                 cand_path = os.path.join(round_dir, f"candidate_{i}.pt")
                 with open(cand_path, "wb") as f:
                     f.write(cand_bytes)
                 candidates.append((cand_path, cand_bytes, chosen_callable,
-                                   trigger_file, attack_family))
+                                   trigger_file, attack_family, cand_strategies))
 
             print(f"Generated {len(candidates)} candidate checkpoints "
                   f"(families: {family_counts}).")
@@ -290,12 +344,15 @@ def run_campaign(args: argparse.Namespace) -> int:
             round_results = []
             bypasses_cnt = 0
             valid_cnt = 0
+            evasion_hits: dict[str, int] = {}
 
-            for filepath, cand_bytes, chosen_callable, trigger_file, attack_family in candidates:
+            for filepath, cand_bytes, chosen_callable, trigger_file, attack_family, cand_strategies in candidates:
                 cand_results = results_by_file.get(filepath, [])
                 is_valid = oracle_val.validate_torch(cand_bytes, trigger_file)
 
                 panel_verdicts = []
+                scanner_verdicts: dict[str, str] = {}
+                matched_rules: list[str] = []
                 oracle_verdict = "benign"
                 decision_score = 0.0
                 for r_scan in cand_results:
@@ -307,10 +364,27 @@ def run_campaign(args: argparse.Namespace) -> int:
                         # Fail-closed: a scanner that errors (parse failure, scan
                         # timeout) is recorded as "error", never as "benign", so
                         # an errored scanner cannot count as "evaded".
-                        panel_verdicts.append(r_scan.verdict or "error")
+                        v = r_scan.verdict or "error"
+                        scanner_verdicts[r_scan.scanner] = v
+                        panel_verdicts.append(v)
+                        if r_scan.matched_rules:
+                            matched_rules.extend(r_scan.matched_rules)
 
-                if is_valid:
-                    valid_cnt += 1
+                use_multi_fitness = (
+                    is_valid
+                    and (args.evasion_mode != "off" or fixed_strategies is not None)
+                )
+                if use_multi_fitness:
+                    # Phase-2 fitness: graded per-scanner credit + novelty.
+                    sig_ops = _candidate_signature(filepath)
+                    nov = novelty.score(novelty.signature(
+                        sig_ops, frozenset(cand_strategies)))
+                    fit_score = compute_fitness_multi(
+                        scanner_verdicts=scanner_verdicts,
+                        decision_score=decision_score,
+                        novelty_score=nov if args.mode == "guided" else 0.0,
+                    )
+                elif is_valid:
                     fit_score = compute_fitness(
                         detected_count=sum(1 for v in panel_verdicts if v == "malicious"),
                         total_scanners=len(panel_verdicts),
@@ -319,9 +393,17 @@ def run_campaign(args: argparse.Namespace) -> int:
                 else:
                     fit_score = 0.0
 
+                if is_valid:
+                    valid_cnt += 1
+
                 is_bypass = is_valid and check_bypass(panel_verdicts, oracle_verdict)
                 if is_bypass:
                     bypasses_cnt += 1
+
+                evaded_scanners = [s for s, v in scanner_verdicts.items()
+                                   if v == "benign"]
+                for s in evaded_scanners:
+                    evasion_hits[s] = evasion_hits.get(s, 0) + 1
 
                 cand_id = hashlib.md5(filepath.encode("utf-8")).hexdigest()
                 log_candidate(
@@ -345,6 +427,9 @@ def run_campaign(args: argparse.Namespace) -> int:
                     "fitness": fit_score,
                     "evaded_all": all(v == "benign" for v in panel_verdicts),
                     "valid": is_valid,
+                    # Phase-2 grey-box keys (FeedbackController ingests them).
+                    "scanner_verdicts": scanner_verdicts,
+                    "matched_rules": matched_rules,
                 })
                 tracker.track_candidate(filepath)
 
@@ -362,11 +447,13 @@ def run_campaign(args: argparse.Namespace) -> int:
                 "opcode_cov": opcode_cov,
                 "callable_cov": callable_cov,
                 "families": family_counts,
+                "evasion_hits": dict(evasion_hits),
             })
 
             print(f"Round {r} Complete: Valid={valid_cnt}/{len(candidates)}, "
                   f"Bypasses={bypasses_cnt}, Mean Fitness={mean_fitness:.3f}, "
-                  f"Opcode Cov={opcode_cov * 100:.1f}%, Callable Cov={callable_cov * 100:.1f}%")
+                  f"Opcode Cov={opcode_cov * 100:.1f}%, Callable Cov={callable_cov * 100:.1f}%, "
+                  f"Per-scanner evasions={evasion_hits or '{}'}")
 
         # If the time budget cut the campaign short, correct the recorded
         # total so RQ2 censoring and completeness stats use the true count.
@@ -415,6 +502,24 @@ def run_campaign(args: argparse.Namespace) -> int:
             "| :--- | :---: |",
         ]
         report_lines += [f"| {f} | {family_totals[f]} |" for f in families]
+
+        if args.evasion_mode != "off" or fixed_strategies is not None:
+            totals: dict[str, int] = {}
+            for s in round_summaries:
+                for scanner, n in s.get("evasion_hits", {}).items():
+                    totals[scanner] = totals.get(scanner, 0) + n
+            report_lines += [
+                "",
+                "## Per-scanner evasions (verdict=benign on valid candidates)",
+                "",
+                f"Evasion mode: **{args.evasion_mode}**"
+                + (f", fixed strategies: {fixed_strategies}" if fixed_strategies else ""),
+                "",
+                "| Scanner | Evasions |",
+                "| :--- | :---: |",
+            ]
+            report_lines += [f"| {s} | {n} |" for s, n in sorted(totals.items())] or \
+                ["| (none) | 0 |"]
         with open(report_path, "w") as f:
             f.write("\n".join(report_lines))
         print(f"\nWritten fuzzing report to {report_path}")
@@ -440,6 +545,24 @@ def _registry_callables():
     """
     from pipeline.registry import get_armable_entries
     return [(e.module, e.name) for e in get_armable_entries()]
+
+
+def _candidate_signature(filepath: str):
+    """Parse the embedded pickle of a candidate for novelty signatures."""
+    import zipfile
+    try:
+        with open(filepath, "rb") as f:
+            magic = f.read(4)
+        if magic.startswith(b"PK\x03\x04"):
+            with zipfile.ZipFile(filepath) as z:
+                name = [n for n in z.namelist() if n.endswith("data.pkl")][0]
+                pkl = z.read(name)
+        else:
+            with open(filepath, "rb") as f:
+                pkl = f.read()
+        return parse_pickle(pkl)
+    except Exception:
+        return []
 
 
 if __name__ == "__main__":

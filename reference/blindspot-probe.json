@@ -1,0 +1,50 @@
+{
+  "ctrl_global.pt": {
+    "picklescan": "malicious",
+    "modelscan": "malicious",
+    "fickling": "error",
+    "modeltracer": "malicious"
+  },
+  "ctrl_nested_B.pt": {
+    "picklescan": "malicious",
+    "modelscan": "malicious",
+    "fickling": "error",
+    "modeltracer": "malicious"
+  },
+  "v_stackglobal.pt": {
+    "picklescan": "malicious",
+    "modelscan": "malicious",
+    "fickling": "error",
+    "modeltracer": "malicious"
+  },
+  "v_stackglobal_nested.pt": {
+    "picklescan": "malicious",
+    "modelscan": "malicious",
+    "fickling": "error",
+    "modeltracer": "malicious"
+  },
+  "v_inst.pt": {
+    "picklescan": "malicious",
+    "modelscan": "malicious",
+    "fickling": "error",
+    "modeltracer": "benign"
+  },
+  "v_nested_C.pt": {
+    "picklescan": "malicious",
+    "modelscan": "malicious",
+    "fickling": "error",
+    "modeltracer": "malicious"
+  },
+  "v_eval_import.pt": {
+    "picklescan": "malicious",
+    "modelscan": "malicious",
+    "fickling": "error",
+    "modeltracer": "malicious"
+  },
+  "v_double_nested_C.pt": {
+    "picklescan": "malicious",
+    "modelscan": "malicious",
+    "fickling": "error",
+    "modeltracer": "malicious"
+  }
+}

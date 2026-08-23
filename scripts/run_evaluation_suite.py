@@ -82,7 +82,8 @@ def run_benign_fp_check(scanners: list[str], corpus_dir: str | None = None,
 
     config = Config(backend="podman", tag=":latest", max_workers=4, timeout=60,
                     oracle=True, pre_filter=False,
-                    oracle_model_dir="real_benign_corpus/oracle-calibrated/text-generation")
+                    oracle_model_dir=os.environ.get("REGENBENCH_ORACLE_MODEL_DIR") or
+                                   os.path.abspath("real_benign_corpus/oracle-calibrated/text-generation"))
     runner = Runner(config, scanners=scanners)
     results = runner.run(artifacts)
 
@@ -552,6 +553,7 @@ def query_campaign_stats(db_path: str) -> dict:
         "valid_candidates": 0,
         "picklescan_evaded": 0,
         "fickling_evaded": 0,
+        "modelscan_evaded": 0,
         "dynahug_detected": 0,
         "confirmed_bypasses": 0,
         "uncorroborated_bypasses": 0,
@@ -567,35 +569,32 @@ def query_campaign_stats(db_path: str) -> dict:
         total = cursor.execute("SELECT COUNT(*) FROM candidates").fetchone()[0] or 0
         valid = cursor.execute("SELECT COUNT(*) FROM campaign_fitness WHERE is_valid = 1").fetchone()[0] or 0
 
-        # Evasion counts are restricted to *valid* candidates so the numerator
-        # and the `valid_candidates` denominator refer to the same population.
-        # Each scanner's "admitted" denominator is further restricted to valid
-        # candidates that scanner actually ran on (a scanner that never scanned
-        # a candidate must not be reported as "admitted / cleared" it).
-        pk_scanned = cursor.execute(
-            """SELECT COUNT(*) FROM panel_results p
-               JOIN campaign_fitness f ON f.candidate_id = p.candidate_id
-               WHERE p.scanner = 'picklescan'
-                 AND f.is_valid = 1"""
-        ).fetchone()[0] or 0
-        fk_scanned = cursor.execute(
-            """SELECT COUNT(*) FROM panel_results p
-               JOIN campaign_fitness f ON f.candidate_id = p.candidate_id
-               WHERE p.scanner = 'fickling'
-                 AND f.is_valid = 1"""
-        ).fetchone()[0] or 0
-        pk_evaded = cursor.execute(
-            """SELECT COUNT(*) FROM panel_results p
-               JOIN campaign_fitness f ON f.candidate_id = p.candidate_id
-               WHERE p.scanner = 'picklescan' AND p.verdict = 'benign'
-                 AND f.is_valid = 1"""
-        ).fetchone()[0] or 0
-        fk_evaded = cursor.execute(
-            """SELECT COUNT(*) FROM panel_results p
-               JOIN campaign_fitness f ON f.candidate_id = p.candidate_id
-               WHERE p.scanner = 'fickling' AND p.verdict = 'benign'
-                 AND f.is_valid = 1"""
-        ).fetchone()[0] or 0
+        # Per-scanner evasion tallies over the static torch-capable panel.
+        # Each scanner's "admitted" denominator is restricted to valid
+        # candidates that scanner actually ran on (a scanner that never
+        # scanned a candidate must not be reported as "admitted / cleared").
+        scanner_evaded: dict[str, int] = {}
+        scanner_scanned: dict[str, int] = {}
+        for scanner in ("picklescan", "fickling", "modelscan"):
+            scanner_scanned[scanner] = cursor.execute(
+                """SELECT COUNT(*) FROM panel_results p
+                   JOIN campaign_fitness f ON f.candidate_id = p.candidate_id
+                   WHERE p.scanner = ? AND f.is_valid = 1""",
+                (scanner,),
+            ).fetchone()[0] or 0
+            scanner_evaded[scanner] = cursor.execute(
+                """SELECT COUNT(*) FROM panel_results p
+                   JOIN campaign_fitness f ON f.candidate_id = p.candidate_id
+                   WHERE p.scanner = ? AND p.verdict = 'benign'
+                     AND f.is_valid = 1""",
+                (scanner,),
+            ).fetchone()[0] or 0
+        pk_scanned = scanner_scanned["picklescan"]
+        fk_scanned = scanner_scanned["fickling"]
+        ms_scanned = scanner_scanned["modelscan"]
+        pk_evaded = scanner_evaded["picklescan"]
+        fk_evaded = scanner_evaded["fickling"]
+        ms_evaded = scanner_evaded["modelscan"]
         dh_detected = cursor.execute(
             """SELECT COUNT(*) FROM oracle_results o
                JOIN campaign_fitness f ON f.candidate_id = o.candidate_id
@@ -652,8 +651,10 @@ def query_campaign_stats(db_path: str) -> dict:
             "valid_candidates": valid,
             "picklescan_scanned": pk_scanned,
             "fickling_scanned": fk_scanned,
+            "modelscan_scanned": ms_scanned,
             "picklescan_evaded": pk_evaded,
             "fickling_evaded": fk_evaded,
+            "modelscan_evaded": ms_evaded,
             "dynahug_detected": dh_detected,
             "confirmed_bypasses": confirmed,
             "uncorroborated_bypasses": uncorroborated,
@@ -821,8 +822,10 @@ def main(argv: list[str] | None = None) -> int:
     valid_candidates = stats["valid_candidates"]
     picklescan_evaded = stats["picklescan_evaded"]
     fickling_evaded = stats["fickling_evaded"]
+    modelscan_evaded = stats.get("modelscan_evaded", 0)
     pk_admitted = stats["picklescan_scanned"]
     fk_admitted = stats["fickling_scanned"]
+    ms_admitted = stats.get("modelscan_scanned", 0)
     dynahug_detected = stats["dynahug_detected"]
     confirmed_bypass_count = stats["confirmed_bypasses"]
     uncorroborated_bypass_count = stats["uncorroborated_bypasses"]
@@ -832,13 +835,16 @@ def main(argv: list[str] | None = None) -> int:
     # (a scanner absent from a campaign's panel must not show "admitted").
     pk_evasion = picklescan_evaded / max(1, pk_admitted)
     fk_evasion = fickling_evaded / max(1, fk_admitted)
+    ms_evasion = modelscan_evaded / max(1, ms_admitted)
 
     # Bootstrap CIs (T7.10)
     pk_data = [1] * picklescan_evaded + [0] * max(0, pk_admitted - picklescan_evaded)
     fk_data = [1] * fickling_evaded + [0] * max(0, fk_admitted - fickling_evaded)
+    ms_data = [1] * modelscan_evaded + [0] * max(0, ms_admitted - modelscan_evaded)
 
     pk_ci_low, pk_ci_high = bootstrap_ci(pk_data, seed=args.seed)
     fk_ci_low, fk_ci_high = bootstrap_ci(fk_data, seed=args.seed)
+    ms_ci_low, ms_ci_high = bootstrap_ci(ms_data, seed=args.seed)
 
     # RQ2: Wilcoxon signed-rank test (guided vs unguided queries-to-first-bypass)
     bypass_q = query_bypass_queries(args.db)
@@ -917,6 +923,7 @@ def main(argv: list[str] | None = None) -> int:
         "| :--- | :---: | :---: | :---: | :---: |",
         f"| **PickleScan** | {pk_admitted} | {picklescan_evaded} | {pk_evasion * 100:.1f}% | [{pk_ci_low * 100:.1f}%, {pk_ci_high * 100:.1f}%] |",
         f"| **Fickling** | {fk_admitted} | {fickling_evaded} | {fk_evasion * 100:.1f}% | [{fk_ci_low * 100:.1f}%, {fk_ci_high * 100:.1f}%] |",
+        f"| **ModelScan** | {ms_admitted} | {modelscan_evaded} | {ms_evasion * 100:.1f}% | [{ms_ci_low * 100:.1f}%, {ms_ci_high * 100:.1f}%] |",
         "",
         "**Verdict on H1**: "
         + (
@@ -1072,7 +1079,11 @@ def main(argv: list[str] | None = None) -> int:
             else (
                 "Not assessable: the campaign database is empty."
                 if not stats["has_data"]
-                else "Not assessable on current data: uncorroborated and confirmed evasion counts are both 0."
+                else (
+                    "Not assessable on current data: uncorroborated and confirmed evasion counts are both 0."
+                    if uncorroborated_bypass_count == 0 and confirmed_bypass_count == 0
+                    else "Not supported on current data: every panel-only evasion was corroborated by the oracle (uncorroborated == confirmed), so dynamic validation does not inflate bypass counts -- the panel evasions are already functional bypasses."
+                )
             )
         ),
         "",

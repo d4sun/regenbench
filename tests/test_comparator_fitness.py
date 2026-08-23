@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pipeline.comparator import check_bypass  # noqa: E402
-from pipeline.fitness import compute_fitness  # noqa: E402
+from pipeline.fitness import compute_fitness, compute_fitness_multi  # noqa: E402
 
 
 def _reference_bypass(panel_verdicts, oracle_verdict):
@@ -131,6 +131,74 @@ class TestComputeFitness(unittest.TestCase):
     def test_zero_scanners_edge(self):
         # Degenerate panel: only the boundary bonus remains.
         self.assertAlmostEqual(compute_fitness(0, 0, 0.0), 1.0)
+
+
+class TestMultiFitness(unittest.TestCase):
+    def test_graded_evasion_credit(self):
+        verdicts = {"a": "malicious", "b": "malicious",
+                    "c": "benign", "d": "benign"}
+        partial = compute_fitness_multi(verdicts, None)
+        none_evaded = compute_fitness_multi(
+            {"a": "malicious", "b": "malicious",
+             "c": "malicious", "d": "malicious"}, None)
+        all_evaded = compute_fitness_multi(
+            {"a": "benign", "b": "benign", "c": "benign", "d": "benign"}, None)
+        self.assertLess(none_evaded, partial)
+        self.assertLess(partial, all_evaded)
+
+    def test_error_verdicts_penalized_not_credited(self):
+        clean = compute_fitness_multi({"a": "error"}, None)
+        benign = compute_fitness_multi({"a": "benign"}, None)
+        self.assertLess(clean, benign)
+        self.assertEqual(compute_fitness_multi({"a": "error"}, None),
+                         -0.25 + 0.5)
+
+    def test_novelty_adds_linearly(self):
+        base = compute_fitness_multi({"a": "malicious"}, None, novelty_score=0.0)
+        novel = compute_fitness_multi({"a": "malicious"}, None, novelty_score=1.0)
+        self.assertAlmostEqual(novel - base, 2.0)
+
+    def test_boundary_symmetry_preserved(self):
+        self.assertAlmostEqual(
+            compute_fitness_multi({"a": "benign"}, 0.7),
+            compute_fitness_multi({"a": "benign"}, -0.7))
+
+
+class TestNoveltyTrackerAndGreybox(unittest.TestCase):
+    def _controller(self):
+        from pipeline.feedback import FeedbackController
+        return FeedbackController()
+
+    def test_first_sight_full_then_decays(self):
+        from pipeline.feedback import NoveltyTracker
+        nt = NoveltyTracker()
+        sig = (("PROTO", "GLOBAL"), ("s1",))
+        self.assertEqual(nt.score(sig), 1.0)
+        self.assertEqual(nt.score(sig), 0.5)
+        self.assertEqual(nt.score(sig), 1.0 / 3.0)
+        self.assertEqual(nt.novel_signatures, 1)
+
+    def test_greybox_ingestion_flags_and_tallies(self):
+        fc = self._controller()
+        before = fc.weights.get(("os", "system"))
+        fc.update([{
+            "callable": ("os", "system"),
+            "fitness": 0.0, "evaded_all": False, "valid": True,
+            "scanner_verdicts": {"picklescan": "malicious",
+                                 "modelscan": "benign"},
+            "matched_rules": ["global:os.system:dangerous"],
+        }])
+        self.assertEqual(fc.scanner_stats["picklescan"]["malicious"], 1)
+        self.assertEqual(fc.scanner_stats["modelscan"]["benign"], 1)
+        self.assertEqual(fc.flagged_callables[("os", "system")], 1)
+        self.assertLess(fc.weights[("os", "system")], before)
+
+    def test_update_without_greybox_keys_is_noop_safe(self):
+        fc = self._controller()
+        fc.update([{"callable": ("os", "system"),
+                    "fitness": 1.0, "evaded_all": True, "valid": True}])
+        self.assertEqual(fc.scanner_stats, {})
+        self.assertEqual(fc.flagged_callables, {})
 
 
 if __name__ == "__main__":

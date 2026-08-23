@@ -50,6 +50,7 @@ class ScanResult:
     exit_code: Optional[int]
     decision_score: Optional[float] = None
     findings: list = field(default_factory=list)
+    matched_rules: list = field(default_factory=list)
     error: Optional[str] = None
     duration: float = 0.0
 

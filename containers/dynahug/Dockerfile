@@ -31,6 +31,7 @@ ENV DYNAHUG_COMMIT=${DYNAHUG_COMMIT}
 
 RUN python3.13 -m pip install --no-cache-dir \
         scikit-learn==1.7.1 \
+        ipython \
         joblib==1.5.2
 
 # Fetch the pinned DynaHug files (reference + model artifacts).

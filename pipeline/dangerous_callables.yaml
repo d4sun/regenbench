@@ -114,3 +114,45 @@ dangerous_callables:
     category: "serialization_vulnerability"
     description: "YAML deserializer that allows arbitrary object construction."
     genuine_code_exec: true
+
+  - module: "builtins"
+    name: "__import__"
+    category: "import_smuggling"
+    description: "Dynamic import primitive used to hide dangerous-module references."
+    genuine_code_exec: false
+
+  - module: "builtins"
+    name: "getattr"
+    category: "import_smuggling"
+    description: "Attribute-resolution primitive used to hide dangerous-callable names."
+    genuine_code_exec: false
+
+  - module: "_pickle"
+    name: "loads"
+    category: "import_smuggling"
+    description: "Nested-deserialization primitive hiding payloads in bytes blobs."
+    genuine_code_exec: false
+
+  - module: "pty"
+    name: "spawn"
+    category: "command_execution"
+    description: "Spawns /bin/sh connected to a pseudo-terminal (shell alias of system())."
+    genuine_code_exec: true
+
+  - module: "os"
+    name: "popen"
+    category: "command_execution"
+    description: "Opens a pipe to/from a shell command."
+    genuine_code_exec: true
+
+  - module: "platform"
+    name: "popen"
+    category: "command_execution"
+    description: "Deprecated shell-command wrapper around os.popen."
+    genuine_code_exec: true
+
+  - module: "posix"
+    name: "execv"
+    category: "command_execution"
+    description: "Replaces the running process image with a new executable."
+    genuine_code_exec: true

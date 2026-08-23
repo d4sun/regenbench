@@ -83,6 +83,10 @@ def main() -> int:
             "operator": issue.get("operator", ""),
             "severity": issue.get("severity", ""),
         })
+    # Grey-box signal (Phase 2): which operator rules fired.
+    matched_rules = [
+        f"{f['operator']}:{f['module']}:{f['severity']}" for f in findings
+    ]
 
     summary = {
         "total_issues": report.get("summary", {}).get("total_issues", 0),
@@ -117,6 +121,7 @@ def main() -> int:
         "verdict": verdict,
         "exit_code": exit_code,
         "findings": findings,
+        "matched_rules": matched_rules,
         "summary": summary,
         "raw_output": raw_output.strip(),
     })

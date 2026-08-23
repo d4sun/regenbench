@@ -13,6 +13,7 @@ from typing import Any
 
 from pipeline.opcodes import parse_pickle, OPCODES_BY_BYTE, OPCODES_BY_NAME, OpcodeCategory, OpcodeClassification
 from pipeline.registry import get_all_entries
+from pipeline.evasion import _enc_short_binunicode, _ensure_proto
 
 
 class PickleMutator:
@@ -22,6 +23,30 @@ class PickleMutator:
         self.sample_strings = ["benign", "fuzzed", "", "A" * 10, "A" * 256, "127.0.0.1", "localhost"]
         self.sample_ints = [0, 1, -1, 127, 255, 32767, 65535, 2147483647, -2147483648]
         self.sample_floats = [0.0, 1.0, -1.0, 3.14159, 1e-5, float("inf"), float("-inf"), float("nan")]
+
+    def mutate_opcode_encoding(self, op: OpcodeClassification, arg: bytes) -> tuple[OpcodeClassification, bytes]:
+        """Encode a GLOBAL/INST import as proto-4 STACK_GLOBAL string pushes.
+
+        Evasion operator: replaces the delimited two-line GLOBAL operand with
+        SHORT_BINUNICODE module/name pushes + STACK_GLOBAL, removing the byte
+        pattern static scanners match while resolving the identical callable.
+        The enclosing stream must be rebuilt at protocol >= 4; callers using
+        this operator inside :meth:`mutate` get the PROTO bump automatically.
+        """
+        if op.name not in ("GLOBAL", "INST"):
+            return op, arg
+        try:
+            fields = arg.decode("latin1").rstrip("\n").split("\n")
+            if len(fields) < 2:
+                return op, arg
+            encoded = (
+                _enc_short_binunicode(fields[0])
+                + _enc_short_binunicode(fields[1])
+                + OPCODES_BY_NAME["STACK_GLOBAL"].code
+            )
+            return OPCODES_BY_NAME["STACK_GLOBAL"], encoded
+        except Exception:
+            return op, arg
 
     def mutate_opcode_swap(self, op: OpcodeClassification, arg: bytes) -> tuple[OpcodeClassification, bytes]:
         """Swap an opcode for an equivalent one in the same category/stack behavior.
@@ -132,34 +157,51 @@ class PickleMutator:
         callable_sub_prob: float = 0.2,
         arg_fuzz_prob: float = 0.2,
         stack_prob: float = 0.05,
+        encoding_prob: float = 0.0,
     ) -> bytes:
-        """Parse, apply selected mutation operators, and reconstruct the pickle stream."""
+        """Parse, apply selected mutation operators, and reconstruct the pickle stream.
+
+        ``encoding_prob`` (Phase 1 evasion operator) rewrites GLOBAL/INST
+        imports to STACK_GLOBAL form; when it fires at least once the stream
+        is rebuilt at protocol >= 4 so the result stays loadable.
+        """
         # 1. Structural stacking mutation
         if random.random() < stack_prob:
             pkl_bytes = self.mutate_structural_stacking(pkl_bytes)
-            
+
         parsed = parse_pickle(pkl_bytes)
         mutated_parsed = []
-        
+        encoded_any = False
+
         for op, arg in parsed:
             if op.name == "STOP":
                 mutated_parsed.append((op, arg))
                 continue
-                
+
             curr_op, curr_arg = op, arg
-            
+
             # 2. Opcode swapping mutation
             if random.random() < op_swap_prob:
                 curr_op, curr_arg = self.mutate_opcode_swap(curr_op, curr_arg)
-                
+
             # 3. Callable substitution mutation
             if random.random() < callable_sub_prob:
                 curr_op, curr_arg = self.mutate_callable_substitution(curr_op, curr_arg)
-                
+
+            # 3b. Evasion encoding mutation (GLOBAL -> STACK_GLOBAL form)
+            if encoding_prob and random.random() < encoding_prob:
+                new_op, new_arg = self.mutate_opcode_encoding(curr_op, curr_arg)
+                if new_op.name == "STACK_GLOBAL" and curr_op.name != "STACK_GLOBAL":
+                    encoded_any = True
+                curr_op, curr_arg = new_op, new_arg
+
             # 4. Argument fuzzing mutation
             if random.random() < arg_fuzz_prob:
                 curr_arg = self.mutate_argument_fuzz(curr_op, curr_arg)
-                
+
             mutated_parsed.append((curr_op, curr_arg))
-            
-        return b"".join(op.code + arg for op, arg in mutated_parsed)
+
+        out = b"".join(op.code + arg for op, arg in mutated_parsed)
+        if encoded_any:
+            out = _ensure_proto(out)
+        return out

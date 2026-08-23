@@ -194,6 +194,32 @@ python3 scripts/run_fuzzing_campaign.py --mode unguided --rounds 5 \
 (a real text-generation checkpoint rather than the synthetic toy), the round
 schedule, and `campaign.time_budget_hours` used by the pilot.
 
+#### Signature-evasion mode (Phase 1/2)
+
+Candidates can be post-processed with signature-evasion strategies
+(`pipeline/evasion.py`) that rewrite the malicious stream so the same payload
+still executes while the byte patterns static scanners match are removed or
+hidden: `stack_global_encoding` (GLOBAL→STACK_GLOBAL, proto-4),
+`payload_obfuscation` (trigger strings hidden in nested-pickle blobs),
+`indirect_chain` (`__import__`/`getattr` runtime sink resolution; also
+available as the `indirect_chain` attack family), and `nested_loads_wrap`
+(whole-stream nesting). All strategies preserve trigger execution exactly.
+
+```sh
+python3 scripts/run_fuzzing_campaign.py --mode guided --evasion-mode adaptive ...
+python3 scripts/run_fuzzing_campaign.py --mode unguided --evasion-mode random ...   # ablation baseline
+python3 scripts/run_fuzzing_campaign.py --evasion-strategies stack_global_encoding,indirect_chain ...
+```
+
+With evasion enabled the guided loop uses multi-objective fitness
+(`compute_fitness_multi`: graded per-scanner credit + novelty bonus +
+error penalty) and grey-box feedback: scanner wrappers emit `matched_rules`,
+and `FeedbackController` down-weights callables whose names fired rules.
+Fuzzing reports gain a per-scanner evasion table. The smuggling primitives
+(`builtins.__import__`, `builtins.getattr`, `_pickle.loads`) are registered in
+`dangerous_callables.yaml` (category `import_smuggling`, never selected as
+direct sinks) so coverage tracking and the pre-filter see evasive streams.
+
 The same DB accumulates all runs; each gets a `fuzzing-report-<run_id>.md`.
 
 ### 4. Run the evaluation & ablation suite
@@ -295,7 +321,37 @@ Snapshot: `results/20260818-141227/` (see `results.md` / `results.json`).
 Full detail: [`docs/evaluation-report.md`](docs/evaluation-report.md) and
 [`docs/task3-demo.md`](docs/task3-demo.md).
 
-**Campaigns** (7 runs, 700 candidates in `data/regenbench_campaign.db`):
+### Evasion-mode campaigns (2026-08-23, first confirmed bypasses)
+
+With the Phase-1/2 evasion pipeline active (splice transport, `--evasion-mode
+adaptive`/`random`, panel `picklescan modelscan fickling` on torch artifacts),
+the campaign produced the benchmark's first **confirmed dual-oracle bypasses**
+(panel all-benign + DynaHug malicious), replayable from `data/bypasses/`:
+
+| Run | Mode | Evasion | Candidates | Valid | Confirmed Bypasses |
+| :--- | :--- | :--- | :---: | :---: | :---: |
+| guided-r21 | guided | adaptive | 36 | 23 | **1** |
+| guided-r31 | guided | adaptive | 100 | 77 | **1** |
+| guided-r32 | guided | adaptive | 100 | 72 | **0** |
+| unguided-r22 | unguided | random | 36 | 21 | **4** |
+| unguided-r33 | unguided | random | 100 | 77 | **7** |
+| unguided-r34 | unguided | random | 100 | 68 | **10** |
+
+**All-time (11 runs, 1244 candidates in `data/regenbench_campaign.db`):**
+- **confirmed bypasses: 23** (all `pypi_injected` sink + splice transport)
+- **per-scanner evasion on evasion-mode runs (338 valid):**
+  - PickleScan: 23/338 = **6.8%**
+  - ModelScan: 66/338 = **19.5%**
+  - Fickling: 294/294 = **100%** (no rules for IPython/third-party sinks)
+- **confirmed bypasses by mode:** guided 2/172, unguided 21/166
+- **T7.10 guided vs unguided (all-time): 2/694 vs 21/393, z=-5.56, p≈2.6e-8** — uniform search significantly outperforms guided feedback because the winning vector lives in a family outside the callable-weighting scope.
+- **H1:** Not supported (evasion < 70% threshold).
+- **H2:** Not supported (uncorroborated == confirmed = 23; dynamic validation does not inflate counts).
+- **H3:** Simulated (no version-delta data).
+
+Fickling now torch-capable with a narrow torch-plumbing allowlist (0% FP on benign HF corpus). Legacy mutators harden against ~8% candidate corruption (rejected by validity oracle). `platform.popen` removed in Python 3.13 — dead sink. For torch campaigns use `--panel-scanners picklescan modelscan fickling`.
+
+**Campaigns** (11 runs, 1244 candidates in `data/regenbench_campaign.db`):
 
 | Run | Type | Replicate | Candidates | Valid | Confirmed Bypasses |
 | :--- | :--- | :---: | :---: | :---: | :---: |

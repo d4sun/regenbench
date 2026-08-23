@@ -181,7 +181,11 @@ class TestNestedPayloadRecursion(unittest.TestCase):
         # call, which must be swallowed, not propagated.
         outer = _loads_wrap(b"\x80\x04\xff")
         parsed = parse_pickle(outer)
-        self.assertFalse(_has_dangerous_import(parsed))
+        # The _pickle.loads wrapper global is itself a registered smuggling
+        # primitive, so the result is admitted (True); either way the descent
+        # over the corrupt inner blob must not raise.
+        self.assertIsInstance(_has_dangerous_import(parsed), bool)
+        self.assertTrue(_has_dangerous_import(parsed))
 
 
 if __name__ == "__main__":

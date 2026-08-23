@@ -88,13 +88,19 @@ def get_all_entries() -> list[RegistryEntry]:
 #   - sympy.sympify        : raises SympifyError on the empty shell output
 #   - yaml.unsafe_load     : parses YAML; a Python code string never constructs
 #                            an object graph that executes it
-# They stay in the registry (they ARE dangerous sinks) but must not be selected
-# for candidate generation, or every candidate carrying them fails validity.
+# Plus the Phase-1 smuggling primitives (__import__/getattr/_pickle.loads):
+# they ARE dangerous signatures (the evasion chains use them) and belong in
+# coverage/pre-filter accounting, but selecting one as a *direct sink* would
+# just pass payload_code as an argument to a non-executing primitive, so every
+# such candidate would fail validity.
 NON_ARMABLE: set[tuple[str, str]] = {
     ("runpy", "run_module"),
     ("pandas", "eval"),
     ("sympy", "sympify"),
     ("yaml", "unsafe_load"),
+    ("builtins", "__import__"),
+    ("builtins", "getattr"),
+    ("_pickle", "loads"),
 }
 
 

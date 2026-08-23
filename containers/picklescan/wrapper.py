@@ -79,6 +79,8 @@ def main() -> int:
     ]
     dangerous = sum(1 for f in findings if f["safety"] == "dangerous")
     suspicious = sum(1 for f in findings if f["safety"] == "suspicious")
+    # Grey-box signal (Phase 2): which signatures fired, for feedback.
+    matched_rules = [f"global:{f['module']}.{f['name']}:{f['safety']}" for f in findings]
 
     if scan_result.scan_err:
         verdict = "error"
@@ -98,6 +100,7 @@ def main() -> int:
         "verdict": verdict,
         "exit_code": exit_code,
         "findings": findings,
+        "matched_rules": matched_rules,
         "summary": {
             "scanned_files": scan_result.scanned_files,
             "infected_files": scan_result.infected_files,
