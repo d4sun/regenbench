@@ -762,6 +762,68 @@ def query_coverage_history(db_path: str) -> list[dict]:
         conn.close()
 
 
+def query_strategy_effectiveness(db_path: str) -> list[dict]:
+    """Analyze mutation strategy effectiveness from campaign DB.
+
+    Returns per-strategy breakdown: generated, valid, panel_evasion, confirmed_bypass.
+    """
+    if not os.path.exists(db_path):
+        return []
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        rows = conn.execute("""
+            SELECT 
+                mutation_strategy,
+                COUNT(*) as generated,
+                SUM(CASE WHEN is_valid = 1 THEN 1 ELSE 0 END) as valid,
+                SUM(CASE WHEN is_valid = 1 AND panel_evaded = 1 THEN 1 ELSE 0 END) as panel_evasion,
+                SUM(CASE WHEN is_valid = 1 AND confirmed_bypass = 1 THEN 1 ELSE 0 END) as confirmed_bypass
+            FROM (
+                SELECT 
+                    c.candidate_id,
+                    c.mutation_strategy,
+                    f.is_valid,
+                    CASE 
+                        WHEN EXISTS (
+                            SELECT 1 FROM panel_results p 
+                            WHERE p.candidate_id = c.candidate_id AND p.verdict = 'benign'
+                        )
+                        AND NOT EXISTS (
+                            SELECT 1 FROM panel_results p 
+                            WHERE p.candidate_id = c.candidate_id AND p.verdict IN ('malicious', 'error')
+                        )
+                        THEN 1 ELSE 0 END as panel_evaded,
+                    CASE 
+                        WHEN EXISTS (
+                            SELECT 1 FROM panel_results p 
+                            WHERE p.candidate_id = c.candidate_id AND p.verdict = 'benign'
+                        )
+                        AND NOT EXISTS (
+                            SELECT 1 FROM panel_results p 
+                            WHERE p.candidate_id = c.candidate_id AND p.verdict IN ('malicious', 'error')
+                        )
+                        AND EXISTS (
+                            SELECT 1 FROM oracle_results o 
+                            WHERE o.candidate_id = c.candidate_id 
+                              AND o.verdict = 'malicious' AND o.pre_filtered = 0
+                        )
+                        THEN 1 ELSE 0 END as confirmed_bypass
+                FROM candidates c
+                JOIN campaign_fitness f ON f.candidate_id = c.candidate_id
+                WHERE c.mutation_strategy IS NOT NULL AND c.mutation_strategy != ''
+            )
+            GROUP BY mutation_strategy
+            ORDER BY confirmed_bypass DESC, generated DESC
+        """).fetchall()
+        return [dict(r) for r in rows]
+    except sqlite3.Error as e:
+        print(f"[warning] could not read strategy effectiveness from {db_path}: {e}")
+        return []
+    finally:
+        conn.close()
+
+
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser(description="Run quantitative evaluation suite.")
     ap.add_argument("--db", default="data/regenbench_campaign.db", help="campaign SQLite DB path")

@@ -50,7 +50,14 @@ def init_db(db_path: str) -> None:
                 mutation_depth INTEGER,
                 callables_used TEXT,
                 campaign_type TEXT,
-                run_id TEXT
+                run_id TEXT,
+                mutation_strategy TEXT,
+                parent_id TEXT,
+                generation INTEGER,
+                oracle_verdict TEXT,
+                panel_verdict TEXT,
+                coverage_delta REAL,
+                novelty_score REAL
             )
         """)
 
@@ -126,6 +133,20 @@ def init_db(db_path: str) -> None:
         cov_cols = {row[1] for row in cursor.execute("PRAGMA table_info(campaign_coverage)").fetchall()}
         if "run_id" not in cov_cols:
             cursor.execute("ALTER TABLE campaign_coverage ADD COLUMN run_id TEXT DEFAULT ''")
+
+        # Migration: add instrumentation columns to candidates table
+        cand_cols = {row[1] for row in cursor.execute("PRAGMA table_info(candidates)").fetchall()}
+        for col_name, col_type in [
+            ("mutation_strategy", "TEXT"),
+            ("parent_id", "TEXT"),
+            ("generation", "INTEGER"),
+            ("oracle_verdict", "TEXT"),
+            ("panel_verdict", "TEXT"),
+            ("coverage_delta", "REAL"),
+            ("novelty_score", "REAL"),
+        ]:
+            if col_name not in cand_cols:
+                cursor.execute(f"ALTER TABLE candidates ADD COLUMN {col_name} {col_type}")
     # _session() commits and closes on exit.
 
 
@@ -141,6 +162,13 @@ def log_candidate(
     callables_used: str | None = None,
     campaign_type: str | None = None,
     run_id: str | None = None,
+    mutation_strategy: str | None = None,
+    parent_id: str | None = None,
+    generation: int | None = None,
+    oracle_verdict: str | None = None,
+    panel_verdict: str | None = None,
+    coverage_delta: float | None = None,
+    novelty_score: float | None = None,
 ) -> None:
     """Insert a candidate; on conflict, fill in any newly-provided metadata fields.
 
@@ -153,8 +181,10 @@ def log_candidate(
         cursor.execute(
             """INSERT INTO candidates 
             (candidate_id, filepath, source, created_at, round_num, seed_model, 
-             mutation_template, mutation_depth, callables_used, campaign_type, run_id) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             mutation_template, mutation_depth, callables_used, campaign_type, run_id,
+             mutation_strategy, parent_id, generation, oracle_verdict, panel_verdict,
+             coverage_delta, novelty_score) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(candidate_id) DO UPDATE SET
                 filepath = COALESCE(excluded.filepath, candidates.filepath),
                 source = COALESCE(excluded.source, candidates.source),
@@ -164,7 +194,14 @@ def log_candidate(
                 mutation_depth = COALESCE(excluded.mutation_depth, candidates.mutation_depth),
                 callables_used = COALESCE(excluded.callables_used, candidates.callables_used),
                 campaign_type = COALESCE(excluded.campaign_type, candidates.campaign_type),
-                run_id = COALESCE(excluded.run_id, candidates.run_id)
+                run_id = COALESCE(excluded.run_id, candidates.run_id),
+                mutation_strategy = COALESCE(excluded.mutation_strategy, candidates.mutation_strategy),
+                parent_id = COALESCE(excluded.parent_id, candidates.parent_id),
+                generation = COALESCE(excluded.generation, candidates.generation),
+                oracle_verdict = COALESCE(excluded.oracle_verdict, candidates.oracle_verdict),
+                panel_verdict = COALESCE(excluded.panel_verdict, candidates.panel_verdict),
+                coverage_delta = COALESCE(excluded.coverage_delta, candidates.coverage_delta),
+                novelty_score = COALESCE(excluded.novelty_score, candidates.novelty_score)
             """,
             (
                 candidate_id,
@@ -178,6 +215,13 @@ def log_candidate(
                 callables_used,
                 campaign_type,
                 run_id,
+                mutation_strategy,
+                parent_id,
+                generation,
+                oracle_verdict,
+                panel_verdict,
+                coverage_delta,
+                novelty_score,
             ),
         )
 

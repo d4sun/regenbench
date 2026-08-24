@@ -44,7 +44,7 @@ from pipeline.db import (
     log_fitness,
 )
 from pipeline.comparator import check_bypass
-from pipeline.fitness import compute_fitness, compute_fitness_multi
+from pipeline.fitness import compute_fitness, compute_fitness_multi, compute_fitness_oracle_aware, compute_fitness_lexicographic, FitnessMode
 from pipeline.feedback import CoverageTracker, FeedbackController, NoveltyTracker
 from pipeline.registry import load_registry
 from pipeline.templates import FAMILIES, FAMILY_LABELS
@@ -97,16 +97,23 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--evasion-mode", choices=["adaptive", "random", "off"],
                     default="off",
                     help="Phase-1 signature-evasion pipeline: 'adaptive' lets "
-                         "guided feedback pick strategy subsets, 'random' "
-                         "samples uniformly (unguided ablation baseline), "
-                         "'off' disables (legacy behaviour)")
+"guided feedback pick strategy subsets, 'random' "
+                          "samples uniformly (unguided ablation baseline), "
+                          "'off' disables (legacy behaviour)")
     ap.add_argument("--evasion-strategies", default=None,
-                    help="comma-separated fixed strategy subset "
-                         "(stack_global_encoding,payload_obfuscation,"
-                         "indirect_chain,nested_loads_wrap); overrides mode")
+                     help="comma-separated fixed strategy subset "
+                          "(stack_global_encoding,payload_obfuscation,"
+                          "indirect_chain,nested_loads_wrap); overrides mode")
+    ap.add_argument("--fitness-mode", choices=["current", "oracle_aware", "oracle_dominant"],
+                     default="current",
+                     help="fitness computation mode for ablation: "
+                          "'current' = panel evasion + boundary + novelty; "
+                          "'oracle_aware' = adds oracle confirmation bonus; "
+                          "'oracle_dominant' = lexicographic ranking "
+                          "(dynamic confirmation > panel > coverage > novelty)")
     ap.add_argument("--time-budget-hours", type=float, default=24.0,
-                    help="bounded-pilot time budget; the campaign stops after this "
-                         "elapses even if rounds remain")
+                     help="bounded-pilot time budget; the campaign stops after this "
+                          "elapses even if rounds remain")
     return ap.parse_args()
 
 
@@ -205,6 +212,9 @@ def run_campaign(args: argparse.Namespace) -> int:
             fixed_strategies = requested
 
         from pipeline.evasion import select_strategies as _select_evasion_strategies
+
+        # Parse fitness mode
+        fitness_mode = FitnessMode(args.fitness_mode)
 
         def _pick_strategies() -> list[str]:
             if fixed_strategies is not None:
@@ -355,6 +365,10 @@ def run_campaign(args: argparse.Namespace) -> int:
             valid_cnt = 0
             evasion_hits: dict[str, int] = {}
 
+            # Track coverage for delta calculation
+            prev_opcodes = set(tracker.seen_opcodes)
+            prev_callables = set(tracker.seen_callables)
+
             for filepath, cand_bytes, chosen_callable, trigger_file, attack_family, cand_strategies in candidates:
                 cand_results = results_by_file.get(filepath, [])
                 is_valid = oracle_val.validate_torch(cand_bytes, trigger_file)
@@ -384,24 +398,60 @@ def run_campaign(args: argparse.Namespace) -> int:
                     is_valid
                     and (args.evasion_mode != "off" or fixed_strategies is not None)
                 )
-                if use_multi_fitness:
-                    # Phase-2 fitness: graded per-scanner credit + novelty.
+                if fitness_mode == FitnessMode.ORACLE_DOMINANT:
+                    # Lexicographic fitness: dynamic confirmation > panel > coverage > novelty
                     sig_ops = _candidate_signature(filepath)
                     nov = novelty.score(novelty.signature(
                         sig_ops, frozenset(cand_strategies)))
-                    fit_score = compute_fitness_multi(
+                    fit_score = compute_fitness_lexicographic(
                         scanner_verdicts=scanner_verdicts,
-                        decision_score=decision_score,
+                        oracle_verdict=oracle_verdict,
+                        is_valid=is_valid,
                         novelty_score=nov if args.mode == "guided" else 0.0,
+                        coverage_delta=0.0,  # Will be computed below
                     )
-                elif is_valid:
-                    fit_score = compute_fitness(
-                        detected_count=sum(1 for v in panel_verdicts if v == "malicious"),
-                        total_scanners=len(panel_verdicts),
-                        decision_score=decision_score,
-                    )
+                elif fitness_mode == FitnessMode.ORACLE_AWARE:
+                    # Oracle-aware: panel evasion + oracle bonus + boundary + novelty
+                    if use_multi_fitness:
+                        sig_ops = _candidate_signature(filepath)
+                        nov = novelty.score(novelty.signature(
+                            sig_ops, frozenset(cand_strategies)))
+                        fit_score = compute_fitness_oracle_aware(
+                            scanner_verdicts=scanner_verdicts,
+                            oracle_verdict=oracle_verdict,
+                            is_valid=is_valid,
+                            decision_score=decision_score,
+                            novelty_score=nov if args.mode == "guided" else 0.0,
+                        )
+                    elif is_valid:
+                        fit_score = compute_fitness_oracle_aware(
+                            scanner_verdicts=scanner_verdicts,
+                            oracle_verdict=oracle_verdict,
+                            is_valid=is_valid,
+                            decision_score=decision_score,
+                            novelty_score=0.0,
+                        )
+                    else:
+                        fit_score = 0.0
                 else:
-                    fit_score = 0.0
+                    # CURRENT: original behavior
+                    if use_multi_fitness:
+                        sig_ops = _candidate_signature(filepath)
+                        nov = novelty.score(novelty.signature(
+                            sig_ops, frozenset(cand_strategies)))
+                        fit_score = compute_fitness_multi(
+                            scanner_verdicts=scanner_verdicts,
+                            decision_score=decision_score,
+                            novelty_score=nov if args.mode == "guided" else 0.0,
+                        )
+                    elif is_valid:
+                        fit_score = compute_fitness(
+                            detected_count=sum(1 for v in panel_verdicts if v == "malicious"),
+                            total_scanners=len(panel_verdicts),
+                            decision_score=decision_score,
+                        )
+                    else:
+                        fit_score = 0.0
 
                 if is_valid:
                     valid_cnt += 1
@@ -440,6 +490,29 @@ def run_campaign(args: argparse.Namespace) -> int:
                 for s in evaded_scanners:
                     evasion_hits[s] = evasion_hits.get(s, 0) + 1
 
+                # Compute panel verdict summary
+                if all(v == "benign" for v in panel_verdicts) and panel_verdicts:
+                    panel_verdict_summary = "all_benign"
+                elif any(v == "malicious" for v in panel_verdicts):
+                    panel_verdict_summary = "any_malicious"
+                elif any(v == "error" for v in panel_verdicts):
+                    panel_verdict_summary = "error"
+                else:
+                    panel_verdict_summary = "none"
+
+                # Compute coverage delta
+                tracker.track_candidate(filepath)
+                new_opcodes = tracker.seen_opcodes - prev_opcodes
+                new_callables = tracker.seen_callables - prev_callables
+                coverage_delta = len(new_opcodes) + len(new_callables)
+                prev_opcodes = set(tracker.seen_opcodes)
+                prev_callables = set(tracker.seen_callables)
+
+                # Compute novelty score (already computed above for fitness)
+                sig_ops = _candidate_signature(filepath)
+                nov_score = novelty.score(novelty.signature(
+                    sig_ops, frozenset(cand_strategies)))
+
                 log_candidate(
                     db_path, cand_id, filepath, args.mode,
                     round_num=r,
@@ -452,6 +525,13 @@ def run_campaign(args: argparse.Namespace) -> int:
                     ),
                     campaign_type=args.mode,
                     run_id=run_id,
+                    mutation_strategy=",".join(cand_strategies) if cand_strategies else "none",
+                    parent_id=None,  # No parent tracking in current implementation
+                    generation=1,     # No generational tracking in current implementation
+                    oracle_verdict=oracle_verdict,
+                    panel_verdict=panel_verdict_summary,
+                    coverage_delta=coverage_delta,
+                    novelty_score=nov_score,
                 )
                 log_fitness(db_path, cand_id, fit_score, is_valid)
 
@@ -465,7 +545,6 @@ def run_campaign(args: argparse.Namespace) -> int:
                     "scanner_verdicts": scanner_verdicts,
                     "matched_rules": matched_rules,
                 })
-                tracker.track_candidate(filepath)
 
             opcode_cov, callable_cov = tracker.log_round(r)
             if args.mode == "guided":
