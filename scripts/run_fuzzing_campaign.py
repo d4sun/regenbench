@@ -250,7 +250,7 @@ def run_campaign(args: argparse.Namespace) -> int:
                 print("Unguided mode: uniform random callable selection.")
 
             candidates = []
-            family_counts = {f: 0 for f in FAMILIES}
+            family_counts = {f: 0 for f in families}
             for i in range(args.candidates_per_round):
                 elapsed = time.time() - started_at
                 if elapsed >= time_limit:
@@ -262,6 +262,8 @@ def run_campaign(args: argparse.Namespace) -> int:
                 # Select attack family: use family weights in guided mode
                 if args.mode == "guided":
                     family_weights_map = controller.get_family_weights()
+                    # Filter to only allowed families (--attack-families)
+                    family_weights_map = {f: w for f, w in family_weights_map.items() if f in families}
                     family_population = list(family_weights_map.keys())
                     family_weights = list(family_weights_map.values())
                     attack_family = random.choices(family_population, weights=family_weights, k=1)[0]

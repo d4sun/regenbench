@@ -228,10 +228,10 @@ class TestPayloadTemplates(unittest.TestCase):
     def test_family_registry_shape(self):
         self.assertEqual(
             FAMILIES,
-            ("gadget", "overwritten", "pypi_injected", "external", "indirect_chain"),
+            ("gadget", "overwritten", "external", "indirect_chain"),
         )
         self.assertIsNone(family_template("gadget"))
-        for fam in ("overwritten", "pypi_injected", "external", "indirect_chain"):
+        for fam in ("overwritten", "external", "indirect_chain"):
             self.assertIsInstance(family_template(fam), AttackTemplate)
         self.assertEqual(set(FAMILY_LABELS), set(FAMILIES))
         self.assertEqual(set(FAMILY_TEMPLATES), set(FAMILIES) - {"gadget"})

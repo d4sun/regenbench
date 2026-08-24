@@ -246,7 +246,6 @@ def _generate_payload(module_name: str, class_name: str, args: tuple) -> bytes:
 # dangerous-callable injection path, not by a template.
 FAMILY_TEMPLATES: dict[str, AttackTemplate] = {
     "overwritten": OverwrittenModuleTemplate(),
-    "pypi_injected": PyPIInjectedTemplate(),
     "external": ExternalModuleTemplate(),
     "indirect_chain": IndirectChainTemplate(),
 }
@@ -257,7 +256,6 @@ FAMILIES: tuple[str, ...] = ("gadget",) + tuple(FAMILY_TEMPLATES)
 FAMILY_LABELS: dict[str, str] = {
     "gadget": "inject_payload_into_torch",
     "overwritten": "shadowpickle_overwritten",
-    "pypi_injected": "shadowpickle_pypi_injected",
     "external": "shadowpickle_external",
     "indirect_chain": "shadowpickle_indirect_chain",
 }
