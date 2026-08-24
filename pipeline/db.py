@@ -134,6 +134,11 @@ def init_db(db_path: str) -> None:
         if "run_id" not in cov_cols:
             cursor.execute("ALTER TABLE campaign_coverage ADD COLUMN run_id TEXT DEFAULT ''")
 
+        # Migration: add fitness_mode to campaign_runs for pre-existing databases
+        run_cols = {row[1] for row in cursor.execute("PRAGMA table_info(campaign_runs)").fetchall()}
+        if "fitness_mode" not in run_cols:
+            cursor.execute("ALTER TABLE campaign_runs ADD COLUMN fitness_mode TEXT DEFAULT ''")
+
         # Migration: add instrumentation columns to candidates table
         cand_cols = {row[1] for row in cursor.execute("PRAGMA table_info(candidates)").fetchall()}
         for col_name, col_type in [
@@ -234,14 +239,15 @@ def log_campaign_run(
     base_checkpoint: str,
     total_candidates: int,
     total_rounds: int,
+    fitness_mode: str = "",
 ) -> None:
     """Insert or replace a campaign replicate record."""
     with _session(db_path) as (cursor, _):
         cursor.execute(
             """INSERT OR REPLACE INTO campaign_runs 
             (run_id, campaign_type, replicate_num, base_checkpoint, total_candidates, 
-             total_rounds, started_at) 
-            VALUES (?, ?, ?, ?, ?, ?, ?)""",
+             total_rounds, started_at, fitness_mode) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (
                 run_id,
                 campaign_type,
@@ -250,6 +256,7 @@ def log_campaign_run(
                 total_candidates,
                 total_rounds,
                 time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                fitness_mode,
             ),
         )
 

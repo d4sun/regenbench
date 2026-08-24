@@ -182,6 +182,7 @@ def run_campaign(args: argparse.Namespace) -> int:
     log_campaign_run(
         db_path, run_id, args.mode, args.replicate,
         base_abs, total_candidates, args.rounds,
+        fitness_mode=args.fitness_mode,
     )
 
     # Candidates are persisted per-run so the DB filepaths never dangle and
