@@ -53,22 +53,13 @@ def query_campaign_metrics(db_path: str) -> list[CampaignMetrics]:
 
     try:
         # Get all campaign runs with their configs
-        # Only include runs that have fitness_mode in run_id (new experiment runs)
-        # Old runs like "guided-r1" don't have fitness mode info
+        # Use the fitness_mode column directly (new schema)
         runs = cursor.execute("""
             SELECT run_id, campaign_type, replicate_num, total_candidates,
-                   CASE 
-                       WHEN run_id LIKE '%-current-r%' THEN 'current'
-                       WHEN run_id LIKE '%-oracle_aware-r%' THEN 'oracle_aware'
-                       WHEN run_id LIKE '%-oracle_dominant-r%' THEN 'oracle_dominant'
-                       ELSE NULL
-                   END as fitness_mode
+                   COALESCE(NULLIF(fitness_mode, ''), 'unknown') as fitness_mode
             FROM campaign_runs
             WHERE campaign_type IN ('guided', 'unguided')
-              AND (run_id LIKE '%-current-r%' 
-                   OR run_id LIKE '%-oracle_aware-r%' 
-                   OR run_id LIKE '%-oracle_dominant-r%'
-                   OR campaign_type = 'unguided')
+              AND fitness_mode IN ('current', 'oracle_aware', 'oracle_dominant')
             ORDER BY campaign_type, replicate_num
         """).fetchall()
 

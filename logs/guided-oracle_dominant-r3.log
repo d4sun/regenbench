@@ -1,0 +1,358 @@
+============================================================
+STARTING GUIDED FUZZING CAMPAIGN (replicate 3)
+============================================================
+
+--- Round 1 / 5 ---
+Mutation params: op_swap=0.15, sub=0.15, fuzz=0.15
+Generated 20 candidate checkpoints (families: {'gadget': 2, 'overwritten': 4, 'pypi_injected': 5, 'external': 7, 'indirect_chain': 2}).
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmp6wv2qidm.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+  File "/usr/local/lib/python3.13/dist-packages/numpy/__init__.py", line 795, in __getattr__
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
+AttributeError: module 'numpy' has no attribute 'runstring'. Did you mean: 'fromstring'?
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmp6juequc2.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+  File "/usr/local/lib/python3.13/dist-packages/numpy/__init__.py", line 795, in __getattr__
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
+AttributeError: module 'numpy' has no attribute 'runstring'. Did you mean: 'fromstring'?
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmpyfmp3874.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+  File "/usr/local/lib/python3.13/dist-packages/numpy/__init__.py", line 795, in __getattr__
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
+AttributeError: module 'numpy' has no attribute 'runstring'. Did you mean: 'fromstring'?
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmp1k0xsito.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+  File "/usr/local/lib/python3.13/dist-packages/numpy/__init__.py", line 795, in __getattr__
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
+AttributeError: module 'numpy' has no attribute 'runstring'. Did you mean: 'fromstring'?
+
+[validity-debug] Container failed with code 125
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: python3: invalid option -- 'c'
+Try 'python3 --help' for more information.
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmp4s0n6c78.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+AttributeError: module 'IPython' has no attribute 'system'
+
+Round 1 Complete: Valid=14/20, Bypasses=0, Mean Fitness=3539.771, Opcode Cov=42.6%, Callable Cov=32.0%, Per-scanner evasions={'fickling': 20, 'modelscan': 3}
+
+--- Round 2 / 5 ---
+Mutation params: op_swap=0.20, sub=0.20, fuzz=0.20
+Generated 20 candidate checkpoints (families: {'gadget': 2, 'overwritten': 5, 'pypi_injected': 4, 'external': 3, 'indirect_chain': 6}).
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmpe149msz7.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+AttributeError: module 'IPython' has no attribute 'system'
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmpzk1ftqoa.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+AttributeError: module 'IPython' has no attribute 'system'
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmpxha_oqd7.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+  File "/usr/local/lib/python3.13/dist-packages/numpy/__init__.py", line 795, in __getattr__
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
+AttributeError: module 'numpy' has no attribute 'runstring'. Did you mean: 'fromstring'?
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmpd_rk0e4i.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+AttributeError: module 'IPython' has no attribute 'system'
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmpsg36eaat.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+AttributeError: module 'IPython' has no attribute 'system'
+
+Round 2 Complete: Valid=15/20, Bypasses=0, Mean Fitness=4040.433, Opcode Cov=42.6%, Callable Cov=32.0%, Per-scanner evasions={'fickling': 20, 'modelscan': 2}
+
+--- Round 3 / 5 ---
+Mutation params: op_swap=0.25, sub=0.25, fuzz=0.25
+Generated 20 candidate checkpoints (families: {'gadget': 3, 'overwritten': 3, 'pypi_injected': 3, 'external': 2, 'indirect_chain': 9}).
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmp7in5_1w3.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+AttributeError: module 'IPython' has no attribute 'system'
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmpxfr2vgzl.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+AttributeError: module 'IPython' has no attribute 'system'
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmpdyd4ommf.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+  File "/usr/local/lib/python3.13/dist-packages/numpy/__init__.py", line 795, in __getattr__
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
+AttributeError: module 'numpy' has no attribute 'runstring'. Did you mean: 'fromstring'?
+
+Round 3 Complete: Valid=17/20, Bypasses=0, Mean Fitness=6523.204, Opcode Cov=42.6%, Callable Cov=32.0%, Per-scanner evasions={'fickling': 20, 'modelscan': 1}
+
+--- Round 4 / 5 ---
+Mutation params: op_swap=0.30, sub=0.30, fuzz=0.30
+Generated 20 candidate checkpoints (families: {'gadget': 2, 'overwritten': 5, 'pypi_injected': 4, 'external': 1, 'indirect_chain': 8}).
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmp7dbnmiu1.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+AttributeError: module 'IPython' has no attribute 'system'
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmphwgi3q4x.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+AttributeError: module 'IPython' has no attribute 'system'
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmpuq7x6pwk.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+  File "/usr/local/lib/python3.13/dist-packages/numpy/__init__.py", line 795, in __getattr__
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
+AttributeError: module 'numpy' has no attribute 'runstring'. Did you mean: 'fromstring'?
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmpbus805y4.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+AttributeError: module 'IPython' has no attribute 'system'
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmp39yoq7zu.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+AttributeError: module 'IPython' has no attribute 'system'
+
+Round 4 Complete: Valid=15/20, Bypasses=0, Mean Fitness=5026.356, Opcode Cov=42.6%, Callable Cov=32.0%, Per-scanner evasions={'fickling': 20}
+
+--- Round 5 / 5 ---
+Mutation params: op_swap=0.35, sub=0.35, fuzz=0.35
+Generated 20 candidate checkpoints (families: {'gadget': 6, 'overwritten': 4, 'pypi_injected': 0, 'external': 2, 'indirect_chain': 8}).
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmpwvd54bke.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+  File "/usr/local/lib/python3.13/dist-packages/numpy/__init__.py", line 795, in __getattr__
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
+AttributeError: module 'numpy' has no attribute 'runstring'. Did you mean: 'fromstring'?
+
+[validity-debug] Container failed with code 1
+[validity-debug] Container stdout: 
+[validity-debug] Container stderr: Traceback (most recent call last):
+  File "<string>", line 3, in <module>
+    obj = torch.load('/tmp/tmpjyi7z7gy.pt', weights_only=False, map_location='cpu')
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 1610, in load
+    return _load(
+        opened_zipfile,
+    ...<3 lines>...
+        **pickle_load_args,
+    )
+  File "/usr/local/lib/python3.13/dist-packages/torch/serialization.py", line 2221, in _load
+    result = unpickler.load()
+  File "/usr/local/lib/python3.13/dist-packages/numpy/__init__.py", line 795, in __getattr__
+    raise AttributeError(f"module {__name__!r} has no attribute {attr!r}")
+AttributeError: module 'numpy' has no attribute 'runstring'. Did you mean: 'fromstring'?
+
+Round 5 Complete: Valid=18/20, Bypasses=0, Mean Fitness=6527.597, Opcode Cov=42.6%, Callable Cov=32.0%, Per-scanner evasions={'fickling': 20}
+
+Written fuzzing report to docs/fuzzing-report-guided-r3.md
+============================================================
+CAMPAIGN COMPLETE (guided, replicate 3)
+  valid candidates : 79/100
+  confirmed bypasses: 0
+============================================================
