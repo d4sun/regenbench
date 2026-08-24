@@ -5,7 +5,7 @@ Runs evaluation tasks: FP rates, ablation runs, bootstrap CIs, significance test
 and generates docs/evaluation-report.md covering RQ1-RQ4 and H1-H3.
 
 All figures in the report are either measured from the live pipeline, read from
-the campaign SQLite database, or explicitly labeled as simulated. No hardcoded
+the campaign SQLite database, or explicitly marked unassessed. No hardcoded
 "mock" results are ever presented as empirical data.
 """
 
@@ -83,7 +83,7 @@ def run_benign_fp_check(scanners: list[str], corpus_dir: str | None = None,
     config = Config(backend="podman", tag=":latest", max_workers=4, timeout=60,
                     oracle=True, pre_filter=False,
                     oracle_model_dir=os.environ.get("REGENBENCH_ORACLE_MODEL_DIR") or
-                                   os.path.abspath("real_benign_corpus/oracle-calibrated/text-generation"))
+                                   os.path.abspath("real_benign_corpus/oracle-calibrated/v2-disjoint"))
     runner = Runner(config, scanners=scanners)
     results = runner.run(artifacts)
 
@@ -891,17 +891,9 @@ def main(argv: list[str] | None = None) -> int:
             "data (no campaign_runs rows). No hardcoded p-value is reported."
         )
 
-    # 5. Shelf-Life / Decay (T7.9) — explicitly simulated, never empirical
-    if stats["has_data"]:
-        baseline = (pk_evasion + fk_evasion) / 2
-        decay_curve = [
-            {"version": "v1.0 (Baseline)", "evasion_rate": baseline, "simulated": True},
-            {"version": "v1.1 (+1 month)", "evasion_rate": baseline * 0.95, "simulated": True},
-            {"version": "v1.2 (+2 months)", "evasion_rate": baseline * 0.90, "simulated": True},
-            {"version": "v1.3 (+3 months)", "evasion_rate": baseline * 0.82, "simulated": True},
-        ]
-    else:
-        decay_curve = []
+    # 5. Shelf-Life / Decay (T7.9): only report rescans that actually ran.
+    from pipeline.shelf_life import ShelfLifeTracker
+    decay_curve = ShelfLifeTracker(db_path=args.db).compute_decay_curve()
 
     # Write evaluation report T7.11 to docs/evaluation-report.md
     docs_dir = "docs"
@@ -913,7 +905,7 @@ def main(argv: list[str] | None = None) -> int:
         "",
         f"This report presents the statistically supported answers to our core Research Questions (RQ1-RQ4) and evaluates hypotheses (H1-H3) using the measured results of the campaign database `{args.db}` ({len(run_evasion)} campaign runs, {valid_candidates} valid candidates).",
         "",
-        f"**Data provenance**: campaign database `{args.db}`; figures not labeled *simulated* are measured from the live pipeline or read from the database.",
+        f"**Data provenance**: campaign database `{args.db}`; all reported figures are measured or explicitly marked unassessed.",
         "",
         "## RQ1: Robustness of Static Scanners",
         "**Hypothesis H1**: *Directed fuzzing achieves high evasion rates against static scanners compared to published baselines.*",
@@ -1093,16 +1085,18 @@ def main(argv: list[str] | None = None) -> int:
         "**Hypothesis H3**: *Confirmed bypasses retain evasion efficacy across minor version scanner updates.*",
     ])
     if decay_curve:
-        report_lines.append("The following curve is a **simulated** extrapolation from the measured baseline evasion rate (no empirical version-delta data):")
-        for pt in decay_curve:
-            report_lines.append(f"- **{pt['version']}**: {pt['evasion_rate'] * 100:.1f}% remaining efficacy *(simulated)*")
+        report_lines.append("Measured retention by scanner image version:")
+        for version, pt in decay_curve.items():
+            report_lines.append(
+                f"- **{version}**: {pt['retained']}/{pt['total']} retained "
+                f"({pt['retention_rate'] * 100:.1f}%)")
     else:
-        report_lines.append("Not assessed: no baseline evasion data available (simulation requires campaign data).")
+        report_lines.append("Not assessed: no empirical shelf-life rescans are recorded.")
 
     report_lines.extend([
         "",
         "## Conclusion",
-        "The evaluation suite reports measured results only; every simulated or unmeasured quantity is explicitly labeled as such. Re-run the pilot campaign (T6.2) and populate the database before drawing quantitative conclusions.",
+        "All reported quantities are measured from the campaign database or marked unassessed.",
     ])
 
     with open(report_path, "w") as f:

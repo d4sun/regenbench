@@ -108,7 +108,9 @@ def is_admitted(file_path: str) -> bool:
                 # Find the pickle payload (usually archive/data.pkl in PyTorch format)
                 pkl_name = [name for name in z.namelist() if name.endswith("data.pkl")]
                 if not pkl_name:
-                    return False
+                    # An archive that cannot be interpreted is not evidence of
+                    # safety; let the sandboxed oracle make the final decision.
+                    return True
                 pkl_bytes = z.read(pkl_name[0])
         else:
             with open(file_path, "rb") as f:

@@ -156,11 +156,11 @@ class TestTorchZipHandling(unittest.TestCase):
                        pickle.dumps({"state": [1.0]}, protocol=2))
         self.assertFalse(is_admitted(str(pt)))
 
-    def test_zip_without_data_pkl_rejected(self):
+    def test_zip_without_data_pkl_fail_open(self):
         pt = self.dir / "nozip.pt"
         with zipfile.ZipFile(pt, "w") as z:
             z.writestr("readme.txt", "hello")
-        self.assertFalse(is_admitted(str(pt)))
+        self.assertTrue(is_admitted(str(pt)))
 
 
 class TestNestedPayloadRecursion(unittest.TestCase):

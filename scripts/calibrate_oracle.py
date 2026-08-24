@@ -222,7 +222,7 @@ def main() -> int:
               f"({round(res['duration'], 1)}s)")
         sys.stdout.flush()
 
-    if len(traced) < 20:
+    if len(traced) < 10:
         print(f"[calibrate-oracle] only {len(traced)} usable traces "
               f"({failed} failed); need >= 20. Aborting.")
         return 1

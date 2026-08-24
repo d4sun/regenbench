@@ -44,11 +44,11 @@ from pipeline.db import (
     log_fitness,
 )
 from pipeline.comparator import check_bypass
-from pipeline.evasion import select_strategies as select_evasion_strategies
 from pipeline.fitness import compute_fitness, compute_fitness_multi
 from pipeline.feedback import CoverageTracker, FeedbackController, NoveltyTracker
 from pipeline.registry import load_registry
 from pipeline.templates import FAMILIES, FAMILY_LABELS
+from pipeline.shelf_life import register_confirmed_bypass
 
 DEFAULT_BASE = "ci/corpus/torch/benign/benign.pt"
 # Static panel capable of analyzing torch-zip artifacts. ModelTracer is
@@ -204,6 +204,8 @@ def run_campaign(args: argparse.Namespace) -> int:
                 return 1
             fixed_strategies = requested
 
+        from pipeline.evasion import select_strategies as _select_evasion_strategies
+
         def _pick_strategies() -> list[str]:
             if fixed_strategies is not None:
                 return list(fixed_strategies)
@@ -213,8 +215,8 @@ def run_campaign(args: argparse.Namespace) -> int:
             if args.evasion_mode == "adaptive" and args.mode == "guided":
                 # Bias subset size upward as flagged-callable pressure grows.
                 base_k = 1 + (1 if controller.flagged_callables else 0)
-                return select_evasion_strategies(random, k=base_k)
-            return select_evasion_strategies(random)
+                return _select_evasion_strategies(random, k=base_k)
+            return _select_evasion_strategies(random)
 
         round_summaries = []
         budget_exhausted = False
@@ -237,7 +239,7 @@ def run_campaign(args: argparse.Namespace) -> int:
                 print("Unguided mode: uniform random callable selection.")
 
             candidates = []
-            family_counts = {f: 0 for f in families}
+            family_counts = {f: 0 for f in FAMILIES}
             for i in range(args.candidates_per_round):
                 elapsed = time.time() - started_at
                 if elapsed >= time_limit:
@@ -246,7 +248,14 @@ def run_campaign(args: argparse.Namespace) -> int:
                     budget_exhausted = True
                     break
 
-                attack_family = random.choice(families)
+                # Select attack family: use family weights in guided mode
+                if args.mode == "guided":
+                    family_weights_map = controller.get_family_weights()
+                    family_population = list(family_weights_map.keys())
+                    family_weights = list(family_weights_map.values())
+                    attack_family = random.choices(family_population, weights=family_weights, k=1)[0]
+                else:
+                    attack_family = random.choice(families)
                 family_counts[attack_family] += 1
                 if attack_family == "gadget":
                     if weights:
@@ -349,6 +358,7 @@ def run_campaign(args: argparse.Namespace) -> int:
             for filepath, cand_bytes, chosen_callable, trigger_file, attack_family, cand_strategies in candidates:
                 cand_results = results_by_file.get(filepath, [])
                 is_valid = oracle_val.validate_torch(cand_bytes, trigger_file)
+                cand_id = hashlib.md5(filepath.encode("utf-8")).hexdigest()
 
                 panel_verdicts = []
                 scanner_verdicts: dict[str, str] = {}
@@ -399,13 +409,37 @@ def run_campaign(args: argparse.Namespace) -> int:
                 is_bypass = is_valid and check_bypass(panel_verdicts, oracle_verdict)
                 if is_bypass:
                     bypasses_cnt += 1
+                    # Register confirmed bypass for shelf-life tracking (H3)
+                    try:
+                        # Get scanner versions from the runner's images
+                        scanner_versions = {}
+                        for name in runner.spec:
+                            scanner_versions[name] = runner.images[name]
+
+                        register_confirmed_bypass(
+                            candidate_id=cand_id,
+                            run_id=run_id,
+                            family=attack_family,
+                            callable=(
+                                f"{chosen_callable[0]}::{chosen_callable[1]}"
+                                if chosen_callable else f"family::{attack_family}"
+                            ),
+                            transport=cand_transport or "loads",
+                            strategies=cand_strategies,
+                            artifact_path=filepath,
+                            scanner_versions=scanner_versions,
+                            panel_verdicts=scanner_verdicts,
+                            oracle_verdict=oracle_verdict,
+                            decision_score=decision_score,
+                        )
+                    except Exception as e:
+                        print(f"[shelf-life] Failed to register bypass: {e}")
 
                 evaded_scanners = [s for s, v in scanner_verdicts.items()
                                    if v == "benign"]
                 for s in evaded_scanners:
                     evasion_hits[s] = evasion_hits.get(s, 0) + 1
 
-                cand_id = hashlib.md5(filepath.encode("utf-8")).hexdigest()
                 log_candidate(
                     db_path, cand_id, filepath, args.mode,
                     round_num=r,

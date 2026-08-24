@@ -172,10 +172,7 @@ class TestConfigPlumbing(unittest.TestCase):
                 runner = Runner(cfg)
                 results = runner.run([art])
             dynahug_rows = [r for r in results if r.scanner == "dynahug"]
-            self.assertEqual(len(dynahug_rows), 1)
-            # Pre-filtered artifacts are logged as synthetic benign/0.0 rows.
-            self.assertEqual(dynahug_rows[0].verdict, "benign")
-            self.assertEqual(dynahug_rows[0].duration, 0.0)
+            self.assertEqual(dynahug_rows, [])
 
 
 class TestFieldCoverage(unittest.TestCase):

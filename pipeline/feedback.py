@@ -12,6 +12,7 @@ from typing import Any
 
 from pipeline.opcodes import parse_pickle, OPCODES_BY_BYTE
 from pipeline.registry import get_armable_entries, get_all_entries, is_dangerous
+from pipeline.templates import FAMILIES, FAMILY_TEMPLATES
 from pipeline.db import log_coverage
 
 
@@ -167,6 +168,11 @@ class FeedbackController:
         # Equal initial weighting
         self.weights = {c: 1.0 for c in self.callables}
         
+        # Family-level weights (Phase 2): weight by evasion success per family
+        # gadget family uses callable weights; template families use family weight
+        self.families = list(FAMILIES)
+        self.family_weights = {f: 1.0 for f in self.families}
+
         # Mutation rate baselines
         self.op_swap_prob = 0.15
         self.callable_sub_prob = 0.15
@@ -183,6 +189,13 @@ class FeedbackController:
         if total <= 0.0:
             return {c: 1.0 / len(self.callables) for c in self.callables}
         return {c: w / total for c, w in self.weights.items()}
+
+    def get_family_weights(self) -> dict[str, float]:
+        """Return the current normalized weights for attack families."""
+        total = sum(self.family_weights.values())
+        if total <= 0.0:
+            return {f: 1.0 / len(self.families) for f in self.families}
+        return {f: w / total for f, w in self.family_weights.items()}
 
     def _ingest_greybox(self, round_results: list[dict[str, Any]]) -> None:
         """Update per-scanner tallies and penalize rules-flagged callables."""
@@ -211,8 +224,9 @@ class FeedbackController:
         Each result in round_results is a dict:
             {
                 "callable": (module, name),
+                "family": str,           # attack family (gadget, overwritten, pypi_injected, etc.)
                 "fitness": float,
-                "evaded_all": bool,  # True if candidate bypassed all panel scanners
+                "evaded_all": bool,      # True if candidate bypassed all panel scanners
                 "valid": bool
             }
         """
@@ -229,6 +243,17 @@ class FeedbackController:
             if c in self.weights:
                 # Add a portion of the fitness score to its weight (reinforcement)
                 self.weights[c] += 0.2 * fit
+
+        # 1b. Bias attack families towards higher evasion success
+        for res in round_results:
+            fam = res.get("family")
+            evaded = res.get("evaded_all", False)
+            if fam in self.family_weights:
+                # Reward family if it produced a full-panel evasion
+                if evaded:
+                    self.family_weights[fam] += 2.0  # Strong reward for full evasion
+                elif res.get("valid", False):
+                    self.family_weights[fam] += 0.1  # Small reward for validity
 
         # 2. Adjust mutation parameters based on global evasion rates
         valid_results = [r for r in round_results if r.get("valid", False)]

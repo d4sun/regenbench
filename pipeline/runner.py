@@ -207,12 +207,6 @@ class Runner:
                     else:
                         log_panel_result(db_path, cand_id, scanner, res.verdict or "error", res.exit_code, res.findings, res.duration)
 
-        # Append fake benign ScanResult for pre-filtered dynahug runs so that the summaries are balanced
-        for src in pre_filtered_artifacts:
-            cand_id = hashlib.md5(src.encode("utf-8")).hexdigest()
-            res = ScanResult("dynahug", src, "benign", 0, decision_score=0.0, duration=0.0)
-            results.append(res)
-
         results.sort(key=lambda r: (r.artifact, r.scanner))
         if self.sink is not None:
             self.sink.log_scans(results)

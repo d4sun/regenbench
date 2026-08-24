@@ -347,7 +347,7 @@ the campaign produced the benchmark's first **confirmed dual-oracle bypasses**
 - **T7.10 guided vs unguided (all-time): 2/694 vs 21/393, z=-5.56, p≈2.6e-8** — uniform search significantly outperforms guided feedback because the winning vector lives in a family outside the callable-weighting scope.
 - **H1:** Not supported (evasion < 70% threshold).
 - **H2:** Not supported (uncorroborated == confirmed = 23; dynamic validation does not inflate counts).
-- **H3:** Simulated (no version-delta data).
+- **H3:** Unassessed until empirical version-delta rescans are run.
 
 Fickling now torch-capable with a narrow torch-plumbing allowlist (0% FP on benign HF corpus). Legacy mutators harden against ~8% candidate corruption (rejected by validity oracle). `platform.popen` removed in Python 3.13 — dead sink. For torch campaigns use `--panel-scanners picklescan modelscan fickling`.
 
@@ -398,7 +398,7 @@ over 5 files); guided vs unguided confirmed-bypass rates 0/493 vs 0/200
 flags every benign GGUF as malicious (24/24 FP).
 
 **Hypotheses**: H2 not assessable (uncorroborated and confirmed evasions are
-both 0); H3 is a simulated extrapolation (0.0% remaining efficacy, no
+both 0); H3 is unassessed (no
 version-delta data).
 
 ### Evaluation correctness fixes (2026-08-19)

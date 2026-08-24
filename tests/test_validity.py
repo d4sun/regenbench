@@ -4,8 +4,7 @@ Layers:
   1. Pure logic: _trigger_exists polling semantics.
   2. Branch logic with mocked subprocess: timeout -> False, SELinux relabel
      retry drops the :z mount, plain failure never retries, trigger cleanup.
-  3. Host-fallback path (no container runtime): load success AND trigger
-     conjunction.
+  3. Unavailable-runtime path never deserializes on the host.
   4. Real container integration (skipped without podman + built images):
      known-good executing pickle -> True; known-bad bytes -> False;
      GGUF reference-reader verdict parsing.
@@ -207,11 +206,8 @@ class TestValidatePickleCleanupAndConjunction(unittest.TestCase):
             b"\x80\x04X\xff\xff\xff\xff", self.trigger))
 
 
-class TestHostFallbackExecutesPayload(unittest.TestCase):
-    """Without a container runtime the oracle loads via a host subprocess.
-
-    The conjunction rule requires BOTH a successful load and a fired trigger;
-    verify each half independently using harmless self-written fixtures."""
+class TestUnavailableRuntime(unittest.TestCase):
+    """Without a container runtime the oracle must not deserialize on-host."""
 
     def setUp(self):
         self.oracle = ValidityOracle(container_backend="definitely-not-a-runtime-xyz",
@@ -220,15 +216,16 @@ class TestHostFallbackExecutesPayload(unittest.TestCase):
         self.addCleanup(self._tmp.cleanup)
         self.trigger = str(Path(self._tmp.name) / "trig")
 
-    def test_trigger_without_successful_load_is_rejected(self):
-        # Host-fallback path: the trigger "fires" (mocked) but the load
-        # itself fails on truncated bytes -> conjunction must reject.
+    def test_pickle_trigger_is_rejected_without_runtime(self):
         with mock.patch("pipeline.validity._trigger_exists", return_value=True):
-            ok = self.oracle.validate_pickle(b"\x80\x04X\xff\xff\xff\xff",
-                                             self.trigger)
+            ok = self.oracle.validate_pickle(b"\x80\x02N.", self.trigger)
         self.assertFalse(ok)
 
-    def test_successful_benign_load_without_trigger_is_rejected(self):
+    def test_malformed_pickle_is_rejected_without_runtime(self):
+        ok = self.oracle.validate_pickle(b"\x80\x04X\xff\xff\xff\xff", self.trigger)
+        self.assertFalse(ok)
+
+    def test_pickle_is_rejected_without_runtime(self):
         ok = self.oracle.validate_pickle(b"\x80\x02}q\x00.", self.trigger)
         self.assertFalse(ok)
 

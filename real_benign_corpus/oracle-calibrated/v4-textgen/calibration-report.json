@@ -1,0 +1,65 @@
+{
+  "task": "oracle-calibration",
+  "image": "regenbench/dynahug:latest",
+  "backend": "podman",
+  "gamma": 0.1,
+  "nu": 0.01,
+  "split_file": null,
+  "split_role": null,
+  "generated_at": "2026-08-24T06:04:18Z",
+  "corpus": "/home/d4sun/Projects/PhD/regenbench/real_benign_corpus/text-generation-only",
+  "traced_total": 15,
+  "train_n": 12,
+  "holdout_n": 3,
+  "train_repos": [
+    "EleutherAI_pythia-14m-deduped",
+    "HuggingFaceM4_tiny-random-LlamaForCausalLM",
+    "Maykeye_TinyLLama-v0",
+    "RajuKandasamy_tamillama_tiny_30m",
+    "TristanBehrens_js-fakes-4bars",
+    "ai-guru_lakhclean_mmmtrack_4bars_d-2048",
+    "arman-bd_guppylm-9M",
+    "google_reformer-crime-and-punishment",
+    "junnyu_roformer_chinese_sim_char_small",
+    "ncfrey_ChemGPT-4.7M",
+    "roneneldan_TinyStories-1M",
+    "sshleifer_tiny-gpt2"
+  ],
+  "train": {
+    "n": 12,
+    "min": -0.0004,
+    "q25": 0.0,
+    "median": 0.0001,
+    "q75": 0.004,
+    "max": 0.0092,
+    "mean": 0.0021,
+    "std": 0.0035,
+    "positive": 0.75,
+    "spread": 0.0096
+  },
+  "holdout": {
+    "n": 3,
+    "min": 0.0031,
+    "q25": 0.0031,
+    "median": 0.0044,
+    "q75": 0.0053,
+    "max": 0.0053,
+    "mean": 0.0043,
+    "std": 0.0011,
+    "positive": 1.0,
+    "spread": 0.0021
+  },
+  "trace_duration_mean": 4.76,
+  "artifacts": [
+    "oneclass_svm_model.pkl",
+    "scaler.pkl",
+    "syscalls.txt",
+    "traces.json",
+    "vectorizer.pkl"
+  ],
+  "models": [
+    "concedo_OPT-19M-ChatSalad",
+    "nickypro_tinyllama-15M",
+    "jploski_retnet-mini-shakespeare"
+  ]
+}
