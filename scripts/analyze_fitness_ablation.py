@@ -408,10 +408,156 @@ def print_scanner_table(db_path: str) -> None:
         print(f"{r['fitness_mode']:<18} {r['scanner']:<15} {r['evaded']:>8} {r['admitted']:>8} {rate:>7.1f}%")
 
 
+def query_panel_inflation(db_path: str) -> list[dict]:
+    """Analyze panel inflation (panel-only bypasses vs oracle-confirmed)."""
+    conn = sqlite3.connect(db_path)
+    conn.row_factory = sqlite3.Row
+    try:
+        # Query from round_results if available, fallback to SQL
+        try:
+            rows = conn.execute("""
+                SELECT 
+                    c.run_id,
+                    cr.campaign_type,
+                    cr.fitness_mode,
+                    SUM(CASE WHEN r.panel_only_bypass = 1 THEN 1 ELSE 0 END) as panel_only_bypasses,
+                    SUM(CASE WHEN r.oracle_confirmed = 1 THEN 1 ELSE 0 END) as confirmed_bypasses,
+                    SUM(CASE WHEN r.panel_evasion = 1 THEN 1 ELSE 0 END) as panel_evasions,
+                    SUM(CASE WHEN r.valid = 1 THEN 1 ELSE 0 END) as valid_count
+                FROM round_results r
+                JOIN candidates c ON c.candidate_id = r.candidate_id
+                JOIN campaign_runs cr ON cr.run_id = c.run_id
+                GROUP BY c.run_id, cr.campaign_type, cr.fitness_mode
+            """).fetchall()
+            if rows:
+                return [dict(r) for r in rows]
+        except sqlite3.OperationalError:
+            pass  # round_results table might not have these columns
+        
+        # Fallback: compute from candidates and results tables
+        rows = conn.execute("""
+            SELECT 
+                c.run_id,
+                cr.campaign_type,
+                cr.fitness_mode,
+                SUM(CASE 
+                    WHEN f.is_valid = 1 
+                    AND EXISTS (
+                        SELECT 1 FROM panel_results p 
+                        WHERE p.candidate_id = c.candidate_id AND p.verdict = 'benign'
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1 FROM panel_results p 
+                        WHERE p.candidate_id = c.candidate_id AND p.verdict IN ('malicious', 'error')
+                    )
+                    AND (
+                        NOT EXISTS (
+                            SELECT 1 FROM oracle_results o 
+                            WHERE o.candidate_id = c.candidate_id 
+                              AND o.verdict = 'malicious' AND o.pre_filtered = 0
+                        )
+                        OR o.verdict IS NULL
+                    )
+                    THEN 1 ELSE 0 END) as panel_only_bypasses,
+                SUM(CASE 
+                    WHEN f.is_valid = 1 
+                    AND EXISTS (
+                        SELECT 1 FROM panel_results p 
+                        WHERE p.candidate_id = c.candidate_id AND p.verdict = 'benign'
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1 FROM panel_results p 
+                        WHERE p.candidate_id = c.candidate_id AND p.verdict IN ('malicious', 'error')
+                    )
+                    AND EXISTS (
+                        SELECT 1 FROM oracle_results o 
+                        WHERE o.candidate_id = c.candidate_id 
+                          AND o.verdict = 'malicious' AND o.pre_filtered = 0
+                    )
+                    THEN 1 ELSE 0 END) as confirmed_bypasses,
+                SUM(CASE 
+                    WHEN f.is_valid = 1 
+                    AND EXISTS (
+                        SELECT 1 FROM panel_results p 
+                        WHERE p.candidate_id = c.candidate_id AND p.verdict = 'benign'
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1 FROM panel_results p 
+                        WHERE p.candidate_id = c.candidate_id AND p.verdict IN ('malicious', 'error')
+                    )
+                    THEN 1 ELSE 0 END) as panel_evasions,
+                SUM(CASE WHEN f.is_valid = 1 THEN 1 ELSE 0 END) as valid_count
+            FROM candidates c
+            JOIN campaign_fitness f ON f.candidate_id = c.candidate_id
+            JOIN campaign_runs cr ON cr.run_id = c.run_id
+            LEFT JOIN oracle_results o ON o.candidate_id = c.candidate_id
+            WHERE c.campaign_type IN ('guided', 'unguided')
+              AND cr.fitness_mode IN ('current', 'oracle_aware', 'oracle_dominant')
+            GROUP BY c.run_id, cr.campaign_type, cr.fitness_mode
+        """).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
+def print_panel_inflation_table(inflation_data: list[dict]) -> None:
+    """Print panel inflation analysis table."""
+    if not inflation_data:
+        print("\nNo panel inflation data available.")
+        return
+    
+    print("\n" + "=" * 100)
+    print("PANEL INFLATION ANALYSIS")
+    print("=" * 100)
+    print(f"{'Config':<25} {'Rep':>3} {'Valid':>6} {'PanelEv':>7} {'ConfByp':>7} {'PanelOnly':>9} {'InflRate':>8} {'InflRatio':>9}")
+    print("-" * 100)
+    
+    for row in sorted(inflation_data, key=lambda x: (x.get('fitness_mode', ''), x.get('replicate', 0))):
+        valid = row.get('valid_count', 0)
+        panel_ev = row.get('panel_evasions', 0)
+        confirmed = row.get('confirmed_bypasses', 0)
+        panel_only = row.get('panel_only_bypasses', 0)
+        
+        panel_rate = (panel_ev / max(1, valid)) * 100 if valid else 0
+        confirmed_rate = (confirmed / max(1, valid)) * 100 if valid else 0
+        infl_rate = (panel_only / max(1, valid)) * 100 if valid else 0
+        infl_ratio = panel_ev / max(confirmed, 0.001) if confirmed > 0 else float('inf')
+        
+        mode = row.get('fitness_mode', 'unknown')
+        rep = row.get('replicate', 0)
+        
+        print(f"{mode:<25} {rep:>3} {valid:>6} {panel_ev:>7} {confirmed:>7} {panel_only:>9} {infl_rate:>7.1f}% {infl_ratio:>8.2f}x")
+
+
+def query_parallel_stats(db_path: str) -> dict:
+    """Query parallel execution statistics."""
+    conn = sqlite3.connect(db_path)
+    try:
+        # Check if we have timing data in logs
+        rows = conn.execute("""
+            SELECT 
+                c.run_id,
+                c.campaign_type,
+                c.fitness_mode,
+                c.replicate_num,
+                COUNT(*) as total_candidates,
+                SUM(CASE WHEN f.is_valid = 1 THEN 1 ELSE 0 END) as valid,
+                AVG(f.fitness_score) as avg_fitness
+            FROM candidates c
+            JOIN campaign_fitness f ON f.candidate_id = c.candidate_id
+            GROUP BY c.run_id, c.campaign_type, c.fitness_mode, c.replicate_num
+        """).fetchall()
+        return [dict(r) for r in rows]
+    finally:
+        conn.close()
+
+
 def main():
     ap = argparse.ArgumentParser(description="Analyze fitness ablation experiment")
     ap.add_argument("--db", default="data/regenbench_campaign.db", help="campaign SQLite DB")
     ap.add_argument("--json", help="output JSON summary to file")
+    ap.add_argument("--panel-inflation", action="store_true", help="show panel inflation analysis")
+    ap.add_argument("--parallel-stats", action="store_true", help="show parallel execution stats")
     args = ap.parse_args()
 
     metrics = query_campaign_metrics(args.db)
@@ -423,6 +569,18 @@ def main():
     print_comparison_table(metrics)
     print_strategy_table(args.db)
     print_scanner_table(args.db)
+
+    if args.panel_inflation:
+        inflation_data = query_panel_inflation(args.db)
+        print_panel_inflation_table(inflation_data)
+
+    if args.parallel_stats:
+        parallel_stats = query_parallel_stats(args.db)
+        print("\n" + "=" * 80)
+        print("PARALLEL EXECUTION STATS")
+        print("=" * 80)
+        for row in parallel_stats:
+            print(f"  {row['run_id']}: {row['valid']}/{row['total_candidates']} valid, avg_fitness={row['avg_fitness']:.2f}")
 
     # JSON output
     if args.json:

@@ -116,16 +116,17 @@ def compute_fitness_lexicographic(
     is_valid: bool,
     novelty_score: float,
     coverage_delta: float,
+    decision_score: float | None = None,
     mode: FitnessMode = FitnessMode.CURRENT,
 ) -> float:
     """Lexicographic fitness ranking for ORACLE_DOMINANT mode.
     
     Ranking (highest to lowest):
-    1. CONFIRMED_MALICIOUS + VALID (oracle_verdict == "malicious" AND is_valid)
-    2. PANEL_EVASION + VALID (all panel benign AND is_valid)
-    3. VALID + NOVEL (is_valid AND novelty_score > 0)
-    4. VALID + COVERAGE (is_valid AND coverage_delta > 0)
-    5. INVALID (not is_valid)
+    1. CONFIRMED_MALICIOUS + VALID     (oracle_verdict == "malicious" AND is_valid)
+    2. PANEL_EVASION + VALID           (all panel benign AND is_valid)
+    3. VALID + NOVEL                   (is_valid AND novelty_score > 0)
+    4. VALID + COVERAGE                (is_valid AND coverage_delta > 0)
+    5. INVALID                         (not is_valid)
     
     Returns a float where higher = better, with large gaps between tiers
     to enforce lexicographic ordering.
@@ -139,9 +140,12 @@ def compute_fitness_lexicographic(
         return 0.0  # Tier 5: Invalid
     
     if oracle_verdict == "malicious":
-        return 10000.0 + novelty_score * 10 + coverage_delta  # Tier 1: Confirmed malicious
+        # Tier 1: Confirmed malicious - use decision_score for granularity
+        distance = abs(decision_score) if decision_score is not None else 1.0
+        boundary_proximity = 1.0 / (1.0 + distance)
+        return 10000.0 + boundary_proximity * 100 + novelty_score * 10 + coverage_delta
     
-    if panel_all_benign:
+    if all(v == "benign" for v in scanner_verdicts.values()) and scanner_verdicts:
         return 1000.0 + novelty_score * 10 + coverage_delta  # Tier 2: Panel evasion
     
     if novelty_score > 0:

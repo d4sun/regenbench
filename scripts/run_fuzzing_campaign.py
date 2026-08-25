@@ -114,6 +114,14 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--time-budget-hours", type=float, default=24.0,
                      help="bounded-pilot time budget; the campaign stops after this "
                           "elapses even if rounds remain")
+    ap.add_argument("--oracle-model-dir", default="real_benign_corpus/oracle-calibrated/v5-recalibrated",
+                      help="path to recalibrated DynaHug model directory")
+    ap.add_argument("--ensemble-oracle", action="store_true",
+                      help="use ensemble oracle (DynaHug + syscall anomaly detector)")
+    ap.add_argument("--anomaly-model-dir", default="real_benign_corpus/oracle-calibrated/v5-recalibrated/anomaly",
+                      help="path to trained anomaly detector model")
+    ap.add_argument("--anomaly-threshold", type=float, default=0.0,
+                      help="anomaly score threshold for ensemble decision")
     return ap.parse_args()
 
 
