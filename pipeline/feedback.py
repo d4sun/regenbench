@@ -262,13 +262,22 @@ class FeedbackController:
             
         evasion_rate = sum(1 for r in valid_results if r.get("evaded_all", False)) / len(valid_results)
         
+        # Cap mutation probabilities to prevent structural corruption
+        # Higher values cause pickle stream corruption (invalid opcodes)
+        MAX_OP_SWAP = 0.25
+        MAX_CALLABLE_SUB = 0.25
+        MAX_ARG_FUZZ = 0.30
+        MIN_OP_SWAP = 0.05
+        MIN_CALLABLE_SUB = 0.05
+        MIN_ARG_FUZZ = 0.05
+        
         if evasion_rate < 0.2:
             # Low evasion rate: increase mutation entropy to explore more options
-            self.op_swap_prob = min(0.40, self.op_swap_prob + 0.05)
-            self.callable_sub_prob = min(0.40, self.callable_sub_prob + 0.05)
-            self.arg_fuzz_prob = min(0.45, self.arg_fuzz_prob + 0.05)
+            self.op_swap_prob = min(MAX_OP_SWAP, self.op_swap_prob + 0.05)
+            self.callable_sub_prob = min(MAX_CALLABLE_SUB, self.callable_sub_prob + 0.05)
+            self.arg_fuzz_prob = min(MAX_ARG_FUZZ, self.arg_fuzz_prob + 0.05)
         elif evasion_rate > 0.6:
             # High evasion rate: specialize around current configurations
-            self.op_swap_prob = max(0.05, self.op_swap_prob - 0.03)
-            self.callable_sub_prob = max(0.05, self.callable_sub_prob - 0.03)
-            self.arg_fuzz_prob = max(0.05, self.arg_fuzz_prob - 0.03)
+            self.op_swap_prob = max(MIN_OP_SWAP, self.op_swap_prob - 0.03)
+            self.callable_sub_prob = max(MIN_CALLABLE_SUB, self.callable_sub_prob - 0.03)
+            self.arg_fuzz_prob = max(MIN_ARG_FUZZ, self.arg_fuzz_prob - 0.03)
