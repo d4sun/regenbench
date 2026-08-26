@@ -1,0 +1,8 @@
+[workspace]
+members = ["crates/*"]
+resolver = "2"
+
+[workspace.dependencies]
+pyo3 = { version = "0.22", features = ["extension-module"] }
+thiserror = "1"
+rand = "0.8"

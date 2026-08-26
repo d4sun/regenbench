@@ -1,0 +1,13 @@
+[package]
+name = "regenbench-py"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "regenbench_pybind"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { workspace = true }
+regenbench_core = { package = "regenbench-core", path = "../regenbench-core" }
+rand = { workspace = true }
