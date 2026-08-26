@@ -351,16 +351,33 @@ class CandidateGenerator:
         for _attempt in range(3):
             if _structurally_sane(malicious_pkl):
                 break
-            if attack_family != "gadget":
-                break  # template families are deterministic; retry won't help
-            malicious_pkl = self.mutate_pickle_bytes(
-                pkl_bytes=base_pkl,
-                payload_code=payload_code,
-                dangerous_callable=dangerous_callable,
-                mutate_meta=mutate_meta,
-                mutation_prob=mutation_prob,
-            )
-            if evasion_strategies:
+            if attack_family == "gadget":
+                malicious_pkl = self.mutate_pickle_bytes(
+                    pkl_bytes=base_pkl,
+                    payload_code=payload_code,
+                    dangerous_callable=dangerous_callable,
+                    mutate_meta=mutate_meta,
+                    mutation_prob=mutation_prob,
+                )
+            else:
+                # Template families are deterministic, but evasion strategies
+                # can corrupt them. Try progressively simpler evasion configs.
+                if _attempt == 0:
+                    # First retry: try without evasion strategies
+                    malicious_pkl = base_pkl
+                elif _attempt == 1:
+                    # Second retry: try with minimal evasion (just stack_global_encoding)
+                    from pipeline.evasion import STRATEGIES
+                    minimal = [s for s in evasion_strategies if s in ("stack_global_encoding",)]
+                    if minimal:
+                        from pipeline.evasion import apply_pipeline
+                        malicious_pkl = apply_pipeline(base_pkl, minimal)
+                    else:
+                        malicious_pkl = base_pkl
+                else:
+                    # Third retry: no evasion
+                    malicious_pkl = base_pkl
+            if evasion_strategies and _attempt == 0:
                 from pipeline.evasion import apply_pipeline
                 malicious_pkl = apply_pipeline(malicious_pkl, evasion_strategies)
         else:

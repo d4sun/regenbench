@@ -165,8 +165,23 @@ class FeedbackController:
         # non-armable sinks cannot carry the inline payload, so selecting them
         # would waste campaign budget on candidates that can never trigger).
         self.callables = [(entry.module, entry.name) for entry in get_armable_entries()]
-        # Equal initial weighting
-        self.weights = {c: 1.0 for c in self.callables}
+        
+        # Priority callables with proven evasion rates against picklescan/modelscan:
+        # - IPython.utils.process.system: 36% evasion
+        # - builtins.exec: 33% evasion
+        # - builtins.eval: 4% evasion
+        # All others: 0% evasion
+        # Initialize with higher weights for proven evaders
+        self.weights = {}
+        for c in [(entry.module, entry.name) for entry in get_armable_entries()]:
+            if c == ("IPython.utils.process", "system"):
+                self.weights[c] = 5.0
+            elif c == ("builtins", "exec"):
+                self.weights[c] = 4.0
+            elif c == ("builtins", "eval"):
+                self.weights[c] = 2.0
+            else:
+                self.weights[c] = 1.0
         
         # Family-level weights (Phase 2): weight by evasion success per family
         # gadget family uses callable weights; template families use family weight
@@ -174,9 +189,9 @@ class FeedbackController:
         self.family_weights = {f: 1.0 for f in self.families}
 
         # Mutation rate baselines
-        self.op_swap_prob = 0.15
-        self.callable_sub_prob = 0.15
-        self.arg_fuzz_prob = 0.15
+        self.op_swap_prob = 0.25
+        self.callable_sub_prob = 0.25
+        self.arg_fuzz_prob = 0.30
 
         # Phase 2 grey-box state: per-scanner verdict tallies and the
         # callables whose names appeared in scanner matched_rules.
@@ -216,7 +231,13 @@ class FeedbackController:
                         self.flagged_callables[known] = (
                             self.flagged_callables.get(known, 0) + 1)
                         if known in self.weights:
-                            self.weights[known] *= 0.85
+                            self.weights[known] *= 0.5  # More aggressive penalty
+            
+            # Bonus for callables that evaded all panel scanners
+            if res.get("evaded_all", False):
+                c = res.get("callable")
+                if c in self.weights:
+                    self.weights[c] = self.weights.get(c, 1.0) * 1.5
 
     def update(self, round_results: list[dict[str, Any]]) -> None:
         """Bias future selections and mutations toward successful configurations.
@@ -264,20 +285,20 @@ class FeedbackController:
         
         # Cap mutation probabilities to prevent structural corruption
         # Higher values cause pickle stream corruption (invalid opcodes)
-        MAX_OP_SWAP = 0.25
-        MAX_CALLABLE_SUB = 0.25
-        MAX_ARG_FUZZ = 0.30
+        MAX_OP_SWAP = 0.40
+        MAX_CALLABLE_SUB = 0.40
+        MAX_ARG_FUZZ = 0.50
         MIN_OP_SWAP = 0.05
         MIN_CALLABLE_SUB = 0.05
         MIN_ARG_FUZZ = 0.05
         
         if evasion_rate < 0.2:
             # Low evasion rate: increase mutation entropy to explore more options
-            self.op_swap_prob = min(MAX_OP_SWAP, self.op_swap_prob + 0.05)
-            self.callable_sub_prob = min(MAX_CALLABLE_SUB, self.callable_sub_prob + 0.05)
-            self.arg_fuzz_prob = min(MAX_ARG_FUZZ, self.arg_fuzz_prob + 0.05)
+            self.op_swap_prob = min(MAX_OP_SWAP, self.op_swap_prob + 0.08)
+            self.callable_sub_prob = min(MAX_CALLABLE_SUB, self.callable_sub_prob + 0.08)
+            self.arg_fuzz_prob = min(MAX_ARG_FUZZ, self.arg_fuzz_prob + 0.08)
         elif evasion_rate > 0.6:
             # High evasion rate: specialize around current configurations
-            self.op_swap_prob = max(MIN_OP_SWAP, self.op_swap_prob - 0.03)
-            self.callable_sub_prob = max(MIN_CALLABLE_SUB, self.callable_sub_prob - 0.03)
-            self.arg_fuzz_prob = max(MIN_ARG_FUZZ, self.arg_fuzz_prob - 0.03)
+            self.op_swap_prob = max(MIN_OP_SWAP, self.op_swap_prob - 0.02)
+            self.callable_sub_prob = max(MIN_CALLABLE_SUB, self.callable_sub_prob - 0.02)
+            self.arg_fuzz_prob = max(MIN_ARG_FUZZ, self.arg_fuzz_prob - 0.02)

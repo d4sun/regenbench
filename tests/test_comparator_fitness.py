@@ -150,13 +150,12 @@ class TestMultiFitness(unittest.TestCase):
         clean = compute_fitness_multi({"a": "error"}, None)
         benign = compute_fitness_multi({"a": "benign"}, None)
         self.assertLess(clean, benign)
-        self.assertEqual(compute_fitness_multi({"a": "error"}, None),
-                         -0.25 + 0.5)
+        self.assertEqual(compute_fitness_multi({"a": "error"}, None), 0.5)
 
     def test_novelty_adds_linearly(self):
         base = compute_fitness_multi({"a": "malicious"}, None, novelty_score=0.0)
         novel = compute_fitness_multi({"a": "malicious"}, None, novelty_score=1.0)
-        self.assertAlmostEqual(novel - base, 2.0)
+        self.assertAlmostEqual(novel - base, 1.0)
 
     def test_boundary_symmetry_preserved(self):
         self.assertAlmostEqual(

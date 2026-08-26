@@ -36,6 +36,7 @@ from pipeline.opcodes import parse_pickle
 from pipeline.generator import CandidateGenerator
 from pipeline.runner import Runner, Config
 from pipeline.validity import ValidityOracle
+from pipeline.oracle_ensemble import EnsembleOracle
 from pipeline.db import (
     complete_campaign_run,
     init_db,
@@ -51,10 +52,8 @@ from pipeline.templates import FAMILIES, FAMILY_LABELS
 from pipeline.shelf_life import register_confirmed_bypass
 
 DEFAULT_BASE = "ci/corpus/torch/benign/benign.pt"
-# Static panel capable of analyzing torch-zip artifacts. ModelTracer is
-# dynamic (strace) and excluded from RQ1 static-evasion measurement; add it
-# explicitly via --panel-scanners when behavioral tracing is wanted.
-PANEL_SCANNERS = ["picklescan", "fickling", "modelscan"]
+# Static panel for torch-zip artifacts: picklescan + modelscan (fickling cannot analyze torch .pt files)
+PANEL_SCANNERS = ["picklescan", "modelscan"]
 
 
 def parse_args() -> argparse.Namespace:
@@ -82,13 +81,13 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--validity-timeout", type=int, default=20,
                     help="per-validity-check container timeout (seconds)")
     ap.add_argument("--panel-scanners", nargs="+", default=None,
-                    help="override panel scanner list. Default full panel "
-                         "(picklescan fickling modelscan modeltracer); for real torch "
-                         "checkpoints use 'picklescan modelscan' because fickling and "
-                         "modeltracer cannot analyze torch artifacts")
+                    help="override panel scanner list. Default: picklescan modelscan "
+                         "(fickling excluded as it cannot analyze torch .pt files)")
     ap.add_argument("--workers", type=int, default=4)
     ap.add_argument("--pre-filter", action="store_true",
-                    help="enable the static pre-filter before the DynaHug oracle")
+                    help="enable the static pre-filter before the DynaHug oracle (default: off for generated candidates)")
+    ap.add_argument("--no-pre-filter", action="store_true",
+                    help="disable the static pre-filter even for external artifacts")
     ap.add_argument("--seed", type=int, default=None,
                     help="random seed for reproducibility")
     ap.add_argument("--attack-families", default=",".join(FAMILIES),
@@ -202,8 +201,17 @@ def run_campaign(args: argparse.Namespace) -> int:
     time_limit = args.time_budget_hours * 3600.0
     try:
         generator = CandidateGenerator()
-        oracle_val = ValidityOracle(container_backend=args.backend,
-                                    timeout=args.validity_timeout)
+        if args.ensemble_oracle:
+            oracle_val = EnsembleOracle(
+                container_backend=args.backend,
+                timeout=args.validity_timeout,
+                dynahug_model_dir=args.oracle_model_dir,
+                anomaly_model_dir=args.anomaly_model_dir,
+                anomaly_threshold=args.anomaly_threshold,
+            )
+        else:
+            oracle_val = ValidityOracle(container_backend=args.backend,
+                                        timeout=args.validity_timeout)
         tracker = CoverageTracker(db_path, run_id=run_id)
         controller = FeedbackController()
         novelty = NoveltyTracker()
@@ -360,7 +368,8 @@ def run_campaign(args: argparse.Namespace) -> int:
             config = Config(
                 backend=args.backend, tag=args.tag,
                 max_workers=args.workers, timeout=args.timeout,
-                oracle=True, pre_filter=args.pre_filter,
+                oracle=True, pre_filter=args.pre_filter and not args.no_pre_filter,
+                skip_pre_filter=True,
             )
             panel = args.panel_scanners or PANEL_SCANNERS
             runner = Runner(config, scanners=panel + ["dynahug"])

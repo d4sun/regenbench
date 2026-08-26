@@ -184,7 +184,7 @@ class TestFieldCoverage(unittest.TestCase):
 
     COVERED_FIELDS = {
         "backend", "tag", "max_workers", "timeout", "extensions", "min_size",
-        "skip", "oracle", "pre_filter", "oracle_model_dir",
+        "skip", "oracle", "pre_filter", "oracle_model_dir", "skip_pre_filter",
     }
 
     def test_all_fields_covered(self):

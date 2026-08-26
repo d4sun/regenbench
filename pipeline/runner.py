@@ -63,6 +63,8 @@ class Config:
     oracle: bool = True
     pre_filter: bool = True
     oracle_model_dir: str | None = None
+    # When True, skip the static pre-filter entirely (for trusted/generated candidates)
+    skip_pre_filter: bool = False
 
 
 def make_generator(paths: list[str]) -> tuple[list[str], Callable[[], list[str]]]:
@@ -177,8 +179,8 @@ class Runner:
 
             scanners = self._scanners_for(src)
             
-            # Check pre-filter for DynaHug oracle
-            if "dynahug" in scanners and self.config.pre_filter:
+            # Check pre-filter for DynaHug oracle (skip if disabled)
+            if "dynahug" in scanners and self.config.pre_filter and not self.config.skip_pre_filter:
                 admitted = is_admitted(src)
                 if not admitted:
                     pre_filtered_artifacts.add(src)

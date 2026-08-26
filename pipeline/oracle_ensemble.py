@@ -293,12 +293,31 @@ class EnsembleOracle(ValidityOracle):
         # We want: dynahug says malicious (not valid) AND anomaly says anomalous
         # But for fitness scoring, we want continuous signal
         
-        # Binary ensemble decision for validity
-        ensemble_valid = dynahug_result and anomaly_result and executed
+        # Get anomaly score for continuous signal
+        anomaly_score = 0.0
+        if self.anomaly_detector is not None and counts is not None:
+            anomaly_score = self.anomaly_detector.predict(counts)
         
-        # For fitness scoring, store both scores
-        self._last_anomaly_score = anomaly_score if 'anomaly_score' in locals() else 0.0
+        # Weighted voting for ensemble decision
+        dynahug_weight = 0.6
+        anomaly_weight = 0.3
+        execution_weight = 0.1
+        
+        confidence = 0.0
+        if dynahug_result:
+            confidence += dynahug_weight
+        if anomaly_result:
+            confidence += anomaly_weight
+        if executed:
+            confidence += execution_weight
+        
+        self._last_ensemble_confidence = confidence
+        self._last_anomaly_score = anomaly_score
         self._last_dynahug_result = dynahug_result
+        self._last_dynahug_verdict = self._last_dynahug_verdict if hasattr(self, '_last_dynahug_verdict') else "unknown"
+        
+        # Binary ensemble decision for validity (OR logic - less strict)
+        ensemble_valid = (dynahug_result or anomaly_result) and executed
         
         return ensemble_valid
 
