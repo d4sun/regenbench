@@ -53,11 +53,11 @@ campaign:
   concurrency_limit: 2
   time_budget_hours: 24
   # Static panel scanners; dynahug is appended as the behavioral oracle.
+  # modeltracer excluded: cannot analyze torch artifacts (strace-based).
   panel_scanners:
     - "picklescan"
     - "fickling"
     - "modelscan"
-    - "modeltracer"
   oracle_scanners:
     - "dynahug"
 
