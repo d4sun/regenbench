@@ -49,9 +49,10 @@ reproducible container and wrapped behind a single
 | T3.9 | Real GGUF benign crawler & corpus | — | [`scripts/crawl_gguf.py`](scripts/crawl_gguf.py), `data/gguf_benign_corpus/` |
 | T3.10| MalHug real malicious corpus crawler | — | [`scripts/crawl_malhug.py`](scripts/crawl_malhug.py), `data/malhug/` |
 | T3.11| GGUF attack surface demo & report | — | [`scripts/run_task3_demo.py`](scripts/run_task3_demo.py), [`docs/task3-demo.md`](docs/task3-demo.md) |
-| T3.12| Defense/repair prototype (quarantine + safe reserialization) | — | [`pipeline/defense.py`](pipeline/defense.py), [`tests/test_defense.py`](tests/test_defense.py) |
+| T3.12| Defense/repair prototype (sanitization, quarantine + safe reserialization) | — | [`pipeline/sanitizer.py`](pipeline/sanitizer.py), [`pipeline/repair.py`](pipeline/repair.py), [`pipeline/defense.py`](pipeline/defense.py) |
 | T3.13| Unified Task-3 demo (pickle + torch + GGUF, full pipeline) | — | [`scripts/demo_task3.py`](scripts/demo_task3.py), [`docs/demo-report.md`](docs/demo-report.md) |
 | T3.14| Related-works comparison analysis | — | [`docs/related-works-comparison.md`](docs/related-works-comparison.md) |
+| T3.15| Load-time monitoring | — | [`pipeline/monitor.py`](pipeline/monitor.py) |
 | T4.1 | Implement static pre-filter | — | [`pipeline/pre_filter.py`](pipeline/pre_filter.py) |
 | T4.2 | Implement scanner panel runner | — | [`pipeline/runner.py`](pipeline/runner.py) |
 | T4.3 | Implement behavioral oracle runner | — | [`pipeline/runner.py`](pipeline/runner.py) |
@@ -266,10 +267,12 @@ prototype -> GGUF surface) on a small committed subset, producing
 python3 scripts/demo_task3.py --backend docker   # -> docs/demo-report.md
 ```
 
-The defense prototype (`pipeline/defense.py`) is the "repair" component: it
-quarantines artifacts whose embedded pickle arms a dangerous callable, and
-only reserializes content that survives `torch.load(weights_only=True)`
-inside the sandboxed base container. Related-works context is in
+The defense prototype combines static sanitization (`pipeline/sanitizer.py`),
+repair output/quarantine policy (`pipeline/repair.py` and
+`pipeline/defense.py`), and containerized load-time monitoring
+(`pipeline/monitor.py`). It never mutates the source artifact and only
+reserializes content that survives `torch.load(weights_only=True)` inside the
+sandboxed base container. Related-works context is in
 `docs/related-works-comparison.md`.
 
 ### 6. Supplementary reports
@@ -363,7 +366,7 @@ the campaign produced the benchmark's first **confirmed dual-oracle bypasses**
   - Fickling: 294/294 = **100%** (no rules for IPython/third-party sinks)
 - **confirmed bypasses by mode:** guided 2/172, unguided 21/166
 - **T7.10 guided vs unguided (all-time): 2/694 vs 21/393, z=-5.56, p≈2.6e-8** — uniform search significantly outperforms guided feedback because the winning vector lives in a family outside the callable-weighting scope.
-- **H1:** Not supported (evasion < 70% threshold). *Superseded by the post-fix scaled run (2026-08-29): H1 is now measured as relative improvement over the ShadowPickle baseline per the proposal wording and is Supported (see below).*
+- **H1:** This pre-fix snapshot is superseded by the post-fix scaled run below; current evaluation uses relative improvement over the ShadowPickle baseline.
 - **H2:** Not supported (uncorroborated == confirmed = 23; dynamic validation does not inflate counts). *Consistent with the post-fix valid negative result.*
 - **H3:** Unassessed until empirical version-delta rescans are run. *Now Supported empirically (see below).*
 

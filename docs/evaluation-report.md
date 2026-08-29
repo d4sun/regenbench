@@ -58,6 +58,22 @@ Consistency between scanners and our dynamic behavior-based oracle (DynaHug).
 
 ---
 
+## RQ3: Defense and Repair
+
+The Task 3 defense prototype consists of static pickle sanitization, separate
+repair output with quarantine on failure, and containerized load-time
+monitoring. Run `python scripts/run_evaluation_suite.py --defense` to measure
+the committed malicious and benign pickle subset. Without that command, the
+metrics below are intentionally unassessed rather than reported as zero.
+
+| Metric | Status |
+| :--- | :--- |
+| Repair success rate | Unassessed until `--defense` |
+| Repair false-negative rate | Unassessed until `--defense` |
+| Repair correctness on benign inputs | Unassessed until `--defense` |
+| Repair byte overhead | Unassessed until `--defense` |
+| Monitor detection / false-alarm rates | Measured by the containerized unified demo |
+
 ## RQ4: Ablation Studies
 
 ### Ablation 1: Efficacy of Coverage-Guided Feedback (T7.6)

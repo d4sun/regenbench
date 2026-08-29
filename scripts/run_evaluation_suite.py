@@ -31,6 +31,61 @@ from pipeline.feedback import FeedbackController
 from pipeline.registry import load_registry
 
 
+def compute_defense_metrics(repair_rows: list[dict], monitor_rows: list[dict] | None = None) -> dict:
+    """Compute defense metrics from measured repair/monitor records.
+
+    Rows deliberately contain outcomes rather than scanner-specific objects so
+    this function is also usable by offline evaluations and unit tests.
+    """
+    malicious = [r for r in repair_rows if r.get("label") == "malicious"]
+    benign = [r for r in repair_rows if r.get("label") == "benign"]
+    repaired_malicious = [r for r in malicious if r.get("sanitized_verdict") == "benign"]
+    repaired_benign = [r for r in benign if r.get("sanitized_verdict") == "benign"]
+    overhead = [r["sanitized_bytes"] / r["original_bytes"] for r in repair_rows
+                if r.get("original_bytes", 0) and r.get("sanitized_bytes") is not None]
+    metrics = {
+        "repair_success_rate": len(repaired_malicious) / len(malicious) if malicious else None,
+        "repair_false_negative_rate": 1 - len(repaired_malicious) / len(malicious) if malicious else None,
+        "repair_correctness_rate": len(repaired_benign) / len(benign) if benign else None,
+        "repair_overhead": sum(overhead) / len(overhead) if overhead else None,
+    }
+    monitors = monitor_rows or []
+    mm = [r for r in monitors if r.get("label") == "malicious"]
+    mb = [r for r in monitors if r.get("label") == "benign"]
+    metrics["monitor_detection_rate"] = (
+        sum(r.get("verdict") == "suspicious" for r in mm) / len(mm) if mm else None)
+    metrics["monitor_false_alarm_rate"] = (
+        sum(r.get("verdict") == "suspicious" for r in mb) / len(mb) if mb else None)
+    return metrics
+
+
+def collect_repair_metrics(malicious_dir: str, benign_dir: str, output_dir: str) -> tuple[dict, list[dict]]:
+    """Run static repair over a small pickle/Torch corpus without loading it on host."""
+    from pipeline.repair import ModelRepair
+
+    paths = []
+    for label, root in (("malicious", malicious_dir), ("benign", benign_dir)):
+        if not os.path.isdir(root):
+            continue
+        for base, _dirs, names in os.walk(root):
+            for name in sorted(names):
+                if name.endswith((".pkl", ".pickle", ".pt", ".pth", ".bin")):
+                    paths.append((label, os.path.join(base, name)))
+    rows = []
+    repairer = ModelRepair()
+    for label, path in paths:
+        original = os.path.getsize(path)
+        result = repairer.repair_file(path, output_dir)
+        rows.append({
+            "label": label,
+            "path": path,
+            "original_bytes": original,
+            "sanitized_bytes": os.path.getsize(result.repaired) if result.repaired else None,
+            "sanitized_verdict": "benign" if not result.quarantined else "quarantined",
+        })
+    return compute_defense_metrics(rows), rows
+
+
 def bootstrap_ci(data: list[int | float], num_resamples: int = 10000,
                  seed: int | None = None) -> tuple[float, float]:
     """Calculate 95% bootstrap confidence intervals.
@@ -858,6 +913,10 @@ def main(argv: list[str] | None = None) -> int:
                     help="if >0, randomly sample this many artifacts from corpus for FP check")
     ap.add_argument("--seed", type=int, default=1337,
                     help="fixed seed for bootstraps/permutation tests (reproducibility)")
+    ap.add_argument("--defense", action="store_true",
+                    help="run static repair metrics over the committed pickle corpus")
+    ap.add_argument("--defense-output", default="data/repaired/evaluation",
+                    help="directory for repaired evaluation artifacts")
     args = ap.parse_args(argv)
 
     print("====================================================")
@@ -865,6 +924,12 @@ def main(argv: list[str] | None = None) -> int:
     print("====================================================")
 
     load_registry()
+
+    defense_metrics = None
+    if args.defense:
+        defense_metrics, _ = collect_repair_metrics(
+            "ci/corpus/pkl/malicious", "ci/corpus/pkl/benign", args.defense_output)
+        print(f"Defense repair metrics: {defense_metrics}")
 
     scanners = ["picklescan", "fickling", "modelscan", "modeltracer", "dynahug"]
     fp_sample = 20 if args.quick else args.fp_sample
@@ -1052,7 +1117,7 @@ def main(argv: list[str] | None = None) -> int:
         "",
         "---",
         "",
-        "## RQ3: Oracle Reliability and False-Positive Costs",
+        "## RQ5: Oracle Reliability and False-Positive Costs",
         "Consistency between scanners and our dynamic behavior-based oracle (DynaHug).",
         "",
         "### Benign False-Positive Cost Evaluation",
@@ -1097,6 +1162,29 @@ def main(argv: list[str] | None = None) -> int:
     else:
         report_lines.append("- Not computed: no benign corpus scan results available.")
     report_lines.append("")
+    report_lines.extend([
+        "---",
+        "",
+        "## RQ3: Defense and Repair",
+        "",
+        "Repair metrics use static sanitization and reconstruction. Load-time "
+        "monitoring is assessed by the unified Task 3 demo when containers are available.",
+        "",
+    ])
+    if defense_metrics is None:
+        report_lines.append("Not assessed; rerun with `--defense`.")
+    else:
+        report_lines.extend([
+            "| Metric | Result |",
+            "| :--- | :---: |",
+            f"| Repair success rate | {defense_metrics['repair_success_rate']} |",
+            f"| Repair false-negative rate | {defense_metrics['repair_false_negative_rate']} |",
+            f"| Repair correctness on benign inputs | {defense_metrics['repair_correctness_rate']} |",
+            f"| Repair byte overhead | {defense_metrics['repair_overhead']} |",
+            f"| Monitor detection rate | {defense_metrics['monitor_detection_rate']} |",
+            f"| Monitor false-alarm rate | {defense_metrics['monitor_false_alarm_rate']} |",
+            "",
+        ])
     report_lines.extend([
         "---",
         "",

@@ -35,10 +35,11 @@ transfers across versions or datasets.
 2. **11-strategy static-signature evasion pipeline** applied to real
    scanner-matched rules (GLOBAL->STACK_GLOBAL, nested-loads wrapping, indirect
    callable resolution, payload obfuscation).
-3. **A defensive prototype** (`pipeline/defense.py`) that quarantines
-   dangerous artifacts and reserializes only `weights_only=True`-loadable
-   content inside a container -- the "repair malicious ML models on hubs"
-   direction Task 3 asks for.
+3. **A defensive prototype** (`pipeline/sanitizer.py`, `pipeline/repair.py`,
+   `pipeline/defense.py`) that statically rewrites supported dangerous pickle
+   references, quarantines unrepairable artifacts, and reserializes only
+   `weights_only=True`-loadable content inside a container. `pipeline/monitor.py`
+   adds load-time syscall, file, and network observation.
 4. **The GGUF attack surface** -- a format the pickle-oriented scanners cannot
    see, with a reference-reader oracle.
 

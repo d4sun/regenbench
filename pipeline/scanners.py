@@ -107,6 +107,8 @@ def run_scan(backend: str, image_full: str, src: str,
                               timeout=timeout + 15)
     except subprocess.TimeoutExpired:
         return None, f"timeout running {image_full} on {src}"
+    except OSError as exc:
+        return None, f"could not run {backend}: {exc}"
     try:
         out = json.loads((proc.stdout or "").strip().splitlines()[-1])
     except (json.JSONDecodeError, IndexError):

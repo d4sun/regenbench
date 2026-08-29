@@ -29,6 +29,8 @@ import tempfile
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from pipeline.defense import ModelDefense, DefenseVerdict  # noqa: E402
+from pipeline.monitor import LoadTimeMonitor  # noqa: E402
+from pipeline.repair import ModelRepair  # noqa: E402
 from pipeline.gguf_tools import GGUF_ATTACKS, GGUF_ATTACK_LABELS, generate_candidate_gguf, benign_gguf  # noqa: E402
 from pipeline.generator import CandidateGenerator  # noqa: E402
 from pipeline.runner import Runner, Config  # noqa: E402
@@ -107,6 +109,11 @@ def defend_candidates(candidates: list[dict], backend: str, out_dir: str) -> dic
     defense = ModelDefense(backend=backend, timeout=120, panel_scanners=PANEL)
     results = defense.batch_inspect([c["path"] for c in candidates], out_dir)
     return {r.artifact_path: r.to_dict() for r in results}
+
+
+def monitor_candidates(candidates: list[dict], backend: str) -> dict[str, dict]:
+    monitor = LoadTimeMonitor(backend=backend)
+    return {c["path"]: monitor.monitor_load(c["path"], timeout=30) for c in candidates}
 
 
 def build_gguf_corpus(out_dir: str) -> tuple[list[tuple[str, str]], str]:
@@ -214,6 +221,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"    {os.path.basename(path):46s} {d['verdict']}")
     report["defense"] = {os.path.basename(p): d for p, d in defense_results.items()}
 
+    # --- 4b. Load-time monitor ---------------------------------------------
+    print("\n[4b] Monitoring load-time behavior...")
+    monitor_results = monitor_candidates(candidates, args.backend)
+    for path, m in monitor_results.items():
+        print(f"    {os.path.basename(path):46s} {m['verdict']}")
+    report["monitor"] = {os.path.basename(p): m for p, m in monitor_results.items()}
+
     # --- 5. GGUF attack surface -------------------------------------------
     print("\n[5] GGUF attack surface...")
     gguf_dir = os.path.join(args.out, "gguf")
@@ -230,6 +244,17 @@ def main(argv: list[str] | None = None) -> int:
     os.makedirs(docs_dir, exist_ok=True)
     lines = ["# ReGenBench -- Task 3 Unified Demo", ""]
     lines.append(f"Backend: `{args.backend}`; seed subset: `{args.subset}`.")
+    lines.append("")
+    lines.append("## 4b. LoadTimeMonitor")
+    lines.append("")
+    lines.append("| candidate | verdict | suspicious syscalls | files created | network |")
+    lines.append("| :--- | :---: | :---: | :---: | :---: |")
+    for c in report["candidates"]:
+        base = os.path.basename(c["path"])
+        m = report["monitor"].get(base, {})
+        lines.append(f"| {c['family']} | {m.get('verdict', 'error')} | "
+                     f"{len(m.get('suspicious_syscalls', []))} | "
+                     f"{len(m.get('files_created', []))} | {m.get('network_activity', False)} |")
     lines.append("")
     lines.append("## 1. Generated candidates (one per attack family)")
     lines.append("")

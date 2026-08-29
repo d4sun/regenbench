@@ -126,6 +126,8 @@ def parse_args() -> argparse.Namespace:
                       help="probability of applying family-synthesis mutation (Phase 3b)")
     ap.add_argument("--oracle-model-dir", default="real_benign_corpus/oracle-calibrated/v5-recalibrated",
                       help="path to recalibrated DynaHug model directory")
+    ap.add_argument("--demo-subset", action="store_true",
+                    help="Task 3 smoke mode: one round and five candidates from ci/corpus")
     ap.add_argument("--ensemble-oracle", action="store_true",
                       help="use ensemble oracle (DynaHug + syscall anomaly detector)")
     ap.add_argument("--anomaly-model-dir", default="real_benign_corpus/oracle-calibrated/v5-recalibrated/anomaly",
@@ -236,6 +238,11 @@ def run_campaign(args: argparse.Namespace) -> int:
     print("=" * 60)
     print(f"STARTING {args.mode.upper()} FUZZING CAMPAIGN (replicate {args.replicate})")
     print("=" * 60)
+
+    if args.demo_subset:
+        args.rounds = 1
+        args.candidates_per_round = 5
+        args.base_checkpoint = "ci/corpus/torch/benign/benign.pt"
 
     if args.seed is not None:
         random.seed(args.seed)
@@ -516,6 +523,7 @@ def run_campaign(args: argparse.Namespace) -> int:
                 backend=args.backend, tag=args.tag,
                 max_workers=args.workers, timeout=args.timeout,
                 oracle=True, pre_filter=args.pre_filter,
+                oracle_model_dir=args.oracle_model_dir,
             )
             panel = args.panel_scanners or PANEL_SCANNERS
             runner = Runner(config, scanners=panel + ["dynahug"])

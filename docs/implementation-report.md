@@ -906,7 +906,7 @@ With Phase-1/2 evasion pipeline active:
   - Fickling: 294/294 = 100% (no rules for IPython/third-party sinks)
 - Confirmed bypasses by mode: guided 2/172, unguided 21/166
 - **T7.10 guided vs unguided (all-time)**: 2/694 vs 21/393, z=-5.56, p≈2.6e-8 — uniform search significantly outperforms guided feedback because the winning vector lives in a family outside the callable-weighting scope
-- **H1**: Not supported (evasion < 70% threshold) — *superseded by the post-fix scaled run in 5.9*
+- **H1**: Superseded by the post-fix scaled run in section 5.9; current evaluation uses relative improvement over the ShadowPickle baseline.
 - **H2**: Not supported (uncorroborated == confirmed = 23; dynamic validation does not inflate counts) — *consistent with the post-fix valid negative result (5.9)*
 - **H3**: Unassessed until empirical version-delta rescans are run — *now supported empirically (5.9)*
 

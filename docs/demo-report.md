@@ -53,6 +53,13 @@ Backend: `docker`; seed subset: `ci/corpus`.
 | gguf_malformed_version_zero.gguf | malicious | benign |
 | benign-synth.gguf | benign | benign |
 
+## 5b. Load-time monitoring
+
+The unified demo now runs `LoadTimeMonitor` against each Torch candidate inside
+the base container. It records `execve`, file-open, and network syscalls plus
+files created during loading. Runtime or image absence is reported explicitly
+in `demo-artifacts/demo-report.json`, never as a benign result.
+
 ## 6. Baseline comparison
 
 ShadowPickle baseline (reproduced by `scripts/run_shadowpickle_baseline.py`): 10/40 valid candidates bypassed (25.0%). Fuzzing campaigns: 446/945 (47.2%).

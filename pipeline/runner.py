@@ -64,6 +64,8 @@ class Config:
     oracle: bool = True
     pre_filter: bool = True
     oracle_model_dir: str | None = None
+    sanitize_mode: bool = False
+    repair_dir: str = "data/repaired"
 
 
 def make_generator(paths: list[str]) -> tuple[list[str], Callable[[], list[str]]]:
@@ -166,21 +168,30 @@ class Runner:
 
         jobs = []
         pre_filtered_artifacts = set()
+        if self.config.sanitize_mode:
+            from pipeline.repair import ModelRepair
+            repairer = ModelRepair()
         
         for src in artifacts:
             if self._filter(src) is False:
                 continue
+
+            scan_src = src
+            if self.config.sanitize_mode:
+                repaired = repairer.repair_file(src, self.config.repair_dir)
+                if repaired.repaired:
+                    scan_src = repaired.repaired
 
             # Generate candidate ID linking all records
             cand_id = hashlib.md5(src.encode("utf-8")).hexdigest()
             if db_path:
                 log_candidate(db_path, cand_id, src, "Fuzzer Campaign")
 
-            scanners = self._scanners_for(src)
+            scanners = self._scanners_for(scan_src)
             
             # Check pre-filter for DynaHug oracle
             if "dynahug" in scanners and self.config.pre_filter:
-                admitted = is_admitted(src)
+                admitted = is_admitted(scan_src)
                 if not admitted:
                     pre_filtered_artifacts.add(src)
                     scanners = [s for s in scanners if s != "dynahug"]
@@ -188,7 +199,7 @@ class Runner:
                         log_oracle_result(db_path, cand_id, "benign", 0.0, 0.0, True)
 
             for scanner in scanners:
-                jobs.append((src, scanner, cand_id))
+                jobs.append((scan_src, scanner, cand_id))
 
         workers = self.config.max_workers or max(1, min(32, (os.cpu_count() or 4)))
         results: list[ScanResult] = []

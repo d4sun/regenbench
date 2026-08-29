@@ -16,6 +16,9 @@ from pipeline.defense import DefenseVerdict, ModelDefense  # noqa: E402
 from pipeline.opcodes import parse_pickle  # noqa: E402
 from pipeline.pre_filter import is_admitted  # noqa: E402
 from pipeline.registry import get_armable_entries, is_dangerous  # noqa: E402
+from pipeline.sanitizer import PickleSanitizer  # noqa: E402
+from pipeline.repair import ModelRepair  # noqa: E402
+from pipeline.monitor import LoadTimeMonitor  # noqa: E402
 
 
 def _global_pickle(module: str, name: str, arg: str = "sentinel") -> bytes:
@@ -110,6 +113,53 @@ class TestModelDefense(unittest.TestCase):
         self.assertEqual(len(results), 2)
         self.assertEqual(results[0].verdict, DefenseVerdict.ACCEPTED)
         self.assertEqual(results[1].verdict, DefenseVerdict.QUARANTINED)
+
+
+class TestPickleSanitizer(unittest.TestCase):
+    def test_global_is_rewritten_without_unpickling(self):
+        original = _global_pickle("os", "system")
+        repaired = PickleSanitizer().sanitize(original)
+        self.assertNotIn(b"os\nsystem", repaired)
+        self.assertIn(b"builtins\nlen", repaired)
+        self.assertEqual(b"".join(op.code + arg for op, arg in parse_pickle(repaired)), repaired)
+
+    def test_stack_global_is_rewritten(self):
+        original = _stack_global_pickle("os", "system")
+        repaired = PickleSanitizer().sanitize(original)
+        self.assertIn(b"os", original)
+        self.assertNotIn(b"os", repaired)
+        self.assertIn(b"builtins", repaired)
+        parse_pickle(repaired)
+
+    def test_unrepairable_can_be_stripped(self):
+        repaired = PickleSanitizer().sanitize(b"\x80\x04\xff", "strip")
+        self.assertEqual(pickle.loads(repaired), {})
+
+    def test_repair_writes_copy_and_preserves_source(self):
+        with tempfile.TemporaryDirectory() as td:
+            source = Path(td) / "evil.pkl"
+            original = _global_pickle("os", "system")
+            source.write_bytes(original)
+            result = ModelRepair().repair_file(str(source), str(Path(td) / "out"))
+            self.assertFalse(result.quarantined)
+            self.assertTrue(result.changed)
+            self.assertEqual(source.read_bytes(), original)
+            self.assertIsNotNone(result.repaired)
+
+
+class TestLoadTimeMonitor(unittest.TestCase):
+    def test_missing_artifact_is_explicit(self):
+        result = LoadTimeMonitor(backend="not-a-runtime").monitor_load("/missing.pt")
+        self.assertEqual(result["verdict"], "suspicious")
+        self.assertEqual(result["error"], "artifact not found")
+
+    def test_missing_runtime_is_not_clean(self):
+        with tempfile.TemporaryDirectory() as td:
+            path = Path(td) / "model.pt"
+            path.write_bytes(b"not a model")
+            result = LoadTimeMonitor(backend="not-a-runtime").monitor_load(str(path))
+            self.assertEqual(result["verdict"], "suspicious")
+            self.assertIn("unavailable", result["error"])
 
 
 if __name__ == "__main__":
