@@ -62,9 +62,18 @@ def main():
                     help="pull latest images before re-scanning")
     ap.add_argument("--decay-only", action="store_true",
                     help="only compute decay curve from existing rescans, don't re-scan")
+    ap.add_argument("--register", action="store_true",
+                    help="bulk-register confirmed bypasses from the campaign DB "
+                         "into the shelf DB before re-scanning (idempotent)")
     args = ap.parse_args()
 
     scanners = [s.strip() for s in args.scanners.split(",")]
+
+    # Optionally bulk-register confirmed bypasses from the campaign DB.
+    if args.register and not args.decay_only:
+        from pipeline.shelf_life import register_bypasses_from_campaign_db
+        n = register_bypasses_from_campaign_db(args.db)
+        print(f"[shelf-life] Registered {n} confirmed bypasses from {args.db}")
     
     # Resolve image overrides
     from pipeline.scanners import SCANNERS
