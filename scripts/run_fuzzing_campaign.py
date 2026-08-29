@@ -16,7 +16,7 @@ Usage:
         --base-checkpoint real_benign_corpus/all/.../pytorch_model.bin \
         --mode guided --rounds 5 --candidates-per-round 20 \
         --replicate 1 --db data/regenbench_campaign.db \
-        --backend podman
+        --backend docker
 """
 
 from __future__ import annotations
@@ -78,7 +78,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--replicate", type=int, default=1,
                     help="replicate number (1..N); recorded in campaign_runs")
     ap.add_argument("--db", default="data/regenbench_campaign.db")
-    ap.add_argument("--backend", choices=["podman", "docker"], default="podman")
+    ap.add_argument("--backend", choices=["podman", "docker"], default="docker")
     ap.add_argument("--tag", default=":latest")
     ap.add_argument("--timeout", type=int, default=120,
                     help="per-scan container timeout (seconds)")

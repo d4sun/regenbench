@@ -121,7 +121,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Core fuzzing engines
     generator = CandidateGenerator()
-    oracle_val = ValidityOracle(container_backend="podman")
+    oracle_val = ValidityOracle(container_backend="docker")
     plausibility = PlausibilityOracle(oracle_val)
     tracker = CoverageTracker(args.db, run_id=run_id)
     controller = FeedbackController()
@@ -217,7 +217,7 @@ def main(argv: list[str] | None = None) -> int:
                 candidates.append((cand_path, cand_bytes, chosen_callable, trigger_file, attack_family))
 
             # 2. Run scanners and dynahug oracle
-            config = Config(backend="podman", tag=":latest", max_workers=concurrency_limit,
+            config = Config(backend="docker", tag=":latest", max_workers=concurrency_limit,
                             timeout=timeout_seconds, oracle=True, pre_filter=True)
             runner = Runner(config, scanners=scanners)
 

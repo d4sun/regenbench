@@ -81,7 +81,7 @@ def run_benign_fp_check(scanners: list[str], corpus_dir: str | None = None,
             print("[warning] benign corpus unavailable; FP rates set to 0.0 (unmeasured)")
             return {s: 0.0 for s in scanners}
 
-    config = Config(backend="podman", tag=":latest", max_workers=4, timeout=60,
+    config = Config(backend="docker", tag=":latest", max_workers=4, timeout=60,
                     oracle=True, pre_filter=False,
                     oracle_model_dir=os.environ.get("REGENBENCH_ORACLE_MODEL_DIR") or
                                    os.path.abspath("real_benign_corpus/oracle-calibrated/v2-disjoint"))
@@ -162,7 +162,7 @@ def run_ablation_unguided() -> tuple[float | None, float | None]:
     """
     print("\nRunning Ablation: Unguided Fuzzing campaign...")
     generator = CandidateGenerator()
-    oracle_val = ValidityOracle(container_backend="podman")
+    oracle_val = ValidityOracle(container_backend="docker")
     plausibility = PlausibilityOracle(oracle_val)
     controller = FeedbackController()
 
@@ -211,7 +211,7 @@ def run_ablation_unguided() -> tuple[float | None, float | None]:
                 f.write(cand_bytes)
             candidates.append((cand_path, cand_bytes, chosen_callable, trigger_file))
 
-        config = Config(backend="podman", tag=":latest", max_workers=2, timeout=45, oracle=True, pre_filter=True)
+        config = Config(backend="docker", tag=":latest", max_workers=2, timeout=45, oracle=True, pre_filter=True)
         runner = Runner(config, scanners=["picklescan", "fickling", "dynahug"])
         cand_paths = [c[0] for c in candidates]
         results = runner.run(cand_paths)
@@ -288,13 +288,13 @@ def run_ablation_prefilter() -> tuple[float | None, float | None]:
             files.append(dst)
 
         # 5 distinct files with the oracle: pre-filter admits/gates dynahug.
-        config_with = Config(backend="podman", tag=":latest", max_workers=2, timeout=45, oracle=True, pre_filter=True)
+        config_with = Config(backend="docker", tag=":latest", max_workers=2, timeout=45, oracle=True, pre_filter=True)
         runner_with = Runner(config_with, scanners=["picklescan", "dynahug"])
         start = time.time()
         runner_with.run(files)
         dur_with = time.time() - start
 
-        config_without = Config(backend="podman", tag=":latest", max_workers=2, timeout=45, oracle=True, pre_filter=False)
+        config_without = Config(backend="docker", tag=":latest", max_workers=2, timeout=45, oracle=True, pre_filter=False)
         runner_without = Runner(config_without, scanners=["picklescan", "dynahug"])
         start = time.time()
         runner_without.run(files)
