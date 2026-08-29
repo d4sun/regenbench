@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from pipeline.generator import CandidateGenerator
 from pipeline.runner import Runner, Config
 from pipeline.validity import ValidityOracle
+from pipeline.plausibility import PlausibilityOracle
 from pipeline.fitness import compute_fitness
 from pipeline.feedback import FeedbackController
 from pipeline.registry import load_registry
@@ -162,6 +163,7 @@ def run_ablation_unguided() -> tuple[float | None, float | None]:
     print("\nRunning Ablation: Unguided Fuzzing campaign...")
     generator = CandidateGenerator()
     oracle_val = ValidityOracle(container_backend="podman")
+    plausibility = PlausibilityOracle(oracle_val)
     controller = FeedbackController()
 
     benign_pt = "ci/corpus/torch/benign/benign.pt"
@@ -224,7 +226,7 @@ def run_ablation_unguided() -> tuple[float | None, float | None]:
 
         for cand_path, cand_bytes, chosen_callable, trigger_file in candidates:
             cand_results = results_by_file.get(cand_path, [])
-            is_valid = oracle_val.validate_torch(cand_bytes, trigger_file)
+            is_valid = plausibility.confirm(cand_bytes, trigger_file)
 
             panel_verdicts = []
             oracle_verdict = "benign"

@@ -49,6 +49,7 @@ from pipeline.feedback import CoverageTracker, FeedbackController, NoveltyTracke
 from pipeline.registry import load_registry
 from pipeline.templates import FAMILIES, FAMILY_LABELS
 from pipeline.shelf_life import register_confirmed_bypass
+from pipeline.plausibility import PlausibilityOracle
 
 DEFAULT_BASE = "ci/corpus/torch/benign/benign.pt"
 # Static panel capable of analyzing torch-zip artifacts. ModelTracer is
@@ -204,6 +205,7 @@ def run_campaign(args: argparse.Namespace) -> int:
         generator = CandidateGenerator()
         oracle_val = ValidityOracle(container_backend=args.backend,
                                     timeout=args.validity_timeout)
+        plausibility = PlausibilityOracle(oracle_val)
         tracker = CoverageTracker(db_path, run_id=run_id)
         controller = FeedbackController()
         novelty = NoveltyTracker()
@@ -382,7 +384,7 @@ def run_campaign(args: argparse.Namespace) -> int:
 
             for filepath, cand_bytes, chosen_callable, trigger_file, attack_family, cand_strategies in candidates:
                 cand_results = results_by_file.get(filepath, [])
-                is_valid = oracle_val.validate_torch(cand_bytes, trigger_file)
+                is_valid = plausibility.confirm(cand_bytes, trigger_file)
                 cand_id = hashlib.md5(filepath.encode("utf-8")).hexdigest()
 
                 panel_verdicts = []
@@ -544,7 +546,9 @@ def run_campaign(args: argparse.Namespace) -> int:
                     coverage_delta=coverage_delta,
                     novelty_score=nov_score,
                 )
-                log_fitness(db_path, cand_id, fit_score, is_valid)
+                log_fitness(db_path, cand_id, fit_score, is_valid,
+                            transport=cand_transport or "loads",
+                            strategies=",".join(cand_strategies) if cand_strategies else None)
 
                 round_results.append({
                     "callable": chosen_callable,
@@ -552,6 +556,8 @@ def run_campaign(args: argparse.Namespace) -> int:
                     "fitness": fit_score,
                     "evaded_all": all(v == "benign" for v in panel_verdicts),
                     "valid": is_valid,
+                    "transport": cand_transport or "loads",
+                    "strategies": list(cand_strategies or []),
                     # Phase-2 grey-box keys (FeedbackController ingests them).
                     "scanner_verdicts": scanner_verdicts,
                     "matched_rules": matched_rules,

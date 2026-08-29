@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from pipeline.generator import CandidateGenerator
 from pipeline.runner import Runner, Config
 from pipeline.validity import ValidityOracle
+from pipeline.plausibility import PlausibilityOracle
 from pipeline.db import (init_db, log_candidate, log_fitness, log_campaign_run,
                          complete_campaign_run)
 from pipeline.comparator import check_bypass
@@ -121,6 +122,7 @@ def main(argv: list[str] | None = None) -> int:
     # Core fuzzing engines
     generator = CandidateGenerator()
     oracle_val = ValidityOracle(container_backend="podman")
+    plausibility = PlausibilityOracle(oracle_val)
     tracker = CoverageTracker(args.db, run_id=run_id)
     controller = FeedbackController()
 
@@ -234,7 +236,7 @@ def main(argv: list[str] | None = None) -> int:
             for filepath, cand_bytes, chosen_callable, trigger_file, attack_family in candidates:
                 cand_results = results_by_file.get(filepath, [])
 
-                is_valid = oracle_val.validate_torch(cand_bytes, trigger_file)
+                is_valid = plausibility.confirm(cand_bytes, trigger_file)
 
                 panel_verdicts = []
                 oracle_verdict = "benign"

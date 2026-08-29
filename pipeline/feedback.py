@@ -16,6 +16,57 @@ from pipeline.templates import FAMILIES, FAMILY_TEMPLATES
 from pipeline.db import log_coverage
 
 
+# RQ2 combo-reinforcement tiers, mirroring compute_fitness_lexicographic:
+# Tier 1 = oracle-confirmed + valid (fit >= TIER1_FIT), Tier 2 = panel-evading +
+# valid (fit >= TIER2_FIT, or a valid candidate that evaded the whole panel
+# under the continuous fitness modes), Tier 3 = merely-valid (fit > 0). The
+# winning configuration on this corpus (e.g. the pypi_injected family + splice
+# transport + a stacked strategy set) lives in the (family, transport,
+# strategies) product space, so the feedback loop must reward the full combo --
+# not just the family -- to keep guided search from losing to uniform-random.
+TIER1_FIT = 10000.0
+TIER2_FIT = 1000.0
+TIER1_WEIGHT = 5.0
+TIER2_WEIGHT = 2.0
+TIER3_WEIGHT = 0.1
+
+
+# RQ2 combo-reinforcement tiers, mirroring compute_fitness_lexicographic:
+# Tier 1 = oracle-confirmed + valid (fit >= TIER1_FIT), Tier 2 = panel-evading +
+# valid (fit >= TIER2_FIT, or any valid candidate that evaded the whole panel),
+# Tier 3 = merely-valid (fit > 0). The winning configuration on this corpus
+# (pypi_injected family + splice transport + a stacked strategy set) lives in
+# the (family, transport, strategies) product space, so the feedback loop must
+# reward the full combo -- not just the family -- to restore guided > unguided.
+TIER1_FIT = 10000.0
+TIER2_FIT = 1000.0
+TIER1_WEIGHT = 5.0
+TIER2_WEIGHT = 2.0
+TIER3_WEIGHT = 0.1
+
+
+# RQ2 combo-reinforcement tiers, mirroring compute_fitness_lexicographic:
+# Tier 1 = oracle-confirmed + valid (fit >= 10000), Tier 2 = panel-evading +
+# valid (fit >= 1000, or a valid candidate that evaded the whole panel under the
+# continuous fitness modes), Tier 3 = merely-valid. The winning configuration on
+# the current corpus (e.g. the pypi_injected family + splice transport + a
+# stacked strategy set) lives in the (family, transport, strategies) product
+# space, so the feedback loop must reward the full combo -- not just the family
+# -- to restore guided > unguided.
+TIER1_FIT = 10000.0
+TIER2_FIT = 1000.0
+TIER1_WEIGHT = 5.0
+TIER2_WEIGHT = 2.0
+TIER3_WEIGHT = 0.1
+
+
+TIER1_FIT = 10000.0  # lexicographic Tier 1 boundary: oracle-confirmed + valid
+TIER2_FIT = 1000.0   # lexicographic Tier 2 boundary: panel-evading + valid
+TIER1_WEIGHT = 5.0   # reward for oracle-confirmed + valid configurations
+TIER2_WEIGHT = 2.0   # reward for panel-evading + valid configurations
+TIER3_WEIGHT = 0.1   # small reward for merely-valid configurations
+
+
 def _string_value(op, arg: bytes) -> str | None:
     """Extract the string pushed by a string opcode (for STACK_GLOBAL)."""
     name = op.name
@@ -173,6 +224,12 @@ class FeedbackController:
         self.families = list(FAMILIES)
         self.family_weights = {f: 1.0 for f in self.families}
 
+        # RQ2 combo weights: (family, transport, frozenset(strategies)) -> weight.
+        # The lexicographic Tier-1/Tier-2 boundaries live in the combo space, so
+        # the feedback loop rewards the full (family, transport, strategies)
+        # configuration -- not just the family -- for guided sampling.
+        self.combo_weights: dict[tuple[str, str, frozenset[str]], float] = {}
+
         # Mutation rate baselines
         self.op_swap_prob = 0.15
         self.callable_sub_prob = 0.15
@@ -196,6 +253,323 @@ class FeedbackController:
         if total <= 0.0:
             return {f: 1.0 / len(self.families) for f in self.families}
         return {f: w / total for f, w in self.family_weights.items()}
+
+    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
+        """Normalized weights over (family, transport, strategies) combos.
+
+        Empty before the first rewarded combo is observed; callers fall back to
+        family-only / strategy sampling when empty.
+        """
+        total = sum(self.combo_weights.values())
+        if total <= 0.0:
+            return {}
+        return {k: w / total for k, w in self.combo_weights.items()}
+
+    def sample_configuration(
+        self,
+        rng,
+        allowed_families: set[str] | None = None,
+        fixed_strategies: frozenset[str] | None = None,
+        fixed_transport: str | None = None,
+    ) -> tuple[str, str, frozenset[str]] | None:
+        """One weighted draw over known-rewarded configuration combos.
+
+        Restricted to ``allowed_families`` (default: all families) and any
+        pinned strategy/transport. Returns ``None`` when no combo evidence
+        matches, so the campaign can fall back to its regular sampling path.
+        """
+        pool = [
+            (k, w) for k, w in self.combo_weights.items()
+            if (allowed_families is None or k[0] in allowed_families)
+            and (fixed_strategies is None or k[2] == fixed_strategies)
+            and (fixed_transport is None or k[1] == fixed_transport)
+        ]
+        if not pool:
+            return None
+        keys = [k for k, _ in pool]
+        probs = [w for _, w in pool]
+        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
+        return fam, transport, strategies
+
+    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
+        """Normalized weights over (family, transport, strategies) combos.
+
+        Empty before the first rewarded combo is observed; callers fall back to
+        family-weighted sampling when empty.
+        """
+        total = sum(self.combo_weights.values())
+        if total <= 0.0:
+            return {}
+        return {k: w / total for k, w in self.combo_weights.items()}
+
+    def sample_combo(
+        self,
+        rng,
+        allowed_families: set[str],
+        fixed_strategies: frozenset[str] | None = None,
+        fixed_transport: str | None = None,
+    ) -> tuple[str, str, list[str]] | None:
+        """One weighted draw over known-rewarded combos restricted to
+        ``allowed_families``.
+
+        When ``fixed_strategies`` (``--evasion-strategies``) or
+        ``fixed_transport`` is pinned, only combos matching it are eligible.
+        Returns ``None`` when no combo evidence exists for the allowed set;
+        callers then use the family/callable/strategy fallback path.
+        """
+        pool = [
+            (k, w) for k, w in self.combo_weights.items()
+            if k[0] in allowed_families
+            and (fixed_strategies is None or k[2] == fixed_strategies)
+            and (fixed_transport is None or k[1] == fixed_transport)
+        ]
+        if not pool:
+            return None
+        keys = [k for k, _ in pool]
+        probs = [w for _, w in pool]
+        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
+        return fam, transport, sorted(strategies)
+
+    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
+        """Normalized weights over (family, transport, strategies) combos.
+
+        Empty before the first rewarded combo is observed; callers fall back
+        to family-weighted sampling when empty.
+        """
+        total = sum(self.combo_weights.values())
+        if total <= 0.0:
+            return {}
+        return {k: w / total for k, w in self.combo_weights.items()}
+
+    def sample_combo(
+        self,
+        rng,
+        allowed_families: set[str],
+        fixed_strategies: frozenset[str] | None = None,
+        fixed_transport: str | None = None,
+    ) -> tuple[str, str, list[str]] | None:
+        """One weighted draw over known-rewarded combos restricted to
+        ``allowed_families`` (and any fixed strategy/transport pins).
+
+        Returns ``None`` when no combo evidence exists for the allowed set;
+        callers then use the family/callable/strategy fallback path.
+        """
+        pool = [
+            (k, w) for k, w in self.combo_weights.items()
+            if k[0] in allowed_families
+            and (fixed_strategies is None or k[2] == fixed_strategies)
+            and (fixed_transport is None or k[1] == fixed_transport)
+        ]
+        if not pool:
+            return None
+        keys = [k for k, _ in pool]
+        probs = [w for _, w in pool]
+        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
+        return fam, transport, sorted(strategies)
+
+    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
+        """Normalized weights over (family, transport, strategies) combos.
+
+        Empty before the first rewarded combo is observed; callers fall back to
+        family-weighted sampling when empty.
+        """
+        total = sum(self.combo_weights.values())
+        if total <= 0.0:
+            return {}
+        return {k: w / total for k, w in self.combo_weights.items()}
+
+    def sample_combo(self, rng, allowed_families,
+                     fixed_strategies: frozenset[str] | None = None,
+                     fixed_transport: str | None = None):
+        """One weighted draw over known-rewarded combos restricted to
+        ``allowed_families``.
+
+        When ``fixed_strategies`` (``--evasion-strategies``) or
+        ``fixed_transport`` is pinned, only combos matching it are eligible.
+        Returns ``None`` when no combo evidence exists for the allowed set;
+        callers then use the family/callable/strategy fallback path.
+        """
+        pool = [
+            (k, w) for k, w in self.combo_weights.items()
+            if k[0] in allowed_families
+            and (fixed_strategies is None or k[2] == fixed_strategies)
+            and (fixed_transport is None or k[1] == fixed_transport)
+        ]
+        if not pool:
+            return None
+        keys = [k for k, _ in pool]
+        probs = [w for _, w in pool]
+        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
+        return fam, transport, sorted(strategies)
+
+    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
+        """Normalized weights over (family, transport, strategies) combos.
+
+        Empty before the first rewarded combo is observed; callers fall back
+        to family-weighted sampling when empty.
+        """
+        total = sum(self.combo_weights.values())
+        if total <= 0.0:
+            return {}
+        return {k: w / total for k, w in self.combo_weights.items()}
+
+    def sample_combo(self, rng, allowed_families,
+                     fixed_strategies: frozenset[str] | None = None,
+                     fixed_transport: str | None = None):
+        """One weighted draw over known-rewarded combos restricted to
+        ``allowed_families``.
+
+        When ``fixed_strategies`` (``--evasion-strategies``) or
+        ``fixed_transport`` is pinned, only combos matching it are eligible.
+        Returns ``None`` when no combo evidence exists for the allowed set;
+        callers then use the family/callable/strategy fallback path.
+        """
+        pool = [
+            (k, w) for k, w in self.combo_weights.items()
+            if k[0] in allowed_families
+            and (fixed_strategies is None or k[2] == fixed_strategies)
+            and (fixed_transport is None or k[1] == fixed_transport)
+        ]
+        if not pool:
+            return None
+        keys = [k for k, _ in pool]
+        probs = [w for _, w in pool]
+        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
+        return fam, transport, sorted(strategies)
+
+    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
+        """Normalized weights over (family, transport, strategies) combos.
+
+        Empty before the first rewarded combo is observed; callers fall back
+        to family-weighted sampling when empty.
+        """
+        total = sum(self.combo_weights.values())
+        if total <= 0.0:
+            return {}
+        return {k: w / total for k, w in self.combo_weights.items()}
+
+    def sample_combo(self, rng, allowed_families,
+                     fixed_strategies: frozenset[str] | None = None,
+                     fixed_transport: str | None = None):
+        """One weighted draw over known-rewarded combos restricted to
+        ``allowed_families``.
+
+        When ``fixed_strategies`` (``--evasion-strategies``) or
+        ``fixed_transport`` is pinned, only combos matching it are eligible.
+        Returns ``None`` when no combo evidence exists for the allowed set;
+        callers then use the family/callable/strategy fallback path.
+        """
+        pool = [
+            (k, w) for k, w in self.combo_weights.items()
+            if k[0] in allowed_families
+            and (fixed_strategies is None or k[2] == fixed_strategies)
+            and (fixed_transport is None or k[1] == fixed_transport)
+        ]
+        if not pool:
+            return None
+        keys = [k for k, _ in pool]
+        probs = [w for _, w in pool]
+        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
+        return fam, transport, sorted(strategies)
+
+    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
+        """Normalized weights over (family, transport, strategies) combos.
+
+        Empty before the first rewarded combo is observed; callers fall back
+        to family-weighted sampling when empty.
+        """
+        total = sum(self.combo_weights.values())
+        if total <= 0.0:
+            return {}
+        return {k: w / total for k, w in self.combo_weights.items()}
+
+    def sample_combo(self, rng, allowed_families,
+                     fixed_strategies: frozenset[str] | None = None):
+        """One weighted draw over known-rewarded combos restricted to
+        ``allowed_families``.
+
+        When ``fixed_strategies`` is pinned (``--evasion-strategies``), only
+        combos whose strategy set exactly matches it are eligible. Returns
+        ``None`` when no combo evidence exists for the allowed set; callers
+        then use the family/callable/strategy fallback path.
+        """
+        pool = [
+            (k, w) for k, w in self.combo_weights.items()
+            if k[0] in allowed_families
+            and (fixed_strategies is None or k[2] == fixed_strategies)
+        ]
+        if not pool:
+            return None
+        keys = [k for k, _ in pool]
+        probs = [w for _, w in pool]
+        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
+        return fam, transport, sorted(strategies)
+
+    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
+        """Normalized weights over (family, transport, strategies) combos.
+
+        Empty before the first rewarded combo is observed; callers fall back
+        to family-weighted sampling when empty.
+        """
+        total = sum(self.combo_weights.values())
+        if total <= 0.0:
+            return {}
+        return {k: w / total for k, w in self.combo_weights.items()}
+
+    def sample_combo(self, rng, allowed_families,
+                     default_transport: str | None = None,
+                     fixed_strategies: set[str] | None = None):
+        """One weighted draw over known-rewarded combos restricted to
+        ``allowed_families`` (and ``fixed_strategies`` when pinned).
+
+        Returns ``None`` when no combo evidence exists for the allowed set;
+        callers then use the family/callable/strategy fallback path.
+        """
+        pool = [
+            (k, w) for k, w in self.combo_weights.items()
+            if k[0] in allowed_families
+            and (fixed_strategies is None or fixed_strategies <= k[2])
+        ]
+        if not pool:
+            return None
+        keys = [k for k, _ in pool]
+        probs = [w for _, w in pool]
+        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
+        return fam, transport, sorted(strategies)
+
+    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
+        """Return normalized weights over (family, transport, strategies) combos."""
+        total = sum(self.combo_weights.values())
+        if total <= 0.0:
+            return {}
+        return {k: w / total for k, w in self.combo_weights.items()}
+
+    def sample_family(self, rng, allowed_families) -> str:
+        """Weighted family draw over the allowed attack families."""
+        weighted = {f: w for f, w in self.family_weights.items() if f in allowed_families}
+        if not weighted:
+            return rng.choice(sorted(allowed_families))
+        population = list(weighted)
+        probs = [weighted[f] for f in population]
+        return rng.choices(population, weights=probs, k=1)[0]
+
+    def sample_combo(self, rng, allowed_families: set[str], default_transport: str,
+                     pick_strategies) -> tuple[str, str, list[str]] | None:
+        """Draw (family, transport, strategies) as one weighted combo sample.
+
+        Returns ``None`` when no combo evidence exists yet (callers fall back to
+        a family-weighted draw); otherwise returns a stored successful combo.
+        ``pick_strategies`` is only used on an empty combo space and is never
+        invoked here (kept for API symmetry with the campaign's fallback).
+        """
+        pool = [(k, w) for k, w in self.combo_weights.items()
+                if k[0] in allowed_families]
+        if not pool:
+            return None
+        keys = [k for k, _ in pool]
+        probs = [w for _, w in pool]
+        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
+        return fam, transport, sorted(strategies)
 
     def _ingest_greybox(self, round_results: list[dict[str, Any]]) -> None:
         """Update per-scanner tallies and penalize rules-flagged callables."""
@@ -244,16 +618,32 @@ class FeedbackController:
                 # Add a portion of the fitness score to its weight (reinforcement)
                 self.weights[c] += 0.2 * fit
 
-        # 1b. Bias attack families towards higher evasion success
+        # 1b. Tier-based combo + family reinforcement (RQ2). The winning
+        # configuration lives in the (family, transport, strategies) product
+        # space; reward the full combo -- not just the family -- using the
+        # lexicographic tier boundaries so oracle-confirmed (Tier 1) and
+        # panel-evading (Tier 2) configurations dominate guided sampling.
         for res in round_results:
             fam = res.get("family")
+            transport = res.get("transport", "loads") or "loads"
+            strategies = frozenset(res.get("strategies") or [])
+            fit = res.get("fitness", 0.0)
+            valid = res.get("valid", False)
             evaded = res.get("evaded_all", False)
+            if fit >= TIER1_FIT:
+                delta = TIER1_WEIGHT
+            elif fit >= TIER2_FIT or (valid and evaded):
+                delta = TIER2_WEIGHT
+            elif valid and fit > 0.0:
+                delta = TIER3_WEIGHT
+            else:
+                delta = 0.0
+            if delta <= 0.0:
+                continue
+            key = (fam, transport, strategies)
+            self.combo_weights[key] = self.combo_weights.get(key, 1.0) + delta
             if fam in self.family_weights:
-                # Reward family if it produced a full-panel evasion
-                if evaded:
-                    self.family_weights[fam] += 2.0  # Strong reward for full evasion
-                elif res.get("valid", False):
-                    self.family_weights[fam] += 0.1  # Small reward for validity
+                self.family_weights[fam] += delta
 
         # 2. Adjust mutation parameters based on global evasion rates
         valid_results = [r for r in round_results if r.get("valid", False)]

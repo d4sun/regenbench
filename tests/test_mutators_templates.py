@@ -228,13 +228,21 @@ class TestPayloadTemplates(unittest.TestCase):
     def test_family_registry_shape(self):
         self.assertEqual(
             FAMILIES,
-            ("gadget", "overwritten", "external", "indirect_chain"),
+            ("gadget", "overwritten", "external", "indirect_chain", "pypi_injected"),
         )
         self.assertIsNone(family_template("gadget"))
-        for fam in ("overwritten", "external", "indirect_chain"):
+        for fam in ("overwritten", "external", "indirect_chain", "pypi_injected"):
             self.assertIsInstance(family_template(fam), AttackTemplate)
+        self.assertIsInstance(family_template("pypi_injected"),
+                              PyPIInjectedTemplate)
         self.assertEqual(set(FAMILY_LABELS), set(FAMILIES))
         self.assertEqual(set(FAMILY_TEMPLATES), set(FAMILIES) - {"gadget"})
+        for fam in FAMILIES:
+            self.assertIn(FAMILY_LABELS[fam], (
+                "inject_payload_into_torch", "shadowpickle_overwritten",
+                "shadowpickle_external", "shadowpickle_indirect_chain",
+                "shadowpickle_pypi_injected",
+            ))
 
 
 class TestInjectIntoTorch(unittest.TestCase):

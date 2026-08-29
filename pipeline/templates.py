@@ -248,6 +248,7 @@ FAMILY_TEMPLATES: dict[str, AttackTemplate] = {
     "overwritten": OverwrittenModuleTemplate(),
     "external": ExternalModuleTemplate(),
     "indirect_chain": IndirectChainTemplate(),
+    "pypi_injected": PyPIInjectedTemplate(),
 }
 
 FAMILIES: tuple[str, ...] = ("gadget",) + tuple(FAMILY_TEMPLATES)
@@ -258,6 +259,7 @@ FAMILY_LABELS: dict[str, str] = {
     "overwritten": "shadowpickle_overwritten",
     "external": "shadowpickle_external",
     "indirect_chain": "shadowpickle_indirect_chain",
+    "pypi_injected": "shadowpickle_pypi_injected",
 }
 
 
