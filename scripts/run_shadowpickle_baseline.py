@@ -25,7 +25,7 @@ from pipeline.comparator import check_bypass
 from pipeline.db import init_db, log_candidate, log_fitness, log_campaign_run, complete_campaign_run
 
 
-SHADOWPICKLE_FAMILIES = ("overwritten", "external", "indirect_chain")
+SHADOWPICKLE_FAMILIES = ("overwritten", "external", "indirect_chain", "pypi_injected")
 
 
 def main(argv: list[str] | None = None) -> int:
