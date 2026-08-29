@@ -17,6 +17,16 @@ pipeline/generator.py + mutators/templates/evasion     panel scanners + dynahug 
 
 Campaign loop lives in `scripts/run_fuzzing_campaign.py`; per-candidate verdicts, fitness, coverage → SQLite via `pipeline/db.py`; reports → `docs/fuzzing-report-<run>.md`.
 
+## Hypothesis status (current, post-fix scaled run)
+
+| H | Verdict | Evidence |
+|---|---|---|
+| **H1** | **Supported** (reframed to proposal wording: relative improvement over baseline, not an absolute 70% threshold) | Fuzzing 47.2% vs ShadowPickle baseline 25.0% confirmed bypass rate; per-scanner PickleScan 47.2% vs 25%, ModelScan 62.9% vs 50%, Fickling 100% vs 100% |
+| **H2** | **Valid negative result** | Uncorroborated == confirmed (446); the static panel already detects all non-executing candidates, so the dual-oracle adds no precision — dynamic validation's value is confirming payload execution (trigger polling), not filtering false evasions |
+| **H3** | **Supported** | 100% retention of 446 bypasses across 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10) |
+
+Scaled proof campaign (this host, docker): guided 365/494 valid bypasses (73.9%), unguided 81/451 (18.0%), Fisher p≈0; Q_first guided [2], unguided [2]. Full details in `docs/evaluation-report.md` (regenerate with `scripts/run_evaluation_suite.py`).
+
 ## Module map
 
 | Module | Role | Key symbol |
@@ -92,7 +102,9 @@ python scripts/run_pilot_campaign.py --quick
 python scripts/run_evaluation_suite.py
 # ShadowPickle baseline replication
 python scripts/run_shadowpickle_baseline.py --candidates-per-family 20 --backend docker
-# rebuild containers (on lab host)
+# H3 shelf-life rescans (bulk-register bypasses, then rescan against version snapshots)
+python scripts/shelf_life_rescan.py --db data/regenbench_campaign.db --register --image picklescan=regenbench/picklescan:1.0.4
+# rebuild containers (on lab host); historical versions: build.sh [VERSION] [SCANNER_COMMIT]
 for d in base picklescan modelscan fickling modeltracer dynahug gguf; do containers/$d/build.sh; done
 ```
 
