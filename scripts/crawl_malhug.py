@@ -24,6 +24,57 @@ import urllib.request
 CSV_URL = "https://raw.githubusercontent.com/security-pride/MalHug/main/malhug_result_info.csv"
 
 
+def mine_opcode_distributions(malhug_dir: str) -> dict:
+    """Extract opcode frequency distributions from real malicious models.
+
+    Returns a dict mapping opcode names to normalized frequencies, suitable
+    for seeding PickleMutator.sample_strings / sample_ints with real-world
+    malicious patterns (Phase 3c).
+    """
+    import zipfile
+    from collections import Counter
+    from pipeline.opcodes import parse_pickle, OPCODES_BY_BYTE
+
+    opcode_counter = Counter()
+    total_opcodes = 0
+
+    for fname in os.listdir(malhug_dir):
+        fpath = os.path.join(malhug_dir, fname)
+        if not os.path.isfile(fpath) or not zipfile.is_zipfile(fpath):
+            continue
+        try:
+            with zipfile.ZipFile(fpath) as z:
+                pkl_names = [n for n in z.namelist() if n.endswith(".pkl") or n.endswith("data.pkl")]
+                for pkl_name in pkl_names:
+                    pkl_bytes = z.read(pkl_name)
+                    try:
+                        parsed = parse_pickle(pkl_bytes)
+                        for op, _ in parsed:
+                            opcode_counter[op.name] += 1
+                            total_opcodes += 1
+                    except Exception:
+                        continue
+        except Exception:
+            continue
+
+    if total_opcodes == 0:
+        return {}
+
+    # Normalize to frequencies
+    return {op: count / total_opcodes for op, count in opcode_counter.items()}
+
+
+def seed_mutator_from_malhug(mutator, malhug_dir: str) -> None:
+    """Seed a PickleMutator's sample strings/ints from MalHug opcode distributions."""
+    dist = mine_opcode_distributions(malhug_dir)
+    if not dist:
+        return
+
+    # Top opcodes become more likely mutation targets
+    # This is a placeholder for future enhancement
+    pass
+
+
 def fetch_csv() -> list[dict]:
     req = urllib.request.Request(CSV_URL, headers={"User-Agent": "regenbench-malhug-crawl"})
     with urllib.request.urlopen(req, timeout=30) as r:
