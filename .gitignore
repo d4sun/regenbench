@@ -1,6 +1,9 @@
 __pycache__/
 *.pyc
 
+# Rust build artifacts (crates/)
+target/
+
 # T0.9 MLflow file-backed store (local experiment tracking output)
 mlruns/
 .mlflow/

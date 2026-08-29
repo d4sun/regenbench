@@ -95,6 +95,11 @@ def main(argv: list[str] | None = None) -> int:
                         dangerous_callable=None,
                         attack_family=family,
                         mutate_meta=False,  # Template families don't use meta mutation
+                        # splice transport: the legacy loads-wrap reintroduces
+                        # GLOBAL _pickle.loads, which PickleScan denylists and
+                        # would zero out every family before it reaches the
+                        # oracle (see root-cause analysis).
+                        injection_transport="splice",
                     )
                 except ValueError as e:
                     print(f"  [skip] {family}: {e}")

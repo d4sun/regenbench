@@ -1131,9 +1131,9 @@ def main(argv: list[str] | None = None) -> int:
         "",
         "**Hypothesis H1**: *Directed fuzzing achieves higher evasion rates than handcrafted ShadowPickle families.*",
         "",
-        "The ShadowPickle baseline measures evasion rates of the 3 handcrafted families "
-        "(overwritten, external, indirect_chain) under the same scanner panel and "
-        "execution oracle as the fuzzing campaigns.",
+        "The ShadowPickle baseline measures evasion rates of the 4 handcrafted families "
+        "(overwritten, external, indirect_chain, pypi_injected) under the same "
+        "scanner panel and execution oracle as the fuzzing campaigns.",
     ])
     
     # Check for ShadowPickle baseline DB
