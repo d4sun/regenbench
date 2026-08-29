@@ -48,6 +48,40 @@ def _structurally_sane(pkl_bytes: bytes) -> bool:
     return True
 
 
+def _import_pairs(parsed) -> list[tuple[str, str]]:
+    """Extract (module, name) pairs from GLOBAL/INST operands and STACK_GLOBAL
+    string pairs (the latter is what stack_global_encoding emits)."""
+    pairs: list[tuple[str, str]] = []
+    for i, (op, arg) in enumerate(parsed):
+        if op.name in ("GLOBAL", "INST"):
+            fields = arg.decode("latin1").split("\n")
+            if len(fields) >= 2:
+                pairs.append((fields[0], fields[1]))
+        elif op.name == "STACK_GLOBAL":
+            strings: list[str] = []
+            for j in range(i - 1, max(-1, i - 6), -1):
+                value = _string_value(parsed[j][0], parsed[j][1])
+                if value is not None:
+                    strings.append(value)
+                    if len(strings) == 2:
+                        break
+            if len(strings) == 2:
+                pairs.append((strings[1], strings[0]))
+    return pairs
+
+
+def _string_value(op, arg: bytes) -> str | None:
+    """Extract the string pushed by a string opcode (used for STACK_GLOBAL)."""
+    name = op.name
+    if name == "SHORT_BINUNICODE":
+        return arg[1:].decode("utf-8", "replace")
+    if name == "BINUNICODE":
+        return arg[4:].decode("utf-8", "replace")
+    if name == "UNICODE":
+        return arg.strip(b"\r\n").decode("utf-8", "replace").strip("'\"")
+    return None
+
+
 def _plausible_candidate(
     malicious_pkl: bytes,
     benign_pt_bytes: bytes,
@@ -89,14 +123,13 @@ def _plausible_candidate(
             if module not in pypi_modules:
                 return False
 
-    # 3. Gadget family: callable must be armable (can carry inline payload)
+    # 3. Gadget family: callable must be armable (can carry inline payload).
+    #    The stream may have already been rewritten by an evasion strategy
+    #    (stack_global_encoding / indirect_chain), so detect the dangerous
+    #    pair from GLOBAL/INST operands AND STACK_GLOBAL string pairs.
     if attack_family == "gadget":
         from pipeline.registry import is_dangerous
-        globals_found = [
-            (arg.decode("latin1").split("\n")[0], arg.decode("latin1").split("\n")[1])
-            for op, arg in parsed
-            if op.name in ("GLOBAL", "INST") and len(arg) > 0
-        ]
+        globals_found = _import_pairs(parsed)
         # At least one dangerous callable must be armable
         has_armable = any(
             is_dangerous(mod, name) for mod, name in globals_found

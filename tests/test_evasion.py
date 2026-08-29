@@ -443,5 +443,67 @@ class TestStreamFusionHardening(unittest.TestCase):
             self.assertEqual(sum(1 for o, _ in parsed if o.name == "STOP"), 1)
 
 
+class TestPlausibilityImportPairs(unittest.TestCase):
+    """Regression: the plausibility gate must recognize STACK_GLOBAL-form
+    imports, or evasion-rewritten gadget candidates are rejected before
+    they reach the scanner panel (a self-defeating gate)."""
+
+    def _pt_bytes(self):
+        import io, zipfile
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            z.writestr("archive/version", b"3")
+            z.writestr("archive/data.pkl",
+                       pickle.dumps({"w": [1.0]}, protocol=4))
+        return buf.getvalue()
+
+    def test_import_pairs_reads_global_and_stack_global(self):
+        from pipeline.generator import _import_pairs, _plausible_candidate
+        import struct
+        # raw GLOBAL pair
+        raw = b"".join([
+            OP["GLOBAL"].code + b"os\nsystem\n",
+            pickle.dumps(("true",), protocol=2)[2:-1],
+            OP["REDUCE"].code, OP["STOP"].code,
+        ])
+        self.assertIn(("os", "system"), _import_pairs(parse_pickle(raw)))
+        # STACK_GLOBAL pair (what stack_global_encoding emits)
+        sg = b"".join([
+            OP["SHORT_BINUNICODE"].code + bytes([2]) + b"os",
+            OP["SHORT_BINUNICODE"].code + bytes([6]) + b"system",
+            OP["STACK_GLOBAL"].code,
+            pickle.dumps(("true",), protocol=2)[2:-1],
+            OP["REDUCE"].code, OP["STOP"].code,
+        ])
+        self.assertIn(("os", "system"), _import_pairs(parse_pickle(sg)))
+
+    def test_plausibility_accepts_rewritten_gadget(self):
+        # A gadget candidate rewritten by stack_global_encoding must still be
+        # admitted: the dangerous callable now lives in STACK_GLOBAL pairs.
+        from pipeline.evasion import apply_pipeline
+        from pipeline.generator import _plausible_candidate
+        raw = b"".join([
+            OP["GLOBAL"].code + b"os\nsystem\n",
+            pickle.dumps(("true",), protocol=2)[2:-1],
+            OP["REDUCE"].code, OP["STOP"].code,
+        ])
+        rewritten = apply_pipeline(raw, ["stack_global_encoding"])
+        self.assertTrue(_plausible_candidate(rewritten, self._pt_bytes(), "gadget"))
+
+    def test_generator_emits_rewritten_gadget(self):
+        from pipeline.generator import CandidateGenerator
+        blob = CandidateGenerator().generate_candidate_pt(
+            benign_pt_bytes=self._pt_bytes(),
+            payload_code="x=1",
+            dangerous_callable=("os", "system"),
+            attack_family="gadget",
+            evasion_strategies=["stack_global_encoding"],
+            injection_transport="splice")
+        import zipfile, io
+        with zipfile.ZipFile(io.BytesIO(blob)) as z:
+            pkl = z.read("archive/data.pkl")
+        self.assertEqual(parse_pickle(pkl)[-1][0].name, "STOP")
+
+
 if __name__ == "__main__":
     unittest.main()
