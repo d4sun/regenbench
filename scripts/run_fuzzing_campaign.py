@@ -51,6 +51,8 @@ from pipeline.templates import FAMILIES, FAMILY_LABELS
 from pipeline.shelf_life import register_confirmed_bypass
 from pipeline.plausibility import PlausibilityOracle
 
+import concurrent.futures
+
 DEFAULT_BASE = "ci/corpus/torch/benign/benign.pt"
 # Static panel capable of analyzing torch-zip artifacts. ModelTracer is
 # dynamic (strace) and excluded from RQ1 static-evasion measurement; add it
@@ -72,7 +74,7 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--mode", choices=["guided", "unguided"], default="guided",
                     help="selection strategy (guided = feedback weights, unguided = uniform)")
     ap.add_argument("--rounds", type=int, default=5)
-    ap.add_argument("--candidates-per-round", type=int, default=20)
+    ap.add_argument("--candidates-per-round", type=int, default=50)
     ap.add_argument("--replicate", type=int, default=1,
                     help="replicate number (1..N); recorded in campaign_runs")
     ap.add_argument("--db", default="data/regenbench_campaign.db")
@@ -88,6 +90,8 @@ def parse_args() -> argparse.Namespace:
                          "checkpoints use 'picklescan modelscan' because fickling and "
                          "modeltracer cannot analyze torch artifacts")
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--gen-workers", type=int, default=0,
+                    help="parallel workers for candidate generation (0=auto, min(8, cpu_count))")
     ap.add_argument("--pre-filter", action="store_true",
                     help="enable the static pre-filter before the DynaHug oracle")
     ap.add_argument("--seed", type=int, default=None,
@@ -113,8 +117,12 @@ def parse_args() -> argparse.Namespace:
                           "'oracle_dominant' = lexicographic ranking "
                           "(dynamic confirmation > panel > coverage > novelty)")
     ap.add_argument("--time-budget-hours", type=float, default=24.0,
-                     help="bounded-pilot time budget; the campaign stops after this "
-                          "elapses even if rounds remain")
+                      help="bounded-pilot time budget; the campaign stops after this "
+                           "elapses even if rounds remain")
+    ap.add_argument("--differential-prob", type=float, default=0.0,
+                      help="probability of applying differential pickle-parser mutation (Phase 3a)")
+    ap.add_argument("--family-synthesis-prob", type=float, default=0.0,
+                      help="probability of applying family-synthesis mutation (Phase 3b)")
     ap.add_argument("--oracle-model-dir", default="real_benign_corpus/oracle-calibrated/v5-recalibrated",
                       help="path to recalibrated DynaHug model directory")
     ap.add_argument("--ensemble-oracle", action="store_true",
@@ -157,6 +165,46 @@ def _resolve_seed_checkpoint(args: argparse.Namespace) -> str:
     print(f"[campaign] seeded from real corpus checkpoint: {path} "
           f"({os.path.getsize(path) / 1e6:.1f} MB)")
     return os.path.abspath(path)
+
+
+def _generate_candidate_worker(
+    benign_pt_bytes: bytes,
+    payload: str,
+    chosen_callable: tuple[str, str] | None,
+    attack_family: str,
+    cand_strategies: list[str],
+    cand_transport: str | None,
+    mutate_meta: bool,
+    mutation_prob: float,
+    op_swap_prob: float,
+    callable_sub_prob: float,
+    arg_fuzz_prob: float,
+    stack_prob: float,
+    differential_prob: float,
+    family_synthesis_prob: float,
+) -> bytes:
+    """Worker function for parallel candidate generation.
+    
+    Must be a top-level function for pickling in ProcessPoolExecutor.
+    """
+    from pipeline.generator import CandidateGenerator
+    generator = CandidateGenerator()
+    return generator.generate_candidate_pt(
+        benign_pt_bytes=benign_pt_bytes,
+        payload_code=payload,
+        dangerous_callable=chosen_callable,
+        mutate_meta=mutate_meta,
+        mutation_prob=mutation_prob,
+        op_swap_prob=op_swap_prob,
+        callable_sub_prob=callable_sub_prob,
+        arg_fuzz_prob=arg_fuzz_prob,
+        stack_prob=stack_prob,
+        attack_family=attack_family,
+        evasion_strategies=cand_strategies,
+        injection_transport=cand_transport,
+        differential_prob=differential_prob,
+        family_synthesis_prob=family_synthesis_prob,
+    )
 
 
 def run_campaign(args: argparse.Namespace) -> int:
@@ -241,6 +289,11 @@ def run_campaign(args: argparse.Namespace) -> int:
 
         round_summaries = []
         budget_exhausted = False
+        
+        # Phase 5: Parallel candidate generation
+        gen_workers = args.gen_workers or min(8, os.cpu_count() or 4)
+        print(f"[campaign] using {gen_workers} parallel workers for candidate generation")
+        
         for r in range(1, args.rounds + 1):
             if budget_exhausted:
                 break
@@ -259,7 +312,8 @@ def run_campaign(args: argparse.Namespace) -> int:
                 weights = None
                 print("Unguided mode: uniform random callable selection.")
 
-            candidates = []
+            # Pre-select all candidate parameters for this round
+            candidate_params = []
             family_counts = {f: 0 for f in families}
             for i in range(args.candidates_per_round):
                 elapsed = time.time() - started_at
@@ -272,7 +326,6 @@ def run_campaign(args: argparse.Namespace) -> int:
                 # Select attack family: use family weights in guided mode
                 if args.mode == "guided":
                     family_weights_map = controller.get_family_weights()
-                    # Filter to only allowed families (--attack-families)
                     family_weights_map = {f: w for f, w in family_weights_map.items() if f in families}
                     family_population = list(family_weights_map.keys())
                     family_weights = list(family_weights_map.values())
@@ -291,19 +344,12 @@ def run_campaign(args: argparse.Namespace) -> int:
                 trigger_file = os.path.join(temp_dir, f"trigger_{r}_{i}.txt")
                 payload = f"with open('{trigger_file}', 'w') as f: f.write('1')"
                 cand_strategies = _pick_strategies()
-                # Splice transport whenever evasion research is active, even
-                # when the sampled strategy subset is empty: falling back to
-                # the legacy loads-wrap would re-introduce the flagged
-                # _pickle.loads signature at random.
                 cand_transport = (
                     "splice"
                     if (args.evasion_mode != "off" or fixed_strategies is not None)
                     else None
                 )
 
-                # Feedback-controlled mutation parameters. In guided mode the
-                # controller's probs (from the previous round's fitness) drive
-                # the operators; in unguided mode they stay at fixed baselines.
                 if args.mode == "guided":
                     op_swap_prob = controller.op_swap_prob
                     callable_sub_prob = controller.callable_sub_prob
@@ -312,47 +358,79 @@ def run_campaign(args: argparse.Namespace) -> int:
                     op_swap_prob = 0.15
                     callable_sub_prob = 0.15
                     arg_fuzz_prob = 0.15
-                try:
-                    cand_bytes = generator.generate_candidate_pt(
-                        benign_pt_bytes=benign_pt_bytes,
-                        payload_code=payload,
-                        dangerous_callable=chosen_callable,
-                        mutate_meta=True,
-                        mutation_prob=0.15,
-                        op_swap_prob=op_swap_prob,
-                        callable_sub_prob=callable_sub_prob,
-                        arg_fuzz_prob=arg_fuzz_prob,
-                        stack_prob=0.05,
-                        attack_family=attack_family,
-                        evasion_strategies=cand_strategies,
-                        injection_transport=cand_transport,
-                    )
-                except ValueError as e:
-                    # Unsupported callable (e.g. runpy.run_module cannot execute
-                    # inline code). Resample a supported callable for this slot.
-                    print(f"  [skip] {chosen_callable}: {e}")
-                    supported = [c for c in population if c != chosen_callable] or population
-                    chosen_callable = random.choice(supported)
-                    cand_bytes = generator.generate_candidate_pt(
-                        benign_pt_bytes=benign_pt_bytes,
-                        payload_code=payload,
-                        dangerous_callable=chosen_callable,
-                        mutate_meta=True,
-                        mutation_prob=0.15,
-                        op_swap_prob=op_swap_prob,
-                        callable_sub_prob=callable_sub_prob,
-                        arg_fuzz_prob=arg_fuzz_prob,
-                        stack_prob=0.05,
-                        attack_family=attack_family,
-                        evasion_strategies=cand_strategies,
-                        injection_transport=cand_transport,
-                    )
 
-                cand_path = os.path.join(round_dir, f"candidate_{i}.pt")
-                with open(cand_path, "wb") as f:
-                    f.write(cand_bytes)
-                candidates.append((cand_path, cand_bytes, chosen_callable,
-                                   trigger_file, attack_family, cand_strategies))
+                candidate_params.append({
+                    "index": i,
+                    "trigger_file": trigger_file,
+                    "payload": payload,
+                    "chosen_callable": chosen_callable,
+                    "attack_family": attack_family,
+                    "cand_strategies": cand_strategies,
+                    "cand_transport": cand_transport,
+                    "op_swap_prob": op_swap_prob,
+                    "callable_sub_prob": callable_sub_prob,
+                    "arg_fuzz_prob": arg_fuzz_prob,
+                })
+
+            # Phase 5: Parallel generation with ProcessPoolExecutor
+            candidates = []
+            with concurrent.futures.ProcessPoolExecutor(max_workers=gen_workers) as executor:
+                futures = {}
+                for params in candidate_params:
+                    fut = executor.submit(
+                        _generate_candidate_worker,
+                        benign_pt_bytes,
+                        params["payload"],
+                        params["chosen_callable"],
+                        params["attack_family"],
+                        params["cand_strategies"],
+                        params["cand_transport"],
+                        True,  # mutate_meta
+                        0.15,  # mutation_prob
+                        params["op_swap_prob"],
+                        params["callable_sub_prob"],
+                        params["arg_fuzz_prob"],
+                        0.05,  # stack_prob
+                        args.differential_prob,   # Phase 3a
+                        args.family_synthesis_prob,  # Phase 3b
+                    )
+                    futures[fut] = params
+
+                for fut in concurrent.futures.as_completed(futures):
+                    params = futures[fut]
+                    i = params["index"]
+                    try:
+                        cand_bytes = fut.result()
+                    except ValueError as e:
+                        # Unsupported callable - resample
+                        print(f"  [skip] {params['chosen_callable']}: {e}")
+                        supported = [c for c in population if c != params["chosen_callable"]] or population
+                        new_callable = random.choice(supported)
+                        params["chosen_callable"] = new_callable
+                        # Retry once
+                        fut2 = executor.submit(
+                            _generate_candidate_worker,
+                            benign_pt_bytes,
+                            params["payload"],
+                            new_callable,
+                            params["attack_family"],
+                            params["cand_strategies"],
+                            params["cand_transport"],
+                            True, 0.15,
+                            params["op_swap_prob"],
+                            params["callable_sub_prob"],
+                            params["arg_fuzz_prob"],
+                            0.05,
+                            args.differential_prob,
+                            args.family_synthesis_prob,
+                        )
+                        cand_bytes = fut2.result()
+
+                    cand_path = os.path.join(round_dir, f"candidate_{i}.pt")
+                    with open(cand_path, "wb") as f:
+                        f.write(cand_bytes)
+                    candidates.append((cand_path, cand_bytes, params["chosen_callable"],
+                                       params["trigger_file"], params["attack_family"], params["cand_strategies"]))
 
             print(f"Generated {len(candidates)} candidate checkpoints "
                   f"(families: {family_counts}).")
