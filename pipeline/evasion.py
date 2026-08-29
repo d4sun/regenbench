@@ -659,10 +659,15 @@ def apply_pipeline(pkl_bytes: bytes, names: list[str]) -> bytes:
 
 def select_strategies(rng, k: int | None = None,
                       exclude_nested: bool = True) -> list[str]:
-    """Random subset of strategy names for exploration campaigns."""
+    """Random subset of strategy names for exploration campaigns.
+
+    Default ``k`` is capped at 1: stacking multiple strategies empirically
+    kills evasion (see fitness ablation: every combo with >1 strategy yields
+    0 bypasses). A single well-chosen strategy preserves the sink's stealth.
+    """
     pool = [n for n in STRATEGIES
             if not (exclude_nested and n in ("nested_loads_wrap", "nested_load_obfuscation"))]
     rng.shuffle(pool)
     if k is None:
-        k = rng.randint(0, len(pool))
+        k = rng.randint(0, 1)
     return pool[:k]

@@ -710,12 +710,15 @@ class FeedbackController:
             if fam == family:
                 seen.add(strat)
         if not seen:
-            # Default strategy sets per family
+            # Default strategy sets per family. Anti-evasive stacks excluded:
+            # nested_loads_wrap/payload_obfuscation add _pickle.loads, and
+            # indirect_chain adds builtins.__import__/getattr -- all denylisted
+            # by PickleScan. Only sets that preserve the sink's stealth belong.
             defaults = {
-                "gadget": [frozenset(), frozenset(["stack_global_encoding"]), frozenset(["nested_loads_wrap"])],
-                "overwritten": [frozenset(), frozenset(["indirect_chain"]), frozenset(["payload_obfuscation"])],
-                "pypi_injected": [frozenset(), frozenset(["stack_global_encoding"]), frozenset(["nested_loads_wrap"])],
-                "external": [frozenset(), frozenset(["indirect_chain"]), frozenset(["string_encoding_variants"])],
+                "gadget": [frozenset(), frozenset(["stack_global_encoding"])],
+                "overwritten": [frozenset(), frozenset(["stack_global_encoding"])],
+                "pypi_injected": [frozenset(), frozenset(["stack_global_encoding"])],
+                "external": [frozenset(), frozenset(["stack_global_encoding"])],
                 "indirect_chain": [frozenset(), frozenset(["stack_global_encoding"])],
             }
             return defaults.get(family, [frozenset()])
