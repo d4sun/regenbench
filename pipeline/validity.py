@@ -36,8 +36,11 @@ def _trigger_exists(path: str, wait: float = 5.0) -> bool:
 class ValidityOracle:
     """Validates candidates to ensure they load successfully and trigger execution."""
 
-    def __init__(self, container_backend: str = "podman", container_image: str = "localhost/regenbench/base:latest",
+    def __init__(self, container_backend: str | None = None, container_image: str = "localhost/regenbench/base:latest",
                  timeout: int = 20):
+        if container_backend is None:
+            from pipeline.scanners import default_backend
+            container_backend = default_backend()
         self.backend = container_backend
         self.image = container_image
         self.timeout = timeout

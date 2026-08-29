@@ -34,6 +34,7 @@ from pipeline.scanners import (
     SCANNERS,
     ScanResult,
     build_images,
+    default_backend,
     expected_scanners,
     run_scan,
 )
@@ -53,7 +54,7 @@ class TrackingSink:
 
 @dataclass
 class Config:
-    backend: str = "podman"
+    backend: str = field(default_factory=lambda: default_backend())
     tag: str = ":latest"
     max_workers: int = 0
     timeout: int = 300

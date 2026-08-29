@@ -40,6 +40,21 @@ GGUF_EXTENSIONS = {".gguf"}
 ORACLE_MODEL_DIR_ENV = "REGENBENCH_ORACLE_MODEL_DIR"
 
 
+def default_backend(prefer: str = "podman") -> str:
+    """Pick a usable container runtime, preferring ``prefer`` when present.
+
+    podman was the original assumption; docker-only hosts (the lab baseline)
+    should not need an explicit --backend on every command. Falls back to
+    docker when podman is not on PATH, and to ``prefer`` otherwise.
+    """
+    import shutil
+    if shutil.which(prefer) is not None:
+        return prefer
+    if shutil.which("docker") is not None:
+        return "docker"
+    return prefer
+
+
 @dataclass
 class ScanResult:
     """Outcome of running one scanner image on one artifact."""

@@ -187,7 +187,7 @@ def main():
     ap.add_argument("--seeds", nargs="+", type=int, default=[1337, 1338, 1339, 1340, 1341])
     ap.add_argument("--fitness-modes", nargs="+", default=["current", "oracle_aware", "oracle_dominant"])
     ap.add_argument("--db", default="data/regenbench_campaign.db")
-    ap.add_argument("--backend", choices=["podman", "docker"], default="podman")
+    ap.add_argument("--backend", choices=["podman", "docker"], default="docker")
     ap.add_argument("--seed-corpus-dir", default="real_benign_corpus/all")
     ap.add_argument("--seed-cluster", default="text-generation")
     ap.add_argument("--attack-families", default="gadget,overwritten,external,indirect_chain,pypi_injected")

@@ -37,7 +37,7 @@ corpus:
 
 oracle_validation:
   script: "scripts/validate_oracle.py"
-  backend: "podman"
+  backend: "docker"
   image: "regenbench/dynahug"
 
 campaign:
@@ -47,7 +47,7 @@ campaign:
   base_checkpoint: "real_benign_corpus/all/text-generation__HuggingFaceM4_tiny-random-LlamaForCausalLM.bin"
   rounds: 5
   candidates_per_round: 20
-  backend: "podman"
+  backend: "docker"
   tag: ":latest"
   timeout_seconds: 120
   concurrency_limit: 2
