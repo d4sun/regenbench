@@ -67,6 +67,81 @@ TIER2_WEIGHT = 2.0   # reward for panel-evading + valid configurations
 TIER3_WEIGHT = 0.1   # small reward for merely-valid configurations
 
 
+def compute_semantic_fingerprint(file_path: str) -> tuple:
+    """Compute a semantic fingerprint for a candidate to identify novel attack families.
+    
+    The fingerprint captures the semantic structure of the attack:
+    - Callable set: which dangerous callables are used (module, name)
+    - Strategy set: which evasion strategies are applied
+    - Opcode categories: high-level categories of opcodes used (not individual opcodes)
+    - Transport: loads vs splice
+    - Family: the attack family
+    
+    This is more stable than full opcode sequences and enables detection of
+    genuinely novel attack patterns vs minor mutations.
+    """
+    import zipfile
+    from pipeline.opcodes import parse_pickle, OpcodeCategory
+    from pipeline.registry import is_dangerous
+    
+    try:
+        with open(file_path, "rb") as f:
+            magic = f.read(4)
+        if not magic:
+            return ()
+        
+        is_zip = magic.startswith(b"PK\x03\x04")
+        if is_zip:
+            with zipfile.ZipFile(file_path) as z:
+                pkl_name = [name for name in z.namelist() if name.endswith("data.pkl")]
+                if not pkl_name:
+                    return ()
+                pkl_bytes = z.read(pkl_name[0])
+        else:
+            with open(file_path, "rb") as f:
+                pkl_bytes = f.read()
+        
+        parsed = parse_pickle(pkl_bytes)
+        
+        # Extract callables
+        callables = set()
+        for op, arg in parsed:
+            if op.name in ("GLOBAL", "INST"):
+                parts = arg.decode("latin1").split("\n")
+                if len(parts) >= 2 and is_dangerous(parts[0], parts[1]):
+                    callables.add((parts[0], parts[1]))
+            elif op.name == "STACK_GLOBAL":
+                strings = []
+                for j in range(len(parsed) - 1, max(-1, len(parsed) - 6), -1):
+                    val = _string_value(parsed[j][0], parsed[j][1])
+                    if val is not None:
+                        strings.append(val)
+                        if len(strings) == 2:
+                            break
+                if len(strings) == 2:
+                    module, name = strings[1], strings[0]
+                    if is_dangerous(module, name):
+                        callables.add((module, name))
+        
+        # Extract opcode categories (not individual opcodes)
+        opcode_cats = set()
+        for op, _ in parsed:
+            if op.category != OpcodeCategory.NO_ARG:
+                opcode_cats.add(op.category.name)
+        
+        # Extract transport from file structure (simplified)
+        transport = "splice" if is_zip else "loads"
+        
+        # Return semantic fingerprint as a tuple
+        return (
+            tuple(sorted(callables)),
+            tuple(sorted(opcode_cats)),
+            transport,
+        )
+    except Exception:
+        return ()
+
+
 def _string_value(op, arg: bytes) -> str | None:
     """Extract the string pushed by a string opcode (for STACK_GLOBAL)."""
     name = op.name
@@ -188,22 +263,42 @@ class NoveltyTracker:
     callables/strategies a candidate carries. First-sight signatures score
     1.0; repeats decay as ``1/(1+count)`` so the fuzzer keeps exploring new
     regions instead of re-sampling the same detected configuration.
+    
+    Semantic signature (for synthesis exploration): (callable_set, strategy_set)
+    where callable_set is frozenset of (module, name) tuples.
     """
 
     def __init__(self):
         self._counts: dict[tuple, int] = {}
+        self._semantic_counts: dict[tuple, int] = {}
         self.novel_signatures = 0
+        self.novel_semantic = 0
 
     @staticmethod
     def signature(parsed_ops, extra: frozenset[str] = frozenset()) -> tuple:
         ops = tuple(op.name for op, _ in parsed_ops)
         return (ops, tuple(sorted(extra)))
 
+    @staticmethod
+    def semantic_signature(callables: frozenset[tuple[str, str]], 
+                           strategies: frozenset[str]) -> tuple:
+        """Semantic signature: (sorted_callables, sorted_strategies)."""
+        return (tuple(sorted(callables)), tuple(sorted(strategies)))
+
     def score(self, signature: tuple) -> float:
         count = self._counts.get(signature, 0)
         self._counts[signature] = count + 1
         if count == 0:
             self.novel_signatures += 1
+            return 1.0
+        return 1.0 / (1.0 + count)
+
+    def score_semantic(self, signature: tuple) -> float:
+        """Score for semantic signature (callable_set + strategy_set)."""
+        count = self._semantic_counts.get(signature, 0)
+        self._semantic_counts[signature] = count + 1
+        if count == 0:
+            self.novel_semantic += 1
             return 1.0
         return 1.0 / (1.0 + count)
 
@@ -570,6 +665,82 @@ class FeedbackController:
         probs = [w for _, w in pool]
         fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
         return fam, transport, sorted(strategies)
+
+    def sample_with_novelty(self, rng, allowed_families: set[str], 
+                            novelty_tracker: NoveltyTracker,
+                            fixed_strategies: frozenset[str] | None = None,
+                            fixed_transport: str | None = None) -> tuple[str, str, frozenset[str]] | None:
+        """Sample configuration with semantic novelty bias for synthesis exploration.
+        
+        Used when combo_weights is empty (early campaign or new synthesis).
+        Biases toward unseen (family, strategy_set) combinations.
+        """
+        # 1. Try combo weights first (exploitation)
+        combo = self.sample_combo(rng, allowed_families, fixed_strategies, fixed_transport)
+        if combo:
+            return combo
+        
+        # 2. Fallback: family-weighted + semantic novelty bonus
+        family = self.sample_family(rng, allowed_families)
+        transport = fixed_transport or "splice"
+        
+        # Get candidate strategy sets for this family
+        strategy_pool = self._candidate_strategy_sets(family)
+        if fixed_strategies:
+            strategy_pool = [s for s in strategy_pool if s == fixed_strategies]
+        
+        if not strategy_pool:
+            return family, transport, frozenset()
+        
+        # Score each strategy set by semantic novelty
+        scored = []
+        for s in strategy_pool:
+            sem_sig = NoveltyTracker.semantic_signature(frozenset(), frozenset(s))
+            nov = novelty_tracker.score_semantic(sem_sig)
+            weight = self.family_weights.get(family, 1.0) * (1.0 + 2.0 * nov)
+            scored.append((s, weight))
+        
+        strategies = rng.choices([s for s, _ in scored], weights=[w for _, w in scored], k=1)[0]
+        return family, transport, frozenset(strategies)
+
+    def _candidate_strategy_sets(self, family: str) -> list[frozenset[str]]:
+        """Get known strategy sets for a family from combo weights."""
+        seen = set()
+        for (fam, _trans, strat), _weight in self.combo_weights.items():
+            if fam == family:
+                seen.add(strat)
+        if not seen:
+            # Default strategy sets per family
+            defaults = {
+                "gadget": [frozenset(), frozenset(["stack_global_encoding"]), frozenset(["nested_loads_wrap"])],
+                "overwritten": [frozenset(), frozenset(["indirect_chain"]), frozenset(["payload_obfuscation"])],
+                "pypi_injected": [frozenset(), frozenset(["stack_global_encoding"]), frozenset(["nested_loads_wrap"])],
+                "external": [frozenset(), frozenset(["indirect_chain"]), frozenset(["string_encoding_variants"])],
+                "indirect_chain": [frozenset(), frozenset(["stack_global_encoding"])],
+            }
+            return defaults.get(family, [frozenset()])
+        return list(seen)
+
+    def sample_coverage_gaps(self, rng, tracker: CoverageTracker,
+                              allowed_families: set[str]) -> tuple[str, tuple[str, str]] | None:
+        """Sample unseen opcodes/callables for coverage-driven exploration.
+        
+        Returns (family, callable) for unseen callable, or (family, "opcode") for unseen opcode.
+        """
+        from pipeline.opcodes import OPCODES_BY_BYTE
+        from pipeline.registry import get_armable_entries
+        
+        unseen_opcodes = set(OPCODES_BY_BYTE.keys()) - tracker.seen_opcodes
+        unseen_callables = set((e.module, e.name) for e in get_armable_entries()) - tracker.seen_callables
+        
+        if unseen_callables and rng.random() < 0.6:
+            family = rng.choice(list(allowed_families))
+            callable = rng.choice(list(unseen_callables))
+            return family, callable
+        elif unseen_opcodes and rng.random() < 0.4:
+            family = rng.choice(list(allowed_families))
+            return family, ("opcode", rng.choice(list(unseen_opcodes)))
+        return None
 
     def _ingest_greybox(self, round_results: list[dict[str, Any]]) -> None:
         """Update per-scanner tallies and penalize rules-flagged callables."""

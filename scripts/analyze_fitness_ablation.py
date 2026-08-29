@@ -75,22 +75,19 @@ def query_campaign_metrics(db_path: str) -> list[CampaignMetrics]:
                 WHERE c.run_id = ? AND f.is_valid = 1
             """, (run_id,)).fetchone()[0] or 0
 
-            # Confirmed bypasses
+            # Confirmed bypasses (execution oracle + panel all benign)
             confirmed = cursor.execute("""
                 SELECT COUNT(*)
-                FROM oracle_results o
-                JOIN candidates c ON c.candidate_id = o.candidate_id
-                JOIN campaign_fitness f ON f.candidate_id = o.candidate_id
-                WHERE c.run_id = ?
-                  AND o.verdict = 'malicious' AND o.pre_filtered = 0
-                  AND f.is_valid = 1
+                FROM campaign_fitness f
+                JOIN candidates c ON c.candidate_id = f.candidate_id
+                WHERE c.run_id = ? AND f.is_valid = 1
                   AND EXISTS (
                       SELECT 1 FROM panel_results p
-                      WHERE p.candidate_id = o.candidate_id AND p.verdict = 'benign'
+                      WHERE p.candidate_id = f.candidate_id AND p.verdict = 'benign'
                   )
                   AND NOT EXISTS (
                       SELECT 1 FROM panel_results p
-                      WHERE p.candidate_id = o.candidate_id
+                      WHERE p.candidate_id = f.candidate_id
                         AND p.verdict IN ('malicious', 'error')
                   )
             """, (run_id,)).fetchone()[0] or 0
@@ -110,7 +107,7 @@ def query_campaign_metrics(db_path: str) -> list[CampaignMetrics]:
             """, (run_id,)).fetchone()[0] or 0
 
             # Queries to first confirmed bypass
-            rows = cursor.execute("""
+rows = cursor.execute("""
                 SELECT c.candidate_id, c.created_at, c.round_num
                 FROM candidates c
                 JOIN campaign_fitness f ON f.candidate_id = c.candidate_id
@@ -122,13 +119,6 @@ def query_campaign_metrics(db_path: str) -> list[CampaignMetrics]:
             q = 0
             for row in rows:
                 q += 1
-                cand = cursor.execute("""
-                    SELECT o.verdict AS ov
-                    FROM oracle_results o
-                    WHERE o.candidate_id = ? AND o.pre_filtered = 0
-                """, (row["candidate_id"],)).fetchone()
-                if not cand or cand["ov"] != "malicious":
-                    continue
                 panel = cursor.execute("""
                     SELECT
                         COUNT(*) FILTER (WHERE verdict = 'benign') AS benign_n,
@@ -136,7 +126,9 @@ def query_campaign_metrics(db_path: str) -> list[CampaignMetrics]:
                         COUNT(*) FILTER (WHERE verdict = 'error') AS error_n
                     FROM panel_results
                     WHERE candidate_id = ?
-                """, (row["candidate_id"],)).fetchone()
+                    """, (row["candidate_id"],)).fetchone()
+                # Execution oracle already confirmed (f.is_valid = 1 in rows query)
+                # Confirmed bypass: panel all benign (>=1 benign, no malicious, no error)
                 if panel and panel["benign_n"] > 0 and panel["malicious_n"] == 0 and panel["error_n"] == 0:
                     first_bypass = q
                     break

@@ -44,7 +44,7 @@ from pipeline.db import (
     log_fitness,
 )
 from pipeline.comparator import check_bypass
-from pipeline.fitness import compute_fitness, compute_fitness_multi, compute_fitness_oracle_aware, compute_fitness_lexicographic, FitnessMode
+from pipeline.fitness import compute_fitness, compute_fitness_multi, compute_fitness_oracle_aware, compute_fitness_lexicographic, compute_fitness_continuous, compute_fitness_coverage_guided, FitnessMode
 from pipeline.feedback import CoverageTracker, FeedbackController, NoveltyTracker
 from pipeline.registry import load_registry
 from pipeline.templates import FAMILIES, FAMILY_LABELS
@@ -109,13 +109,14 @@ def parse_args() -> argparse.Namespace:
                      help="comma-separated fixed strategy subset "
                           "(stack_global_encoding,payload_obfuscation,"
                           "indirect_chain,nested_loads_wrap); overrides mode")
-    ap.add_argument("--fitness-mode", choices=["current", "oracle_aware", "oracle_dominant"],
-                     default="current",
-                     help="fitness computation mode for ablation: "
-                          "'current' = panel evasion + boundary + novelty; "
-                          "'oracle_aware' = adds oracle confirmation bonus; "
-                          "'oracle_dominant' = lexicographic ranking "
-                          "(dynamic confirmation > panel > coverage > novelty)")
+ap.add_argument("--fitness-mode", choices=["current", "oracle_aware", "oracle_dominant", "continuous", "coverage_guided"],
+                      default="current",
+                      help="fitness computation mode for ablation: "
+                           "'current' = panel evasion + boundary + novelty; "
+                           "'oracle_aware' = oracle confirmation multiplier on evasion; "
+                           "'oracle_dominant' = lexicographic ranking (deprecated, creates plateaus); "
+                           "'continuous' = smooth multi-objective (evasion * oracle_mult + boundary + novelty + coverage); "
+                           "'coverage_guided' = coverage delta primary when evasion plateaus")
     ap.add_argument("--time-budget-hours", type=float, default=24.0,
                       help="bounded-pilot time budget; the campaign stops after this "
                            "elapses even if rounds remain")
@@ -323,41 +324,63 @@ def run_campaign(args: argparse.Namespace) -> int:
                     budget_exhausted = True
                     break
 
-                # Select attack family: use family weights in guided mode
                 if args.mode == "guided":
-                    family_weights_map = controller.get_family_weights()
-                    family_weights_map = {f: w for f, w in family_weights_map.items() if f in families}
-                    family_population = list(family_weights_map.keys())
-                    family_weights = list(family_weights_map.values())
-                    attack_family = random.choices(family_population, weights=family_weights, k=1)[0]
-                else:
-                    attack_family = random.choice(families)
-                family_counts[attack_family] += 1
-                if attack_family == "gadget":
-                    if weights:
-                        chosen_callable = random.choices(population, weights=weights, k=1)[0]
+                    # Use combo weights with semantic novelty bias for synthesis exploration
+                    combo = controller.sample_with_novelty(
+                        random, set(families), novelty,
+                        fixed_strategies=frozenset(fixed_strategies) if fixed_strategies else None,
+                        fixed_transport="splice" if (args.evasion_mode != "off" or fixed_strategies is not None) else None
+                    )
+                    if combo:
+                        attack_family, cand_transport, cand_strategies_fs = combo
+                        cand_strategies = list(cand_strategies_fs)
                     else:
-                        chosen_callable = random.choice(population)
-                else:
-                    chosen_callable = None
+                        # Fallback to family weights
+                        family_weights_map = controller.get_family_weights()
+                        family_weights_map = {f: w for f, w in family_weights_map.items() if f in families}
+                        family_population = list(family_weights_map.keys())
+                        family_weights = list(family_weights_map.values())
+                        attack_family = random.choices(family_population, weights=family_weights, k=1)[0]
+                        cand_strategies = _pick_strategies()
+                        cand_transport = "splice" if (args.evasion_mode != "off" or fixed_strategies is not None) else None
 
-                trigger_file = os.path.join(temp_dir, f"trigger_{r}_{i}.txt")
-                payload = f"with open('{trigger_file}', 'w') as f: f.write('1')"
-                cand_strategies = _pick_strategies()
-                cand_transport = (
-                    "splice"
-                    if (args.evasion_mode != "off" or fixed_strategies is not None)
-                    else None
-                )
+                    # Coverage-gap sampling: occasionally pick unseen callable/opcode
+                    if random.random() < 0.1:
+                        gap = controller.sample_coverage_gaps(random, tracker, set(families))
+                        if gap:
+                            attack_family, gap_item = gap
+                            if isinstance(gap_item, tuple) and gap_item[0] == "opcode":
+                                pass  # opcode gap handled via op_swap_prob increase
+                            else:
+                                chosen_callable = gap_item
 
-                if args.mode == "guided":
+                    if attack_family == "gadget":
+                        callable_weights_map = controller.get_callable_weights()
+                        callable_weights_map = {c: w for c, w in callable_weights_map.items() if c in population}
+                        callable_population = list(callable_weights_map.keys())
+                        callable_weights = list(callable_weights_map.values())
+                        chosen_callable = random.choices(callable_population, weights=callable_weights, k=1)[0]
+                    else:
+                        chosen_callable = None
+
                     op_swap_prob = controller.op_swap_prob
                     callable_sub_prob = controller.callable_sub_prob
                     arg_fuzz_prob = controller.arg_fuzz_prob
                 else:
+                    attack_family = random.choice(families)
+                    family_counts[attack_family] += 1
+                    if attack_family == "gadget":
+                        chosen_callable = random.choice(population)
+                    else:
+                        chosen_callable = None
+                    cand_strategies = _pick_strategies()
+                    cand_transport = "splice" if (args.evasion_mode != "off" or fixed_strategies is not None) else None
                     op_swap_prob = 0.15
                     callable_sub_prob = 0.15
                     arg_fuzz_prob = 0.15
+
+                trigger_file = os.path.join(temp_dir, f"trigger_{r}_{i}.txt")
+                payload = f"with open('{trigger_file}', 'w') as f: f.write('1')"
 
                 candidate_params.append({
                     "index": i,
@@ -468,12 +491,13 @@ def run_campaign(args: argparse.Namespace) -> int:
                 panel_verdicts = []
                 scanner_verdicts: dict[str, str] = {}
                 matched_rules: list[str] = []
-                oracle_verdict = "benign"
+                dynahug_verdict = "benign"
                 decision_score = 0.0
                 for r_scan in cand_results:
                     if r_scan.scanner == "dynahug":
-                        # Fail-closed: an errored oracle is never "benign".
-                        oracle_verdict = r_scan.verdict or "error"
+                        # DynaHug provides supplementary decision_score signal only.
+                        # Execution oracle (plausibility/validity) is the primary for bypass confirmation.
+                        dynahug_verdict = r_scan.verdict or "error"
                         decision_score = r_scan.decision_score or 0.0
                     else:
                         # Fail-closed: a scanner that errors (parse failure, scan
@@ -484,6 +508,17 @@ def run_campaign(args: argparse.Namespace) -> int:
                         panel_verdicts.append(v)
                         if r_scan.matched_rules:
                             matched_rules.extend(r_scan.matched_rules)
+
+                # Execution oracle verdict for bypass confirmation: "malicious" = trigger fired
+                execution_oracle_verdict = "malicious" if is_valid else "benign"
+
+                # Compute coverage delta for fitness modes that use it
+                tracker.track_candidate(filepath)
+                new_opcodes = tracker.seen_opcodes - prev_opcodes
+                new_callables = tracker.seen_callables - prev_callables
+                coverage_delta = len(new_opcodes) + len(new_callables)
+                prev_opcodes = set(tracker.seen_opcodes)
+                prev_callables = set(tracker.seen_callables)
 
                 use_multi_fitness = (
                     is_valid
@@ -496,20 +531,20 @@ def run_campaign(args: argparse.Namespace) -> int:
                         sig_ops, frozenset(cand_strategies)))
                     fit_score = compute_fitness_lexicographic(
                         scanner_verdicts=scanner_verdicts,
-                        oracle_verdict=oracle_verdict,
+                        oracle_verdict=execution_oracle_verdict,
                         is_valid=is_valid,
                         novelty_score=nov if args.mode == "guided" else 0.0,
-                        coverage_delta=0.0,  # Will be computed below
+                        coverage_delta=coverage_delta,
                     )
                 elif fitness_mode == FitnessMode.ORACLE_AWARE:
-                    # Oracle-aware: panel evasion + oracle bonus + boundary + novelty
+                    # Oracle-aware: panel evasion + execution oracle multiplier + boundary + novelty
                     if use_multi_fitness:
                         sig_ops = _candidate_signature(filepath)
                         nov = novelty.score(novelty.signature(
                             sig_ops, frozenset(cand_strategies)))
                         fit_score = compute_fitness_oracle_aware(
                             scanner_verdicts=scanner_verdicts,
-                            oracle_verdict=oracle_verdict,
+                            oracle_verdict=execution_oracle_verdict,
                             is_valid=is_valid,
                             decision_score=decision_score,
                             novelty_score=nov if args.mode == "guided" else 0.0,
@@ -517,10 +552,60 @@ def run_campaign(args: argparse.Namespace) -> int:
                     elif is_valid:
                         fit_score = compute_fitness_oracle_aware(
                             scanner_verdicts=scanner_verdicts,
-                            oracle_verdict=oracle_verdict,
+                            oracle_verdict=execution_oracle_verdict,
                             is_valid=is_valid,
                             decision_score=decision_score,
                             novelty_score=0.0,
+                        )
+                    else:
+                        fit_score = 0.0
+                elif fitness_mode == FitnessMode.CONTINUOUS:
+                    # Continuous: smooth multi-objective (evasion * oracle_mult + boundary + novelty + coverage)
+                    if use_multi_fitness:
+                        sig_ops = _candidate_signature(filepath)
+                        nov = novelty.score(novelty.signature(
+                            sig_ops, frozenset(cand_strategies)))
+                        fit_score = compute_fitness_continuous(
+                            scanner_verdicts=scanner_verdicts,
+                            execution_oracle_verdict=execution_oracle_verdict,
+                            is_valid=is_valid,
+                            decision_score=decision_score,
+                            novelty_score=nov if args.mode == "guided" else 0.0,
+                            coverage_delta=coverage_delta,
+                        )
+                    elif is_valid:
+                        fit_score = compute_fitness_continuous(
+                            scanner_verdicts=scanner_verdicts,
+                            execution_oracle_verdict=execution_oracle_verdict,
+                            is_valid=is_valid,
+                            decision_score=decision_score,
+                            novelty_score=0.0,
+                            coverage_delta=coverage_delta,
+                        )
+                    else:
+                        fit_score = 0.0
+                elif fitness_mode == FitnessMode.COVERAGE_GUIDED:
+                    # Coverage-guided: coverage delta as primary when evasion plateaus
+                    if use_multi_fitness:
+                        sig_ops = _candidate_signature(filepath)
+                        nov = novelty.score(novelty.signature(
+                            sig_ops, frozenset(cand_strategies)))
+                        fit_score = compute_fitness_coverage_guided(
+                            scanner_verdicts=scanner_verdicts,
+                            execution_oracle_verdict=execution_oracle_verdict,
+                            is_valid=is_valid,
+                            decision_score=decision_score,
+                            novelty_score=nov if args.mode == "guided" else 0.0,
+                            coverage_delta=coverage_delta,
+                        )
+                    elif is_valid:
+                        fit_score = compute_fitness_coverage_guided(
+                            scanner_verdicts=scanner_verdicts,
+                            execution_oracle_verdict=execution_oracle_verdict,
+                            is_valid=is_valid,
+                            decision_score=decision_score,
+                            novelty_score=0.0,
+                            coverage_delta=coverage_delta,
                         )
                     else:
                         fit_score = 0.0
@@ -547,7 +632,7 @@ def run_campaign(args: argparse.Namespace) -> int:
                 if is_valid:
                     valid_cnt += 1
 
-                is_bypass = is_valid and check_bypass(panel_verdicts, oracle_verdict)
+                is_bypass = is_valid and check_bypass(panel_verdicts, execution_oracle_verdict)
                 if is_bypass:
                     bypasses_cnt += 1
                     # Register confirmed bypass for shelf-life tracking (H3)
@@ -570,7 +655,8 @@ def run_campaign(args: argparse.Namespace) -> int:
                             artifact_path=filepath,
                             scanner_versions=scanner_versions,
                             panel_verdicts=scanner_verdicts,
-                            oracle_verdict=oracle_verdict,
+                            oracle_verdict=execution_oracle_verdict,
+                            dynahug_verdict=dynahug_verdict,
                             decision_score=decision_score,
                         )
                     except Exception as e:
@@ -590,14 +676,6 @@ def run_campaign(args: argparse.Namespace) -> int:
                     panel_verdict_summary = "error"
                 else:
                     panel_verdict_summary = "none"
-
-                # Compute coverage delta
-                tracker.track_candidate(filepath)
-                new_opcodes = tracker.seen_opcodes - prev_opcodes
-                new_callables = tracker.seen_callables - prev_callables
-                coverage_delta = len(new_opcodes) + len(new_callables)
-                prev_opcodes = set(tracker.seen_opcodes)
-                prev_callables = set(tracker.seen_callables)
 
                 # Compute novelty score (already computed above for fitness)
                 sig_ops = _candidate_signature(filepath)

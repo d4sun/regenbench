@@ -38,7 +38,8 @@ class BypassRecord:
     discovered_at: str
     scanner_versions: dict[str, str]
     panel_verdicts: dict[str, str]
-    oracle_verdict: str
+    oracle_verdict: str          # Execution oracle verdict (trigger fired = "malicious")
+    dynahug_verdict: str         # Supplementary DynaHug anomaly detector verdict
     decision_score: float
 
 @dataclass
@@ -80,6 +81,7 @@ class ShelfLifeTracker:
                 scanner_versions TEXT,
                 panel_verdicts TEXT,
                 oracle_verdict TEXT,
+                dynahug_verdict TEXT,
                 decision_score REAL
             )
         """)
@@ -110,14 +112,14 @@ class ShelfLifeTracker:
             INSERT OR REPLACE INTO bypass_records
             (candidate_id, run_id, family, callable, transport, strategies,
              artifact_path, discovered_at, scanner_versions, panel_verdicts,
-             oracle_verdict, decision_score)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             oracle_verdict, dynahug_verdict, decision_score)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             record.candidate_id, record.run_id, record.family, record.callable,
             record.transport, json.dumps(record.strategies), record.artifact_path,
             record.discovered_at, json.dumps(record.scanner_versions),
             json.dumps(record.panel_verdicts), record.oracle_verdict,
-            record.decision_score
+            record.dynahug_verdict, record.decision_score
         ))
         conn.commit()
         conn.close()
@@ -147,6 +149,7 @@ class ShelfLifeTracker:
                 scanner_versions=json.loads(row["scanner_versions"]),
                 panel_verdicts=json.loads(row["panel_verdicts"]),
                 oracle_verdict=row["oracle_verdict"],
+                dynahug_verdict=row["dynahug_verdict"] if "dynahug_verdict" in row.keys() else "unknown",
                 decision_score=row["decision_score"]
             )
             for row in rows
@@ -262,6 +265,7 @@ def register_confirmed_bypass(
     scanner_versions: dict[str, str],
     panel_verdicts: dict[str, str],
     oracle_verdict: str,
+    dynahug_verdict: str,
     decision_score: float,
     db_path: str = DEFAULT_DB_PATH
 ) -> None:
@@ -279,6 +283,7 @@ def register_confirmed_bypass(
         scanner_versions=scanner_versions,
         panel_verdicts=panel_verdicts,
         oracle_verdict=oracle_verdict,
+        dynahug_verdict=dynahug_verdict,
         decision_score=decision_score
     )
     tracker.record_bypass(record)

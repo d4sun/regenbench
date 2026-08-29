@@ -310,10 +310,10 @@ def query_bypass_queries(db_path: str) -> dict[str, dict[str, float | int | list
 
     Returns {campaign_type: {"first_bypasses": [Q_first per replicate], ...}}.
     A confirmed bypass is a valid candidate that evades the whole static panel
-    while the oracle labels it malicious. Candidates are ordered by their
-    created_at/insertion order within each run. Campaigns that never find a
-    bypass contribute a *censored* observation (total candidates + 1) rather
-    than being silently discarded.
+    while the execution oracle confirms payload execution (f.is_valid = 1).
+    Candidates are ordered by their created_at/insertion order within each run.
+    Campaigns that never find a bypass contribute a *censored* observation
+    (total candidates + 1) rather than being silently discarded.
     """
     out: dict[str, dict] = {}
     if not os.path.exists(db_path):
@@ -346,16 +346,6 @@ def query_bypass_queries(db_path: str) -> dict[str, dict[str, float | int | list
             q = 0
             for row in rows:
                 q += 1
-                cand = cursor.execute(
-                    """
-                    SELECT o.verdict AS ov
-                    FROM oracle_results o
-                    WHERE o.candidate_id = ? AND o.pre_filtered = 0
-                    """,
-                    (row["candidate_id"],),
-                ).fetchone()
-                if not cand or cand["ov"] != "malicious":
-                    continue
                 panel = cursor.execute(
                     """
                     SELECT
@@ -367,8 +357,8 @@ def query_bypass_queries(db_path: str) -> dict[str, dict[str, float | int | list
                     """,
                     (row["candidate_id"],),
                 ).fetchone()
-                # Confirmed bypass: whole panel benign (>=1 benign row, no
-                # malicious, no error).
+                # Confirmed bypass: execution oracle confirmed (f.is_valid = 1)
+                # AND whole panel benign (>=1 benign row, no malicious, no error).
                 if panel and panel["benign_n"] > 0 and panel["malicious_n"] == 0 and panel["error_n"] == 0:
                     first = q
                     break
@@ -605,25 +595,20 @@ def query_campaign_stats(db_path: str) -> dict:
         ).fetchone()[0] or 0
 
         # Confirmed bypass (strict, matches pipeline.comparator.check_bypass):
-        # candidate admitted to oracle (not pre-filtered), oracle verdict
-        # malicious, and the panel has at least one benign row and NO malicious
-        # or error row -- an errored scanner is never "evaded".
+        # Execution oracle (validity) confirms execution (f.is_valid = 1)
+        # AND panel all benign (at least one benign row, no malicious/error)
         confirmed = cursor.execute(
             """
             SELECT COUNT(*)
-            FROM oracle_results o
-            JOIN candidates c ON c.candidate_id = o.candidate_id
-            JOIN campaign_fitness f ON f.candidate_id = o.candidate_id
-            WHERE o.verdict = 'malicious'
-              AND o.pre_filtered = 0
-              AND f.is_valid = 1
+            FROM campaign_fitness f
+            WHERE f.is_valid = 1
               AND EXISTS (
                   SELECT 1 FROM panel_results p
-                  WHERE p.candidate_id = o.candidate_id AND p.verdict = 'benign'
+                  WHERE p.candidate_id = f.candidate_id AND p.verdict = 'benign'
               )
               AND NOT EXISTS (
                   SELECT 1 FROM panel_results p
-                  WHERE p.candidate_id = o.candidate_id
+                  WHERE p.candidate_id = f.candidate_id
                     AND p.verdict IN ('malicious', 'error')
               )
             """
@@ -710,17 +695,14 @@ def query_run_evasion(db_path: str) -> list[dict]:
             confirmed = conn.execute(
                 """
                 SELECT COUNT(*)
-                FROM oracle_results o
-                JOIN candidates c ON c.candidate_id = o.candidate_id
-                JOIN campaign_fitness f ON f.candidate_id = o.candidate_id
-                WHERE c.run_id = ?
-                  AND o.verdict = 'malicious' AND o.pre_filtered = 0
-                  AND f.is_valid = 1
+                FROM campaign_fitness f
+                JOIN candidates c ON c.candidate_id = f.candidate_id
+                WHERE c.run_id = ? AND f.is_valid = 1
                   AND EXISTS (SELECT 1 FROM panel_results p
-                              WHERE p.candidate_id = o.candidate_id
+                              WHERE p.candidate_id = f.candidate_id
                                 AND p.verdict = 'benign')
                   AND NOT EXISTS (SELECT 1 FROM panel_results p
-                                  WHERE p.candidate_id = o.candidate_id
+                                  WHERE p.candidate_id = f.candidate_id
                                     AND p.verdict IN ('malicious', 'error'))
                 """,
                 (run["run_id"],),
@@ -1142,6 +1124,93 @@ def main(argv: list[str] | None = None) -> int:
                 )
             )
         ),
+        "",
+        "---",
+        "",
+        "## ShadowPickle Baseline Comparison (H1)",
+        "",
+        "**Hypothesis H1**: *Directed fuzzing achieves higher evasion rates than handcrafted ShadowPickle families.*",
+        "",
+        "The ShadowPickle baseline measures evasion rates of the 3 handcrafted families "
+        "(overwritten, external, indirect_chain) under the same scanner panel and "
+        "execution oracle as the fuzzing campaigns.",
+    ])
+    
+    # Check for ShadowPickle baseline DB
+    sp_db = "data/regenbench_shadowpickle.db"
+    if os.path.exists(sp_db):
+        sp_stats = query_campaign_stats(sp_db)
+        if sp_stats["has_data"]:
+            sp_total = sp_stats["total_candidates"]
+            sp_valid = sp_stats["valid_candidates"]
+            sp_bypasses = sp_stats["confirmed_bypasses"]
+            sp_bypass_rate = sp_bypasses / max(1, sp_valid) * 100
+            report_lines.append(f"ShadowPickle baseline: {sp_bypasses}/{sp_valid} valid candidates bypassed ({sp_bypass_rate:.1f}%)")
+            
+            # Compare with fuzzing campaigns
+            if stats["has_data"] and valid_candidates > 0:
+                fuzz_bypass_rate = confirmed_bypass_count / max(1, valid_candidates) * 100
+                report_lines.append(f"Fuzzing campaigns: {confirmed_bypass_count}/{valid_candidates} valid candidates bypassed ({fuzz_bypass_rate:.1f}%)")
+                if fuzz_bypass_rate > sp_bypass_rate:
+                    report_lines.append("**Verdict on H1**: Supported. Fuzzing campaigns achieve higher bypass rates than ShadowPickle baseline.")
+                else:
+                    report_lines.append("**Verdict on H1**: Not supported. Fuzzing campaigns do not exceed ShadowPickle baseline.")
+        else:
+            report_lines.append("ShadowPickle baseline DB exists but has no data.")
+    else:
+        report_lines.append("ShadowPickle baseline not run. Execute `scripts/run_shadowpickle_baseline.py` to generate baseline.")
+    
+    report_lines.extend([
+        "",
+        "## Semantic Fingerprint Analysis (Novelty Detection)",
+        "",
+        "Semantic fingerprints (callable set + opcode categories + transport) "
+        "are used to identify genuinely novel attack families beyond minor mutations.",
+    ])
+    
+    # Query semantic fingerprints from confirmed bypasses
+    if stats["has_data"]:
+        try:
+            conn = sqlite3.connect(args.db)
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            # Get filepaths of confirmed bypasses
+            bypass_files = cursor.execute("""
+                SELECT c.filepath, c.mutation_strategy, c.mutation_template
+                FROM candidates c
+                JOIN campaign_fitness f ON f.candidate_id = c.candidate_id
+                WHERE f.is_valid = 1
+                  AND EXISTS (
+                      SELECT 1 FROM panel_results p
+                      WHERE p.candidate_id = c.candidate_id AND p.verdict = 'benign'
+                  )
+                  AND NOT EXISTS (
+                      SELECT 1 FROM panel_results p
+                      WHERE p.candidate_id = c.candidate_id
+                        AND p.verdict IN ('malicious', 'error')
+                  )
+            """).fetchall()
+            conn.close()
+            
+            if bypass_files:
+                from pipeline.feedback import compute_semantic_fingerprint
+                fingerprints = {}
+                for row in bypass_files:
+                    fp = compute_semantic_fingerprint(row["filepath"])
+                    if fp:
+                        key = (fp[0], fp[2])  # callables + transport
+                        fingerprints[key] = fingerprints.get(key, 0) + 1
+                
+                report_lines.append(f"Unique semantic fingerprints among confirmed bypasses: {len(fingerprints)}")
+                for fp, count in sorted(fingerprints.items(), key=lambda x: -x[1]):
+                    callables_str = ", ".join(f"{m}.{n}" for m,n in fp[0]) if fp[0] else "(none)"
+                    report_lines.append(f"  - Callables: [{callables_str}], Transport: {fp[1]}, Count: {count}")
+            else:
+                report_lines.append("No confirmed bypasses to analyze.")
+        except Exception as e:
+            report_lines.append(f"Semantic fingerprint analysis failed: {e}")
+    
+    report_lines.extend([
         "",
         "---",
         "",

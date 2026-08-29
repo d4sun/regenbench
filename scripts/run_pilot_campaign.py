@@ -239,16 +239,20 @@ def main(argv: list[str] | None = None) -> int:
                 is_valid = plausibility.confirm(cand_bytes, trigger_file)
 
                 panel_verdicts = []
-                oracle_verdict = "benign"
+                dynahug_verdict = "benign"
                 decision_score = 0.0
 
                 for r_scan in cand_results:
                     if r_scan.scanner == "dynahug":
-                        # Fail-closed: an errored oracle never counts as benign.
-                        oracle_verdict = r_scan.verdict or "error"
+                        # DynaHug provides supplementary decision_score signal only.
+                        # Execution oracle (plausibility/validity) is the primary for bypass confirmation.
+                        dynahug_verdict = r_scan.verdict or "error"
                         decision_score = r_scan.decision_score or 0.0
                     else:
                         panel_verdicts.append(r_scan.verdict or "error")
+
+                # Execution oracle verdict for bypass confirmation: "malicious" = trigger fired
+                execution_oracle_verdict = "malicious" if is_valid else "benign"
 
                 if is_valid:
                     valid_cnt += 1
@@ -260,7 +264,7 @@ def main(argv: list[str] | None = None) -> int:
                 else:
                     fit_score = 0.0
 
-                is_bypass = is_valid and check_bypass(panel_verdicts, oracle_verdict)
+                is_bypass = is_valid and check_bypass(panel_verdicts, execution_oracle_verdict)
                 if is_bypass:
                     bypasses_cnt += 1
 

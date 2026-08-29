@@ -7,8 +7,10 @@ gradient when every candidate is fully detected.
 
 Phase 3: Multiple fitness modes for ablation experiments:
   - CURRENT: panel evasion + boundary + novelty (existing behavior)
-  - ORACLE_AWARE: panel evasion + oracle bonus + boundary + novelty
-  - ORACLE_DOMINANT: lexicographic ranking (dynamic confirmation > panel > coverage > novelty)
+  - ORACLE_AWARE: panel evasion + execution oracle bonus (multiplier) + boundary + novelty
+  - ORACLE_DOMINANT: lexicographic ranking (deprecated - creates plateaus)
+  - CONTINUOUS: smooth multi-objective (evasion * oracle_multiplier + boundary + novelty + coverage)
+  - COVERAGE_GUIDED: coverage delta as primary signal
 """
 
 from __future__ import annotations
@@ -22,6 +24,8 @@ class FitnessMode(Enum):
     CURRENT = "current"
     ORACLE_AWARE = "oracle_aware"
     ORACLE_DOMINANT = "oracle_dominant"
+    CONTINUOUS = "continuous"
+    COVERAGE_GUIDED = "coverage_guided"
 
 
 def compute_fitness(detected_count: int, total_scanners: int, decision_score: float | None) -> float:
@@ -95,17 +99,90 @@ def compute_fitness_oracle_aware(
     novelty_score: float = 0.0,
     weights: FitnessWeights = DEFAULT_WEIGHTS,
 ) -> float:
-    """Oracle-aware fitness: adds bonus for oracle-confirmed malicious execution.
+    """Oracle-aware fitness: adds multiplier for execution oracle confirmation.
     
     This mode rewards candidates that:
-    1. Evade panel scanners (existing behavior)
-    2. Are confirmed malicious by the dynamic oracle (DynaHug)
-    3. Are valid (execute successfully)
+    1. Evade panel scanners (per-scanner gradient via compute_fitness_multi)
+    2. Are confirmed malicious by the execution oracle (is_valid = trigger fired)
+    3. Uses oracle as a MULTIPLIER on evasion score, not additive tier gate
     """
     base = compute_fitness_multi(scanner_verdicts, decision_score, novelty_score, weights)
     
     if is_valid and oracle_verdict == "malicious":
-        base += weights.oracle_bonus
+        # Multiplier on evasion component: doubles the evasion reward
+        benign = sum(1 for v in scanner_verdicts.values() if v == "benign")
+        base += weights.evasion * benign  # additional evasion weight
+        base += weights.oracle_bonus      # fixed oracle bonus
+    
+    return base
+
+
+def compute_fitness_continuous(
+    scanner_verdicts: dict[str, str],
+    execution_oracle_verdict: str,
+    is_valid: bool,
+    decision_score: float | None,
+    novelty_score: float = 0.0,
+    coverage_delta: float = 0.0,
+    weights: FitnessWeights = DEFAULT_WEIGHTS,
+) -> float:
+    """Continuous fitness: smooth multi-objective without tier plateaus.
+    
+    Components (all continuous, no hard thresholds):
+    - evasion: per-scanner benign count (0 to N)
+    - oracle_multiplier: 2.0 if execution oracle confirms, 1.0 otherwise
+    - boundary: distance to DynaHug decision boundary (smooth)
+    - novelty: exploration bonus (smooth decay)
+    - coverage: coverage delta (smooth)
+    
+    Formula:
+      fitness = evasion_score * oracle_multiplier + boundary_score + novelty_score * w_novelty + coverage_delta * w_coverage
+    """
+    benign = sum(1 for v in scanner_verdicts.values() if v == "benign")
+    errors = sum(1 for v in scanner_verdicts.values() if v == "error")
+    
+    # Oracle multiplier: 2x evasion reward when execution confirmed
+    oracle_multiplier = 2.0 if (is_valid and execution_oracle_verdict == "malicious") else 1.0
+    
+    evasion_score = weights.evasion * benign * oracle_multiplier
+    error_penalty = weights.error_penalty * errors
+    
+    dist = abs(decision_score) if decision_score is not None else 1.0
+    boundary_score = weights.boundary * (1.0 / (1.0 + dist))
+    
+    novelty_component = weights.novelty * novelty_score
+    coverage_component = weights.novelty * 0.5 * coverage_delta  # half novelty weight for coverage
+    
+    return evasion_score - error_penalty + boundary_score + novelty_component + coverage_component
+
+
+def compute_fitness_coverage_guided(
+    scanner_verdicts: dict[str, str],
+    execution_oracle_verdict: str,
+    is_valid: bool,
+    decision_score: float | None,
+    novelty_score: float = 0.0,
+    coverage_delta: float = 0.0,
+    weights: FitnessWeights = DEFAULT_WEIGHTS,
+) -> float:
+    """Coverage-guided fitness: coverage delta as primary exploration signal.
+    
+    When evasion plateaus (all candidates detected), coverage_delta drives exploration.
+    Oracle confirmation still provides evasion multiplier.
+    """
+    base = compute_fitness_continuous(
+        scanner_verdicts, execution_oracle_verdict, is_valid, 
+        decision_score, novelty_score, coverage_delta, weights
+    )
+    
+    # Boost coverage component when evasion is low (plateau detected)
+    benign = sum(1 for v in scanner_verdicts.values() if v == "benign")
+    total = len(scanner_verdicts)
+    evasion_rate = benign / max(1, total)
+    
+    if evasion_rate < 0.3 and coverage_delta > 0:
+        # Plateau: emphasize coverage exploration
+        base += weights.novelty * 2.0 * coverage_delta
     
     return base
 
