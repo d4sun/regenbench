@@ -326,9 +326,9 @@ class FeedbackController:
         self.combo_weights: dict[tuple[str, str, frozenset[str]], float] = {}
 
         # Mutation rate baselines
-        self.op_swap_prob = 0.15
-        self.callable_sub_prob = 0.15
-        self.arg_fuzz_prob = 0.15
+        self.op_swap_prob = 0.05  # Reduced from 0.15 to improve stability
+        self.callable_sub_prob = 0.0  # Disabled by default: random callable substitution can break payload construction
+        self.arg_fuzz_prob = 0.05  # Reduced from 0.15 to improve stability
 
         # Phase 2 grey-box state: per-scanner verdict tallies and the
         # callables whose names appeared in scanner matched_rules.

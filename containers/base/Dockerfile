@@ -17,22 +17,22 @@ ENV DEBIAN_FRONTEND=noninteractive \
 # Base tooling needed to bootstrap the PPA and Python installation.
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        apt-transport-https=2.8.3 \
-        ca-certificates=20260601~24.04.1 \
-        curl=8.5.0-2ubuntu10.11 \
+        apt-transport-https \
+        ca-certificates \
+        curl \
         gnupg \
-        software-properties-common=0.99.49.4 \
+        software-properties-common \
     && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F23C5A6CF475977595C89F51BA6932366A755776 \
     && add-apt-repository -y "deb https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu noble main" \
     && apt-get update
 
 # Python 3.13 (deadsnakes) + common dependencies.
 RUN apt-get install -y --no-install-recommends \
-        python3.13=3.13.15-1+noble1 \
-        python3.13-venv=3.13.15-1+noble1 \
-        python3.13-dev=3.13.15-1+noble1 \
-        git=1:2.43.0-1ubuntu7.3 \
-        strace=6.8-0ubuntu2 \
+        python3.13 \
+        python3.13-venv \
+        python3.13-dev \
+        git \
+        strace \
     && python3.13 -m ensurepip \
     && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.13 1 \
     && rm -rf /var/lib/apt/lists/*

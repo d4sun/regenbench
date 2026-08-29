@@ -109,7 +109,7 @@ def parse_args() -> argparse.Namespace:
                      help="comma-separated fixed strategy subset "
                           "(stack_global_encoding,payload_obfuscation,"
                           "indirect_chain,nested_loads_wrap); overrides mode")
-ap.add_argument("--fitness-mode", choices=["current", "oracle_aware", "oracle_dominant", "continuous", "coverage_guided"],
+    ap.add_argument("--fitness-mode", choices=["current", "oracle_aware", "oracle_dominant", "continuous", "coverage_guided"],
                       default="current",
                       help="fitness computation mode for ablation: "
                            "'current' = panel evasion + boundary + novelty; "
@@ -697,7 +697,7 @@ def run_campaign(args: argparse.Namespace) -> int:
                     mutation_strategy=",".join(cand_strategies) if cand_strategies else "none",
                     parent_id=None,  # No parent tracking in current implementation
                     generation=1,     # No generational tracking in current implementation
-                    oracle_verdict=oracle_verdict,
+                    oracle_verdict=execution_oracle_verdict,
                     panel_verdict=panel_verdict_summary,
                     coverage_delta=coverage_delta,
                     novelty_score=nov_score,

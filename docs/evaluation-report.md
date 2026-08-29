@@ -1,6 +1,6 @@
 # ReGenBench Quantitative Evaluation & Ablation Report
 
-This report presents the statistically supported answers to our core Research Questions (RQ1-RQ4) and evaluates hypotheses (H1-H3) using the measured results of the campaign database `data/regenbench_campaign.db` (0 campaign runs, 0 valid candidates).
+This report presents the statistically supported answers to our core Research Questions (RQ1-RQ4) and evaluates hypotheses (H1-H3) using the measured results of the campaign database `data/regenbench_campaign.db` (5 campaign runs, 5 valid candidates).
 
 **Data provenance**: campaign database `data/regenbench_campaign.db`; all reported figures are measured or explicitly marked unassessed.
 
@@ -10,17 +10,17 @@ This report presents the statistically supported answers to our core Research Qu
 ### Evasion Rates and 95% Confidence Intervals
 | Scanner | Admitted Candidates | Evasion Count | Evasion Rate | 95% Bootstrap CI |
 | :--- | :---: | :---: | :---: | :---: |
-| **PickleScan** | 0 | 0 | 0.0% | [0.0%, 0.0%] |
-| **Fickling** | 0 | 0 | 0.0% | [0.0%, 0.0%] |
-| **ModelScan** | 0 | 0 | 0.0% | [0.0%, 0.0%] |
+| **PickleScan** | 5 | 0 | 0.0% | [0.0%, 0.0%] |
+| **Fickling** | 5 | 0 | 0.0% | [0.0%, 0.0%] |
+| **ModelScan** | 5 | 0 | 0.0% | [0.0%, 0.0%] |
 
-**Verdict on H1**: Not assessable: the campaign database is empty, so evasion rates are 0/unmeasured.
+**Verdict on H1**: Not supported on current data: measured evasion rates are below 70%.
 
 ---
 
 ## RQ2: Search Efficiency
 We measured the number of queries/candidates generated before reaching the first confirmed scanner bypass, per campaign replicate (per run_id, ordered by round).
-- **Queries-to-First-Bypass**: Not computed: the campaign DB has no guided/unguided replicate data (no campaign_runs rows). No hardcoded p-value is reported.
+- **Queries-to-First-Bypass**: guided: Q_first per replicate = [3, 3, 3, 3, 3] (censored=5; right-censored at total+1 when no bypass found); unguided: Q_first per replicate = [] (censored=0; right-censored at total+1 when no bypass found); test not run: pairs unequal or too few for a paired test; consider independent Mann-Whitney on replicate Q_first values
 
 ---
 
@@ -51,15 +51,25 @@ Consistency between scanners and our dynamic behavior-based oracle (DynaHug).
 Per-replicate results from the campaign DB (each row is one run_id):
 | Campaign | Replicate | Valid Candidates | Panel Evasions | Confirmed (Dual-Oracle) | Evasion Yield |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| — | — | no campaign data in DB | — | — | — |
-- **Unguided ablation harness**: mean fitness 0.000, evasion yield 0.0% (measured live, 10 candidates).
+| **guided** | 1 | 1 | 0 | 0 | 0.0% |
+| **guided** | 2 | 2 | 0 | 0 | 0.0% |
+| **guided** | 3 | 0 | 0 | 0 | 0.0% |
+| **guided** | 4 | 2 | 0 | 0 | 0.0% |
+| **guided** | 5 | 0 | 0 | 0 | 0.0% |
+- **Unguided ablation harness**: mean fitness 3.000, evasion yield 0.0% (measured live, 10 candidates).
+- **Guided vs unguided confirmed-bypass rates (T7.10)**: guided 0/5 vs unguided 0/0 (not computed: one group has no admitted candidates (0 denominator))
 
 ### Coverage Breadth Across Rounds (T7.3)
-- No per-round coverage rows in the campaign DB (the campaign driver does not currently log coverage); measured per-round opcode/callable coverage growth is unavailable.
+| Run | Round | Opcode Coverage | Callable Coverage |
+| :--- | :---: | :---: | :---: |
+| guided-r1 | 1 | 0.4264705882352941 | 0.12 |
+| guided-r2 | 1 | 0.4264705882352941 | 0.12 |
+| guided-r4 | 1 | 0.39705882352941174 | 0.08 |
+- **Growth**: opcode coverage 0.4264705882352941 -> 0.39705882352941174; callable coverage 0.12 -> 0.08 from round 1 to round 1.
 ### Ablation 2: Pre-filtering Throughput Contribution (T7.7)
 | Metric | With Static Pre-Filter | Without Pre-Filter | Throughput Speedup |
 | :--- | :---: | :---: | :---: |
-| **Execution Duration (5 files)** | 0.03s | 0.06s | **1.97x** |
+| **Execution Duration (5 files)** | 0.04s | 0.07s | **1.74x** |
 
 ### Ablation 3: Efficacy of DynaHug Cross-Check (T7.8 / Hypothesis H2)
 **Hypothesis H2**: *Without dynamic validation, scanner bypass counts are significantly inflated.*
@@ -68,7 +78,23 @@ Per-replicate results from the campaign DB (each row is one run_id):
 | **Uncorroborated Evasions (Panel-Only)** | 0 | 0.0% |
 | **Confirmed Evasions (Dual-Oracle)** | 0 | 0.0% |
 
-**Verdict on H2**: Not assessable: the campaign database is empty.
+**Verdict on H2**: Not assessable on current data: uncorroborated and confirmed evasion counts are both 0.
+
+---
+
+## ShadowPickle Baseline Comparison (H1)
+
+**Hypothesis H1**: *Directed fuzzing achieves higher evasion rates than handcrafted ShadowPickle families.*
+
+The ShadowPickle baseline measures evasion rates of the 3 handcrafted families (overwritten, external, indirect_chain) under the same scanner panel and execution oracle as the fuzzing campaigns.
+ShadowPickle baseline: 0/30 valid candidates bypassed (0.0%)
+Fuzzing campaigns: 0/5 valid candidates bypassed (0.0%)
+**Verdict on H1**: Not supported. Fuzzing campaigns do not exceed ShadowPickle baseline.
+
+## Semantic Fingerprint Analysis (Novelty Detection)
+
+Semantic fingerprints (callable set + opcode categories + transport) are used to identify genuinely novel attack families beyond minor mutations.
+No confirmed bypasses to analyze.
 
 ---
 

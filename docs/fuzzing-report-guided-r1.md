@@ -1,4 +1,4 @@
-# ReGenBench Fuzzing Report (guided, replicate 2)
+# ReGenBench Fuzzing Report (guided, replicate 1)
 
 - Mode: **guided**  
 - Base checkpoint: `/home/d4sun/Projects/regenbench/ci/corpus/torch/benign/benign.pt`  
@@ -9,7 +9,7 @@
 
 | Round | Valid / Generated | Confirmed Bypasses | Mean Fitness | Opcode Coverage | Callable Coverage |
 | :---: | :---: | :---: | :---: | :---: | :---: |
-| 1 | 2 / 2 | 0 | 16.250 | 42.6% | 12.0% |
+| 1 | 1 / 2 | 0 | 0.625 | 42.6% | 12.0% |
 
 ## Attack-family distribution
 
