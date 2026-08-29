@@ -669,16 +669,31 @@ class FeedbackController:
     def sample_with_novelty(self, rng, allowed_families: set[str], 
                             novelty_tracker: NoveltyTracker,
                             fixed_strategies: frozenset[str] | None = None,
-                            fixed_transport: str | None = None) -> tuple[str, str, frozenset[str]] | None:
+                            fixed_transport: str | None = None,
+                            explore_prob: float = 0.25) -> tuple[str, str, frozenset[str]] | None:
         """Sample configuration with semantic novelty bias for synthesis exploration.
         
         Used when combo_weights is empty (early campaign or new synthesis).
         Biases toward unseen (family, strategy_set) combinations.
+        
+        Combo exploitation would otherwise lock out families absent from
+        combo_weights: once round 1 populates the pool with the sampled
+        families, any family that never made it in is never drawn again.
+        Exploration probability scales up with the share of allowed families
+        missing from the combo pool, so an uncovered family is guaranteed to
+        stay reachable.
         """
-        # 1. Try combo weights first (exploitation)
-        combo = self.sample_combo(rng, allowed_families, fixed_strategies, fixed_transport)
-        if combo:
-            return combo
+        # 1. Exploit combo weights (unless exploring an unseen family).
+        covered = {k[0] for k in self.combo_weights} & allowed_families
+        missing = allowed_families - covered
+        if missing:
+            # Scale exploration with the uncovered fraction: a family that has
+            # never been sampled must be drawn often enough to be discovered.
+            explore_prob = max(explore_prob, 0.4 + 0.6 * len(missing) / len(allowed_families))
+        if rng.random() >= explore_prob:
+            combo = self.sample_combo(rng, allowed_families, fixed_strategies, fixed_transport)
+            if combo:
+                return combo
         
         # 2. Fallback: family-weighted + semantic novelty bonus
         family = self.sample_family(rng, allowed_families)
