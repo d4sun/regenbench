@@ -1312,6 +1312,18 @@ def main(argv: list[str] | None = None) -> int:
             report_lines.append(
                 f"- **{version}**: {pt['retained']}/{pt['total']} retained "
                 f"({pt['retention_rate'] * 100:.1f}%)")
+        rates = [pt["retention_rate"] for pt in decay_curve.values()]
+        if rates and all(r >= 0.9 for r in rates):
+            verdict = (
+                "Supported on current data: confirmed bypasses retain >=90% evasion "
+                "efficacy across the tested scanner version snapshots."
+            )
+        else:
+            verdict = (
+                "Not supported on current data: evasion retention dropped below 90% "
+                "for at least one scanner version snapshot."
+            )
+        report_lines.extend(["", f"**Verdict on H3**: {verdict}"])
     else:
         report_lines.append("Not assessed: no empirical shelf-life rescans are recorded.")
 

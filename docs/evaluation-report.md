@@ -66,7 +66,7 @@ Per-replicate results from the campaign DB (each row is one run_id):
 | :--- | :---: | :---: | :---: | :---: | :---: |
 | **guided** | 1 | 494 | 365 | 365 | 73.9% |
 | **unguided** | 1 | 451 | 81 | 81 | 18.0% |
-- **Unguided ablation harness**: mean fitness 1.713, evasion yield 0.0% (measured live, 10 candidates).
+- **Unguided ablation harness**: mean fitness 1.617, evasion yield 0.0% (measured live, 10 candidates).
 - **Guided vs unguided confirmed-bypass rates (T7.10)**: guided 365/494 vs unguided 81/451 (z=17.201565936606958, p_ztest=2.58451411177635e-66, p_fisher=0.0; method: z-test via stdlib erfc; Fisher via seeded Monte-Carlo permutation)
 
 ### Coverage Breadth Across Rounds (T7.3)
@@ -86,7 +86,7 @@ Per-replicate results from the campaign DB (each row is one run_id):
 ### Ablation 2: Pre-filtering Throughput Contribution (T7.7)
 | Metric | With Static Pre-Filter | Without Pre-Filter | Throughput Speedup |
 | :--- | :---: | :---: | :---: |
-| **Execution Duration (5 files)** | 1.67s | 15.90s | **9.50x** |
+| **Execution Duration (5 files)** | 1.36s | 15.34s | **11.28x** |
 
 ### Ablation 3: Efficacy of DynaHug Cross-Check (T7.8 / Hypothesis H2)
 **Hypothesis H2**: *Without dynamic validation, scanner bypass counts are significantly inflated.*
@@ -126,7 +126,15 @@ Unique semantic fingerprints among confirmed bypasses: 2
 
 ## Evasion Shelf-Life Decay (T7.9 / Hypothesis H3)
 **Hypothesis H3**: *Confirmed bypasses retain evasion efficacy across minor version scanner updates.*
-Not assessed: no empirical shelf-life rescans are recorded.
+Measured retention by scanner image version:
+- **regenbench/fickling:0.1.10**: 446/446 retained (100.0%)
+- **regenbench/fickling:0.1.11**: 446/446 retained (100.0%)
+- **regenbench/modelscan:0.8.6**: 446/446 retained (100.0%)
+- **regenbench/modelscan:0.8.7**: 446/446 retained (100.0%)
+- **regenbench/picklescan:1.0.3**: 446/446 retained (100.0%)
+- **regenbench/picklescan:1.0.4**: 446/446 retained (100.0%)
+
+**Verdict on H3**: Supported on current data: confirmed bypasses retain >=90% evasion efficacy across the tested scanner version snapshots.
 
 ## Conclusion
 All reported quantities are measured from the campaign database or marked unassessed.
