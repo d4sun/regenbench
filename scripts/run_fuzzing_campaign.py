@@ -489,7 +489,17 @@ def run_campaign(args: argparse.Namespace) -> int:
                             args.family_synthesis_prob,
                             retry_seed,
                         )
-                        cand_bytes = fut2.result()
+                        try:
+                            cand_bytes = fut2.result()
+                        except ValueError as e:
+                            # The resample also failed (e.g. plausibility
+                            # constraints reject the new callable too); drop
+                            # this candidate slot instead of aborting the
+                            # campaign. A sibling except clause cannot catch
+                            # an exception raised inside this handler, so this
+                            # must be a nested try.
+                            print(f"  [skip] {params['chosen_callable']} retry failed: {e}")
+                            continue
 
                     cand_path = os.path.join(round_dir, f"candidate_{i}.pt")
                     with open(cand_path, "wb") as f:
