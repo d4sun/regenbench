@@ -49,6 +49,9 @@ reproducible container and wrapped behind a single
 | T3.9 | Real GGUF benign crawler & corpus | — | [`scripts/crawl_gguf.py`](scripts/crawl_gguf.py), `data/gguf_benign_corpus/` |
 | T3.10| MalHug real malicious corpus crawler | — | [`scripts/crawl_malhug.py`](scripts/crawl_malhug.py), `data/malhug/` |
 | T3.11| GGUF attack surface demo & report | — | [`scripts/run_task3_demo.py`](scripts/run_task3_demo.py), [`docs/task3-demo.md`](docs/task3-demo.md) |
+| T3.12| Defense/repair prototype (quarantine + safe reserialization) | — | [`pipeline/defense.py`](pipeline/defense.py), [`tests/test_defense.py`](tests/test_defense.py) |
+| T3.13| Unified Task-3 demo (pickle + torch + GGUF, full pipeline) | — | [`scripts/demo_task3.py`](scripts/demo_task3.py), [`docs/demo-report.md`](docs/demo-report.md) |
+| T3.14| Related-works comparison analysis | — | [`docs/related-works-comparison.md`](docs/related-works-comparison.md) |
 | T4.1 | Implement static pre-filter | — | [`pipeline/pre_filter.py`](pipeline/pre_filter.py) |
 | T4.2 | Implement scanner panel runner | — | [`pipeline/runner.py`](pipeline/runner.py) |
 | T4.3 | Implement behavioral oracle runner | — | [`pipeline/runner.py`](pipeline/runner.py) |
@@ -253,6 +256,21 @@ and 24 real benign GGUFs across all scanners and the `ggufref` oracle:
 ```sh
 python3 scripts/run_task3_demo.py --corpus data/gguf_benign_corpus  # -> docs/task3-demo.md
 ```
+
+Run the unified Task-3 demo that walks the full pipeline (generate one
+candidate per attack family -> static panel -> ExecutionOracle -> defense
+prototype -> GGUF surface) on a small committed subset, producing
+`docs/demo-report.md` and `demo-artifacts/demo-report.json`:
+
+```sh
+python3 scripts/demo_task3.py --backend docker   # -> docs/demo-report.md
+```
+
+The defense prototype (`pipeline/defense.py`) is the "repair" component: it
+quarantines artifacts whose embedded pickle arms a dangerous callable, and
+only reserializes content that survives `torch.load(weights_only=True)`
+inside the sandboxed base container. Related-works context is in
+`docs/related-works-comparison.md`.
 
 ### 6. Supplementary reports
 

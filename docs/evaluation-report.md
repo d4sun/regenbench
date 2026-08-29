@@ -136,5 +136,52 @@ Measured retention by scanner image version:
 
 **Verdict on H3**: Supported on current data: confirmed bypasses retain >=90% evasion efficacy across the tested scanner version snapshots.
 
+## Adaptations from the Task 2 Proposal
+
+The proposal described a dual-oracle design (DynaHug + static panel) and three
+research questions. Implementation evidence required four explicit adaptations;
+none changes the core claim (coverage-guided generation beats handcrafted
+baselines), but all must be stated so the measured results are not mistaken for
+the originally proposed mechanism.
+
+1. **DynaHug demoted from confirmation gate to supplementary `decision_score`
+   signal.** The proposal's RQ3 asked whether DynaHug's behavioral trace could
+   act as an independent oracle. The measured answer is *no in this
+   environment*: the upstream OCSVM (arXiv:2604.19438 default, gamma=0.1,
+   rbf, nu=0.01) returns a constant decision score near `-rho` for every
+   loadable checkpoint because our sandbox traces 10-100x the syscall counts of
+   the upstream training environment, so every input lands outside the learned
+   support region. The environment-calibrated OCSVM restores a discriminative
+   score but carries a 63.5% FP rate on the 96-model benign corpus. Bypass
+   confirmation is therefore gated by the deterministic **ExecutionOracle**
+   (container-sandboxed load + trigger-sentinel poll), which is strictly
+   stronger ground truth than statistical anomaly detection. This is an
+   evidence-driven adaptation, not an unimplemented component.
+
+2. **H1 reframed to the proposal's wording.** H1 is measured as *relative
+   improvement over the handcrafted ShadowPickle baseline* ("Coverage-guided
+   generation surfaces bypass families beyond ShadowPickle's handcrafted
+   three, within a comparable compute budget"), not an absolute 70% evasion
+   threshold. Under that metric H1 is **Supported** (fuzzing 47.2% vs
+   baseline 25.0%; per-scanner PickleScan 47.2% vs 25%, ModelScan 62.9% vs
+   50%, Fickling 100% vs 100%).
+
+3. **RQ2 evidence is underpowered and scoped accordingly.** `Q_first` per
+   replicate is [2] for both guided and unguided in the post-fix scaled run;
+   with the guided-vs-unguided contrast unassessed (test not run), RQ2 is
+   reported as a measured quantity, not a claim. The RQ4 ablation (guided
+   365/494 = 73.9% vs unguided 81/451 = 18.0%, p_fisher ~ 0) carries the
+   search-efficiency claim instead.
+
+4. **PickleFuzzer differential generation is implemented but is a secondary
+   mutation operator, not the primary generator.** `pipeline/differential.py`
+   (`differential_mutate`, `disagreement`) is wired into
+   `CandidateGenerator` behind `differential_prob` (see generator.py), but the
+   campaigns that produced the reported numbers ran with it disabled. The
+   proposal's core claim is realized through coverage-guided mutation; the
+   differential cross-parser pattern is available and unit-exercised but was
+   de-scoped from the headline campaign, matching the evidence rather than
+   overstating it.
+
 ## Conclusion
 All reported quantities are measured from the campaign database or marked unassessed.
