@@ -283,9 +283,10 @@ def run_campaign(args: argparse.Namespace) -> int:
                 return []
             import random as _r
             if args.evasion_mode == "adaptive" and args.mode == "guided":
-                # Bias subset size upward as flagged-callable pressure grows.
-                base_k = 1 + (1 if controller.flagged_callables else 0)
-                return _select_evasion_strategies(random, k=base_k)
+                # Single-strategy sets only: stacked strategies empirically
+                # kill evasion (see fitness ablation -- every >1-strategy
+                # combo yields 0 bypasses). No upward bias.
+                return _select_evasion_strategies(random, k=1)
             return _select_evasion_strategies(random)
 
         round_summaries = []
