@@ -102,8 +102,21 @@ class ShelfLifeTracker:
         conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_rescans_candidate ON rescans(candidate_id)
         """)
+        self._migrate(conn)
         conn.commit()
         conn.close()
+
+    @staticmethod
+    def _migrate(conn: sqlite3.Connection) -> None:
+        """Idempotent migrations for schema additions (pre-created DBs).
+
+        ``CREATE TABLE IF NOT EXISTS`` cannot add columns to an existing
+        table, so columns added after the table's first creation must be
+        applied via ALTER TABLE when absent.
+        """
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(bypass_records)")}
+        if "dynahug_verdict" not in cols:
+            conn.execute("ALTER TABLE bypass_records ADD COLUMN dynahug_verdict TEXT")
 
     def record_bypass(self, record: BypassRecord) -> None:
         """Store a confirmed bypass for future re-scanning."""

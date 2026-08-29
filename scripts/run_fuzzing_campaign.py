@@ -364,6 +364,8 @@ def run_campaign(args: argparse.Namespace) -> int:
                     else:
                         chosen_callable = None
 
+                    family_counts[attack_family] += 1
+
                     op_swap_prob = controller.op_swap_prob
                     callable_sub_prob = controller.callable_sub_prob
                     arg_fuzz_prob = controller.arg_fuzz_prob

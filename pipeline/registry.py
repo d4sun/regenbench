@@ -98,6 +98,9 @@ NON_ARMABLE: set[tuple[str, str]] = {
     ("pandas", "eval"),
     ("sympy", "sympify"),
     ("yaml", "unsafe_load"),
+    # platform.popen was removed in Python 3.3; GLOBAL'd on py3 it raises
+    # AttributeError at load, so no candidate using it can ever validate.
+    ("platform", "popen"),
     ("builtins", "__import__"),
     ("builtins", "getattr"),
     ("_pickle", "loads"),

@@ -72,12 +72,14 @@ def run_scan(backend: str, image_full: str, src: str,
     DynaHug model dir and sets DYNAHUG_MODEL_DIR inside the container."""
     cmd = [
         backend, "run", "--rm",
-        # Container-side timeout: conmon SIGKILLs the container after N
-        # seconds. Without this, the subprocess timeout below only kills the
-        # podman client, orphaning the container which keeps consuming CPU.
-        "--timeout", str(timeout),
         "-v", f"{os.path.abspath(src)}:/artifact:ro,z",
     ]
+    # Container-side timeout via conmon is a podman feature; docker run has no
+    # --timeout flag and rejects it ("unknown flag"). The host-side subprocess
+    # timeout below bounds the docker path instead.
+    if backend == "podman":
+        cmd.insert(2, "--timeout")
+        cmd.insert(3, str(timeout))
     model_dir = oracle_model_dir or os.environ.get(ORACLE_MODEL_DIR_ENV)
     if model_dir:
         if not os.path.isdir(model_dir):
