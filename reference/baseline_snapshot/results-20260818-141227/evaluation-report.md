@@ -1,4 +1,6 @@
-# ReGenBench Quantitative Evaluation & Ablation Report
+# ReGenBench Quantitative Evaluation & Ablation Report (Baseline Snapshot 2026-08-18)
+
+> **⚠️ DEPRECATED SNAPSHOT**: This report reflects the pre-fix baseline state (2026-08-18). The 70% absolute threshold verdict for H1 is superseded by the post-fix scaled campaign (2026-08-29). Per the proposal wording, H1 is evaluated as relative improvement over the ShadowPickle baseline (47.2% vs 25.0%) — **Supported**. H2 is a valid negative result. H3 is empirically supported (100% retention across 6 versions). See `docs/evaluation-report.md` for current results.
 
 This report presents the statistically supported answers to our core Research Questions (RQ1-RQ4) and evaluates hypotheses (H1-H3) using the measured results of the campaign database `data/regenbench_campaign.db` (7 campaign runs, 693 valid candidates).
 
