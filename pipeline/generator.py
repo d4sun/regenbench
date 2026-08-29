@@ -18,6 +18,7 @@ from typing import Any
 from pipeline.opcodes import parse_pickle, OPCODES_BY_BYTE, OPCODES_BY_NAME, OpcodeCategory, OpcodeClassification
 from pipeline.registry import get_armable_entries, is_dangerous
 from pipeline.templates import inject_payload_into_torch
+from pipeline.differential import differential_mutate
 
 
 def _structurally_sane(pkl_bytes: bytes) -> bool:
@@ -245,6 +246,8 @@ class CandidateGenerator:
         attack_family: str = "gadget",
         evasion_strategies: list[str] | None = None,
         injection_transport: str | None = None,
+        differential_prob: float = 0.0,
+        family_synthesis_prob: float = 0.0,
     ) -> bytes:
         """Inject a mutated pickle payload into a PyTorch checkpoint file.
 
@@ -270,6 +273,12 @@ class CandidateGenerator:
           When active, the torch injection transport defaults to ``splice``
           (raw opcode splice, no ``_pickle.loads`` wrapper) instead of the
           legacy loads-wrap; override with ``injection_transport``.
+        * ``differential_prob`` (Phase 3a) applies cross-parser disagreement
+          mutations that exploit differences between standard pickle and
+          cloudpickle parsers, producing stealthy variants.
+        * ``family_synthesis_prob`` (Phase 3b) combines structural signatures
+          from a donor ShadowPickle family into the target family's stream,
+          exploring the (family1 × family2) product space for novel bypasses.
 
         Raises ``ValueError`` when the callable cannot carry an inline payload
         (e.g. ``runpy.run_module``) or when mutation produces an unparseable
@@ -304,7 +313,16 @@ class CandidateGenerator:
             callable_sub_prob=0.0,  # handled below, on the injected callable
             arg_fuzz_prob=arg_fuzz_prob,
             stack_prob=0.0,  # stacking is appended after injection instead
+            family_synthesis_prob=family_synthesis_prob,
+            target_family=attack_family,
+            donor_family="overwritten" if attack_family != "overwritten" else "pypi_injected",
         )
+
+        # Phase-3a: Differential pickle-parser mutation (cross-parser disagreements)
+        if differential_prob and random.random() < differential_prob:
+            diff_variants = differential_mutate(base_pkl, max_mutations=10)
+            if diff_variants:
+                base_pkl = random.choice(diff_variants)
 
         # Callable substitution: re-roll the injected dangerous callable.
         # Non-armable entries (runpy.run_module, pandas.eval, sympy.sympify,
