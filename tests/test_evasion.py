@@ -197,6 +197,24 @@ class TestIndirectChainStrategy(unittest.TestCase):
         # os.system("exit 3") -> wait status 3 << 8 = 768
         self.assertEqual(pickle.loads(out), 768)
 
+    def test_dotted_module_resolves_leaf_not_toplevel(self):
+        # __import__('os.path') returns os; getattr(os, 'join') raises.
+        # fromlist=['join'] returns os.path so getattr binds the leaf sink.
+        stream = b"".join([
+            OP["GLOBAL"].code + b"os.path\njoin\n",
+            pickle.dumps(("/a", "b"), protocol=2)[2:-1],
+            OP["REDUCE"].code,
+            OP["STOP"].code,
+        ])
+        out = self.s.apply(stream)
+        _assert_parses(self, out)
+        self.assertEqual(pickle.loads(out), os.path.join("/a", "b"))
+
+    def test_fromlist_present_in_import_args(self):
+        out = self.s.apply(_malicious_stream("true"))
+        self.assertIn(
+            pickle.dumps(("os", None, None, ["system"]), protocol=2)[2:-1], out)
+
 
 class TestApplyPipelineAndSelection(unittest.TestCase):
     def test_pipeline_composition_preserves_execution(self):
@@ -261,6 +279,11 @@ class TestIndirectChainFamily(unittest.TestCase):
     def test_trigger_text_present_as_wrapped_arg(self):
         blob = IndirectChainTemplate().generate_pickle_payload("SENTINEL_XYZ")
         self.assertIn(b"SENTINEL_XYZ", blob)
+
+    def test_dotted_module_family_resolves_leaf(self):
+        blob = IndirectChainTemplate("os.path", "join").generate_pickle_payload("x=1")
+        parse_pickle(blob)
+        self.assertIsInstance(pickle.loads(blob), str)
 
 
 class TestSpliceTransport(unittest.TestCase):
