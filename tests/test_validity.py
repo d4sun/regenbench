@@ -90,8 +90,14 @@ class _FakeProc:
 
 
 @mock.patch("pipeline.validity._trigger_exists", return_value=True)
+@mock.patch("shutil.which", return_value="/usr/bin/podman")
 class TestValidatePickleBranches(unittest.TestCase):
-    """Mocked container runs: assert command shape and decision logic."""
+    """Mocked container runs: assert command shape and decision logic.
+
+    ``shutil.which`` is mocked so the podman branch is exercised even on
+    hosts without podman (e.g. docker-only hosts); the tests never actually
+    launch a container.
+    """
 
     def setUp(self):
         self.oracle = ValidityOracle(container_backend="podman", timeout=10)
@@ -99,13 +105,13 @@ class TestValidatePickleBranches(unittest.TestCase):
         self.addCleanup(self._tmp.cleanup)
         self.trigger = str(Path(self._tmp.name) / "trig")
 
-    def test_timeout_yields_false(self, _):
+    def test_timeout_yields_false(self, _, __):
         with mock.patch("pipeline.validity.subprocess.run",
                         side_effect=subprocess.TimeoutExpired(cmd="podman", timeout=1)):
             self.assertFalse(
                 self.oracle.validate_pickle(b"\x80\x02N.", self.trigger))
 
-    def test_selinux_relabel_failure_retries_without_z_mount(self, _):
+    def test_selinux_relabel_failure_retries_without_z_mount(self, _, __):
         calls = []
 
         def fake_run(cmd, **_kw):
@@ -130,7 +136,7 @@ class TestValidatePickleBranches(unittest.TestCase):
         self.assertTrue(mount.startswith("/"))
         self.assertTrue(ok)
 
-    def test_plain_container_failure_never_retries_and_returns_false(self, _):
+    def test_plain_container_failure_never_retries_and_returns_false(self, _, __):
         calls = []
 
         def fake_run(cmd, **_kw):
@@ -143,7 +149,7 @@ class TestValidatePickleBranches(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         self.assertFalse(ok)
 
-    def test_success_command_shape(self, _):
+    def test_success_command_shape(self, _, __):
         captured = {}
 
         def fake_run(cmd, **_kw):
