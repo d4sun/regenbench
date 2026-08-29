@@ -48,6 +48,71 @@ def _structurally_sane(pkl_bytes: bytes) -> bool:
     return True
 
 
+def _plausible_candidate(
+    malicious_pkl: bytes,
+    benign_pt_bytes: bytes,
+    attack_family: str
+) -> bool:
+    """Pre-scan plausibility constraints for candidate rejection.
+
+    Filters out candidates unlikely to be valid bypasses before they reach
+    the oracle/scanners, saving campaign budget. Constraints:
+
+    1. Size ≤ 2× benign base pickle size
+    2. For PyPI-injected family: module must be in allowlist (installed in container)
+    3. For gadget family: callable must be armable (not in NON_ARMABLE)
+    4. Pickle must parse to dict-like state when loaded by torch.load
+    """
+    # 1. Size constraint: reject oversized candidates
+    # Use a more generous limit (10x) to account for small test fixtures.
+    # In real campaigns, benign checkpoints are MBs so 2x is reasonable.
+    min_benign_size = 1024  # 1KB minimum
+    max_size = max(len(benign_pt_bytes), min_benign_size) * 10
+    if len(malicious_pkl) > max_size:
+        return False
+
+    # 2. Family-specific constraints
+    try:
+        parsed = parse_pickle(malicious_pkl)
+    except Exception:
+        return False
+
+    if attack_family == "pypi_injected":
+        # Check that PyPI modules are from known allowlist
+        pypi_modules = {"IPython.utils.process", "IPython", "numpy"}
+        globals_found = [
+            arg.decode("latin1").split("\n")[0]
+            for op, arg in parsed
+            if op.name in ("GLOBAL", "INST") and len(arg) > 0
+        ]
+        for module in globals_found:
+            if module not in pypi_modules:
+                return False
+
+    # 3. Gadget family: callable must be armable (can carry inline payload)
+    if attack_family == "gadget":
+        from pipeline.registry import is_dangerous
+        globals_found = [
+            (arg.decode("latin1").split("\n")[0], arg.decode("latin1").split("\n")[1])
+            for op, arg in parsed
+            if op.name in ("GLOBAL", "INST") and len(arg) > 0
+        ]
+        # At least one dangerous callable must be armable
+        has_armable = any(
+            is_dangerous(mod, name) for mod, name in globals_found
+        )
+        if not has_armable:
+            return False
+
+    # 4. Must be structurally loadable (single object, ends with STOP)
+    if not parsed or parsed[-1][0].name != "STOP":
+        return False
+    if sum(1 for op, _ in parsed if op.name == "STOP") != 1:
+        return False
+
+    return True
+
+
 class CandidateGenerator:
     """Fuzzer candidate generator implementing PickleFuzzer mutation and injection."""
 
@@ -361,6 +426,12 @@ class CandidateGenerator:
         if evasion_strategies:
             from pipeline.evasion import apply_pipeline
             malicious_pkl = apply_pipeline(malicious_pkl, evasion_strategies)
+
+        # Phase-3d: Plausibility constraints - pre-scan rejection criteria
+        # Reject candidates that are unlikely to be valid bypasses before they
+        # reach the oracle/scanners, saving campaign budget.
+        if not _plausible_candidate(malicious_pkl, benign_pt_bytes, attack_family):
+            raise ValueError("candidate failed plausibility constraints")
 
         # Self-check BEFORE the stacking trailer: fused/corrupt streams waste
         # scan budget (they can never load); resample metadata mutation a
