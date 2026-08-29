@@ -118,3 +118,39 @@ def expected_scanners(spec: dict[str, dict] | None = None,
     if selected:
         return {k: v for k, v in spec.items() if k in selected}
     return dict(spec)
+
+
+def get_scanner_version(backend: str, image: str) -> str:
+    """Get the image ID/hash for a scanner image using podman/docker inspect.
+    
+    Returns the first 12 characters of the image ID, or 'unknown' on failure.
+    """
+    import subprocess
+    try:
+        inspect = subprocess.run(
+            [backend, "inspect", image, "--format", "{{.Id}}"],
+            capture_output=True, text=True, timeout=30
+        )
+        if inspect.returncode == 0:
+            return inspect.stdout.strip()[:12]
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+    return "unknown"
+
+
+def pull_scanner_image(backend: str, image: str) -> tuple[bool, str]:
+    """Pull the latest scanner image and return (success, version)."""
+    import subprocess
+    try:
+        print(f"[scanner] Pulling {image}...")
+        result = subprocess.run([backend, "pull", image], capture_output=True, text=True, timeout=300)
+        if result.returncode == 0:
+            version = get_scanner_version(backend, image)
+            print(f"  {image}: {version}")
+            return True, version
+        else:
+            print(f"  {image}: pull failed - {result.stderr[:200]}")
+            return False, "error"
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError) as e:
+        print(f"  {image}: pull error - {e}")
+        return False, "error"
