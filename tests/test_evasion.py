@@ -218,13 +218,40 @@ class TestIndirectChainStrategy(unittest.TestCase):
 
 class TestApplyPipelineAndSelection(unittest.TestCase):
     def test_pipeline_composition_preserves_execution(self):
+        # Default k is capped at {0,1}; every sampled set must stay
+        # load-equivalent on the standard malicious stream.
         rng = random.Random(20260823)
-        for seed in range(10):
+        for seed in range(20):
             rng.seed(seed)
             names = select_strategies(rng)
+            self.assertLessEqual(len(names), 1)
             out = apply_pipeline(_malicious_stream("true"), list(names))
             parse_pickle(out)  # structural sanity
             self.assertEqual(pickle.loads(out), 0, f"seed={seed} names={names}")
+
+    def test_every_single_strategy_preserves_execution(self):
+        # Exercise each strategy standalone across many random seeds to hit
+        # its random branches (string_encoding_variants, opcode_reordering,
+        # dead_code_injection, module_aliasing, ...).
+        for name in STRATEGIES:
+            s = get_strategy(name)
+            for seed in range(25):
+                random.seed(seed)
+                out = s.apply(_malicious_stream("true"))
+                parse_pickle(out)
+                self.assertEqual(pickle.loads(out), 0,
+                                 f"{name} seed={seed}")
+
+    def test_ordered_pairs_preserve_execution(self):
+        # Composition in PIPELINE_ORDER over every strategy pair (the way
+        # campaigns combine them) must keep the stream load-equivalent.
+        from itertools import combinations
+        from pipeline.evasion import PIPELINE_ORDER
+        for a, b in combinations(PIPELINE_ORDER, 2):
+            random.seed(7)
+            out = apply_pipeline(_malicious_stream("true"), [a, b])
+            parse_pickle(out)
+            self.assertEqual(pickle.loads(out), 0, f"{a}+{b}")
 
     def test_unknown_names_ignored(self):
         blob = _malicious_stream("true")
@@ -233,6 +260,20 @@ class TestApplyPipelineAndSelection(unittest.TestCase):
     def test_get_strategy_unknown(self):
         self.assertIsNone(get_strategy("nope"))
         self.assertIsNotNone(get_strategy("stack_global_encoding"))
+
+    def test_module_aliasing_never_emits_py2_builtin(self):
+        s = get_strategy("module_aliasing")
+        for seed in range(25):
+            random.seed(seed)
+            out = s.apply(_malicious_stream("true"))
+            parsed = parse_pickle(out)
+            for op, arg in parsed:
+                if op.name in ("GLOBAL", "INST", "STACK_GLOBAL"):
+                    if op.name == "STACK_GLOBAL":
+                        self.assertNotIn(b"\x0b__builtin__", out)
+                    else:
+                        self.assertNotIn(b"__builtin__\n", out)
+            self.assertEqual(pickle.loads(out), 0)
 
 
 class TestEncodingMutator(unittest.TestCase):

@@ -518,7 +518,9 @@ class ModuleAliasing(EvasionStrategy):
                     module = _canonical_module(fields[0])
                     fname = fields[1]
                     # Use alternative module paths for common dangerous modules
-                    # Only use aliases that actually exist on this platform
+                    # Only use aliases that actually exist on this platform.
+                    # __builtin__ is the py2 name and must never be emitted on
+                    # py3: STACK_GLOBAL resolves the module literally.
                     import sys
                     aliases = {
                         "os": ["os"],
@@ -529,7 +531,6 @@ class ModuleAliasing(EvasionStrategy):
                         aliases["os"].append("nt")
                     else:
                         aliases["os"].append("posix")
-                    aliases["builtins"].append("__builtin__")
                     if module in aliases and len(aliases[module]) > 1:
                         module = random.choice(aliases[module])
                     parts.append(_enc_short_binunicode(module))
@@ -574,6 +575,8 @@ class NestedLoadObfuscation(EvasionStrategy):
 
                 if payload.startswith(b"\x80") or payload.startswith(b"c") or payload.startswith(b"("):
                     # Double-wrap: loads(BINBYTES(loads(BINBYTES(inner))))
+                    # The wrapped blob must be a complete, loadable pickle
+                    # (trailing STOP) or the outer loads() runs out of input.
                     try:
                         inner = pickle.loads(payload + OPCODES_BY_NAME["STOP"].code)
                         # Re-pickle the inner object
@@ -584,6 +587,7 @@ class NestedLoadObfuscation(EvasionStrategy):
                             b"_pickle\nloads\n",
                             _binbytes_tuple(inner_pkl),
                             OPCODES_BY_NAME["REDUCE"].code,
+                            OPCODES_BY_NAME["STOP"].code,
                         ])
                         # Now encode this wrapped version
                         if op.name == "SHORT_BINBYTES":
