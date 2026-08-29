@@ -1,6 +1,6 @@
 # RegenBench — AI Assistant Context
 
-RegenBench is a reproducible benchmark for ML-artifact scanner evasion. It generates malicious pickle/PyTorch candidates from benign seeds, fans them out to a static scanner panel + a behavioral oracle, and scores them with coverage-guided fuzzing. ~5k LOC Python + a Rust crate (`crates/`) for hot paths (Phase 0 migration; Python is still the source of truth).
+RegenBench is a reproducible benchmark for ML-artifact scanner evasion. It generates malicious pickle/PyTorch candidates from benign seeds, fans them out to a static scanner panel + a behavioral oracle, and scores them with coverage-guided fuzzing. ~5k LOC Python + a Rust crate (`crates/`) for hot paths (Phase 0 migration; **Python is the source of truth; Rust crate is not currently wired into the Python pipeline**).
 
 ## Architecture (one line each direction)
 
@@ -25,7 +25,7 @@ Campaign loop lives in `scripts/run_fuzzing_campaign.py`; per-candidate verdicts
 | `pipeline/registry.py` | dangerous-callable YAML registry; `NON_ARMABLE` exclusion | `load_registry`, `get_armable_entries` |
 | `pipeline/templates.py` | ShadowPickle families + torch injection (`loads`/`splice` transport) | `FAMILY_TEMPLATES`, `inject_payload_into_torch` |
 | `pipeline/generator.py` | metadata mutation + payload injection → malicious `.pt` bytes | `CandidateGenerator.generate_candidate_pt` |
-| `pipeline/mutators.py` | opcode swap / callable sub / arg fuzz / stacking / encoding | `PickleMutator.mutate` |
+| `pipeline/mutators.py` | opcode swap / callable sub / arg fuzz / stacking / encoding | `PickleMutator.mutate` (Python); Rust `crates/regenbench-core/src/mutators.rs` (not wired) |
 | `pipeline/evasion.py` | 11 static-signature evasion strategies + `apply_pipeline` | `STRATEGIES`, `PIPELINE_ORDER` |
 | `pipeline/validity.py` | container-sandboxed load + trigger poll ("did it execute") | `ValidityOracle`, `_trigger_exists` |
 | `pipeline/pre_filter.py` | static admission gate for the oracle (fail-open on malformed) | `is_admitted` |
