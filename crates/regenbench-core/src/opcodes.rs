@@ -60,8 +60,9 @@ fn build_opcode_table() -> [Option<&'static OpcodeClassification>; 256] {
     add_opcode!(0x8c, "SHORT_BINUNICODE", OpcodeCategory::LengthPrefixed, Some(1), 2);
     
     // BINUNICODE - unicode string with 4-byte length (protocol 1+)
-    add_opcode!(0x8d, "BINUNICODE8", OpcodeCategory::LengthPrefixed, Some(4), 4);
+    // BINUNICODE8 - unicode string with 8-byte length (protocol 4+)
     add_opcode!(0x58, "BINUNICODE", OpcodeCategory::LengthPrefixed, Some(4), 1);
+    add_opcode!(0x8d, "BINUNICODE8", OpcodeCategory::LengthPrefixed, Some(8), 4);
     
     // SHORT_BINBYTES - short bytes (protocol 3+)
     add_opcode!(0x43, "SHORT_BINBYTES", OpcodeCategory::LengthPrefixed, Some(1), 3);

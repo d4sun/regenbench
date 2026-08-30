@@ -16,7 +16,7 @@ Usage:
         --base-checkpoint real_benign_corpus/all/.../pytorch_model.bin \
         --mode guided --rounds 5 --candidates-per-round 20 \
         --replicate 1 --db data/regenbench_campaign.db \
-        --backend podman
+        --backend docker
 """
 
 from __future__ import annotations
@@ -44,11 +44,14 @@ from pipeline.db import (
     log_fitness,
 )
 from pipeline.comparator import check_bypass
-from pipeline.fitness import compute_fitness, compute_fitness_multi, compute_fitness_oracle_aware, compute_fitness_lexicographic, FitnessMode
+from pipeline.fitness import compute_fitness, compute_fitness_multi, compute_fitness_oracle_aware, compute_fitness_lexicographic, compute_fitness_continuous, compute_fitness_coverage_guided, FitnessMode
 from pipeline.feedback import CoverageTracker, FeedbackController, NoveltyTracker
 from pipeline.registry import load_registry
 from pipeline.templates import FAMILIES, FAMILY_LABELS
 from pipeline.shelf_life import register_confirmed_bypass
+from pipeline.plausibility import PlausibilityOracle
+
+import concurrent.futures
 
 DEFAULT_BASE = "ci/corpus/torch/benign/benign.pt"
 # Static panel capable of analyzing torch-zip artifacts. ModelTracer is
@@ -71,11 +74,11 @@ def parse_args() -> argparse.Namespace:
     ap.add_argument("--mode", choices=["guided", "unguided"], default="guided",
                     help="selection strategy (guided = feedback weights, unguided = uniform)")
     ap.add_argument("--rounds", type=int, default=5)
-    ap.add_argument("--candidates-per-round", type=int, default=20)
+    ap.add_argument("--candidates-per-round", type=int, default=50)
     ap.add_argument("--replicate", type=int, default=1,
                     help="replicate number (1..N); recorded in campaign_runs")
     ap.add_argument("--db", default="data/regenbench_campaign.db")
-    ap.add_argument("--backend", choices=["podman", "docker"], default="podman")
+    ap.add_argument("--backend", choices=["podman", "docker"], default="docker")
     ap.add_argument("--tag", default=":latest")
     ap.add_argument("--timeout", type=int, default=120,
                     help="per-scan container timeout (seconds)")
@@ -87,6 +90,8 @@ def parse_args() -> argparse.Namespace:
                          "checkpoints use 'picklescan modelscan' because fickling and "
                          "modeltracer cannot analyze torch artifacts")
     ap.add_argument("--workers", type=int, default=4)
+    ap.add_argument("--gen-workers", type=int, default=0,
+                    help="parallel workers for candidate generation (0=auto, min(8, cpu_count))")
     ap.add_argument("--pre-filter", action="store_true",
                     help="enable the static pre-filter before the DynaHug oracle")
     ap.add_argument("--seed", type=int, default=None,
@@ -104,18 +109,25 @@ def parse_args() -> argparse.Namespace:
                      help="comma-separated fixed strategy subset "
                           "(stack_global_encoding,payload_obfuscation,"
                           "indirect_chain,nested_loads_wrap); overrides mode")
-    ap.add_argument("--fitness-mode", choices=["current", "oracle_aware", "oracle_dominant"],
-                     default="current",
-                     help="fitness computation mode for ablation: "
-                          "'current' = panel evasion + boundary + novelty; "
-                          "'oracle_aware' = adds oracle confirmation bonus; "
-                          "'oracle_dominant' = lexicographic ranking "
-                          "(dynamic confirmation > panel > coverage > novelty)")
+    ap.add_argument("--fitness-mode", choices=["current", "oracle_aware", "oracle_dominant", "continuous", "coverage_guided"],
+                      default="current",
+                      help="fitness computation mode for ablation: "
+                           "'current' = panel evasion + boundary + novelty; "
+                           "'oracle_aware' = oracle confirmation multiplier on evasion; "
+                           "'oracle_dominant' = lexicographic ranking (deprecated, creates plateaus); "
+                           "'continuous' = smooth multi-objective (evasion * oracle_mult + boundary + novelty + coverage); "
+                           "'coverage_guided' = coverage delta primary when evasion plateaus")
     ap.add_argument("--time-budget-hours", type=float, default=24.0,
-                     help="bounded-pilot time budget; the campaign stops after this "
-                          "elapses even if rounds remain")
+                      help="bounded-pilot time budget; the campaign stops after this "
+                           "elapses even if rounds remain")
+    ap.add_argument("--differential-prob", type=float, default=0.0,
+                      help="probability of applying differential pickle-parser mutation (Phase 3a)")
+    ap.add_argument("--family-synthesis-prob", type=float, default=0.0,
+                      help="probability of applying family-synthesis mutation (Phase 3b)")
     ap.add_argument("--oracle-model-dir", default="real_benign_corpus/oracle-calibrated/v5-recalibrated",
                       help="path to recalibrated DynaHug model directory")
+    ap.add_argument("--demo-subset", action="store_true",
+                    help="Task 3 smoke mode: one round and five candidates from ci/corpus")
     ap.add_argument("--ensemble-oracle", action="store_true",
                       help="use ensemble oracle (DynaHug + syscall anomaly detector)")
     ap.add_argument("--anomaly-model-dir", default="real_benign_corpus/oracle-calibrated/v5-recalibrated/anomaly",
@@ -158,10 +170,79 @@ def _resolve_seed_checkpoint(args: argparse.Namespace) -> str:
     return os.path.abspath(path)
 
 
+def _generate_candidate_worker(
+    benign_pt_bytes: bytes,
+    payload: str,
+    chosen_callable: tuple[str, str] | None,
+    attack_family: str,
+    cand_strategies: list[str],
+    cand_transport: str | None,
+    mutate_meta: bool,
+    mutation_prob: float,
+    op_swap_prob: float,
+    callable_sub_prob: float,
+    arg_fuzz_prob: float,
+    stack_prob: float,
+    differential_prob: float,
+    family_synthesis_prob: float,
+    rng_seed: int | None = None,
+) -> bytes:
+    """Worker function for parallel candidate generation.
+    
+    Must be a top-level function for pickling in ProcessPoolExecutor.
+
+    Forked workers inherit the parent's module-level ``random`` state at fork
+    time and race, so without an explicit reseed the generated bytes depend on
+    worker scheduling -- the same command can produce different candidates.
+    ``rng_seed`` (derived from the campaign seed + round + candidate index)
+    makes each candidate a pure function of its position, independent of
+    parallelism. ``None`` keeps the legacy fork-inherited behaviour.
+    """
+    if rng_seed is not None:
+        random.seed(rng_seed)
+    from pipeline.generator import CandidateGenerator
+    generator = CandidateGenerator()
+    return generator.generate_candidate_pt(
+        benign_pt_bytes=benign_pt_bytes,
+        payload_code=payload,
+        dangerous_callable=chosen_callable,
+        mutate_meta=mutate_meta,
+        mutation_prob=mutation_prob,
+        op_swap_prob=op_swap_prob,
+        callable_sub_prob=callable_sub_prob,
+        arg_fuzz_prob=arg_fuzz_prob,
+        stack_prob=stack_prob,
+        attack_family=attack_family,
+        evasion_strategies=cand_strategies,
+        injection_transport=cand_transport,
+        differential_prob=differential_prob,
+        family_synthesis_prob=family_synthesis_prob,
+    )
+
+
+def _candidate_rng_seed(base_seed: int | None, round_num: int, index: int) -> int | None:
+    """Deterministic per-candidate seed for fork-safe parallel generation.
+
+    ``(base_seed, round_num, index)`` uniquely identifies a candidate within a
+    campaign, so the derived seed reproduces identical bytes for that slot on
+    every run of the same command. Returns ``None`` when the campaign itself is
+    unseeded (no reproducibility requested).
+    """
+    if base_seed is None:
+        return None
+    key = f"{base_seed}:{round_num}:{index}".encode("utf-8")
+    return int(hashlib.sha256(key).hexdigest(), 16) % (2**32)
+
+
 def run_campaign(args: argparse.Namespace) -> int:
     print("=" * 60)
     print(f"STARTING {args.mode.upper()} FUZZING CAMPAIGN (replicate {args.replicate})")
     print("=" * 60)
+
+    if args.demo_subset:
+        args.rounds = 1
+        args.candidates_per_round = 5
+        args.base_checkpoint = "ci/corpus/torch/benign/benign.pt"
 
     if args.seed is not None:
         random.seed(args.seed)
@@ -193,17 +274,48 @@ def run_campaign(args: argparse.Namespace) -> int:
         fitness_mode=args.fitness_mode,
     )
 
+    # Family-quota: prevent single-family collapse (peer-review Weakness 2).
+    # Unguided already samples uniformly, but guided combo weights compound.
+    # Enforce per-round: each family gets >=1 when round size permits, and no
+    # family exceeds 40% of the round budget.
+    family_quota_min = 1 if args.candidates_per_round >= len(families) else 0
+    family_quota_max = max(1, int(0.4 * args.candidates_per_round) + 1)
+
+    def _quota_pick(desired: str, counts: dict[str, int]) -> str:
+        if counts.get(desired, 0) >= family_quota_max:
+            # Over cap -> pick least-represented family
+            under = sorted(families, key=lambda f: counts.get(f, 0))
+            for cand in under:
+                if counts.get(cand, 0) < family_quota_max:
+                    return cand
+        # Near end of round: force missing families to meet minimum
+        remaining = args.candidates_per_round - sum(counts.values()) - 1
+        missing = [f for f in families if counts.get(f, 0) < family_quota_min]
+        if missing and remaining < len(missing):
+            # Must allocate remaining slots to missing families
+            return random.choice(missing)
+        return desired
+
     # Candidates are persisted per-run so the DB filepaths never dangle and
     # export_bypasses can copy real artifacts. Only the trigger files (used by
     # the validity oracle, which mounts the system temp dir) are ephemeral.
     candidates_root = os.path.join("data", "candidates", run_id)
-    temp_dir = tempfile.mkdtemp(prefix=f"regenbench_{run_id}_triggers_")
+    # The trigger path is baked into the candidate payload, so a deterministic
+    # dir keeps candidate bytes a pure function of (seed, round, index) across
+    # runs of the same command. Fall back to mkdtemp when unseeded.
+    if args.seed is not None:
+        temp_dir = os.path.join(
+            tempfile.gettempdir(), f"regenbench_seed{args.seed}_triggers")
+        os.makedirs(temp_dir, exist_ok=True)
+    else:
+        temp_dir = tempfile.mkdtemp(prefix=f"regenbench_{run_id}_triggers_")
     started_at = time.time()
     time_limit = args.time_budget_hours * 3600.0
     try:
         generator = CandidateGenerator()
         oracle_val = ValidityOracle(container_backend=args.backend,
                                     timeout=args.validity_timeout)
+        plausibility = PlausibilityOracle(oracle_val)
         tracker = CoverageTracker(db_path, run_id=run_id)
         controller = FeedbackController()
         novelty = NoveltyTracker()
@@ -232,13 +344,19 @@ def run_campaign(args: argparse.Namespace) -> int:
                 return []
             import random as _r
             if args.evasion_mode == "adaptive" and args.mode == "guided":
-                # Bias subset size upward as flagged-callable pressure grows.
-                base_k = 1 + (1 if controller.flagged_callables else 0)
-                return _select_evasion_strategies(random, k=base_k)
+                # Single-strategy sets only: stacked strategies empirically
+                # kill evasion (see fitness ablation -- every >1-strategy
+                # combo yields 0 bypasses). No upward bias.
+                return _select_evasion_strategies(random, k=1)
             return _select_evasion_strategies(random)
 
         round_summaries = []
         budget_exhausted = False
+        
+        # Phase 5: Parallel candidate generation
+        gen_workers = args.gen_workers or min(8, os.cpu_count() or 4)
+        print(f"[campaign] using {gen_workers} parallel workers for candidate generation")
+        
         for r in range(1, args.rounds + 1):
             if budget_exhausted:
                 break
@@ -257,7 +375,8 @@ def run_campaign(args: argparse.Namespace) -> int:
                 weights = None
                 print("Unguided mode: uniform random callable selection.")
 
-            candidates = []
+            # Pre-select all candidate parameters for this round
+            candidate_params = []
             family_counts = {f: 0 for f in families}
             for i in range(args.candidates_per_round):
                 elapsed = time.time() - started_at
@@ -267,90 +386,163 @@ def run_campaign(args: argparse.Namespace) -> int:
                     budget_exhausted = True
                     break
 
-                # Select attack family: use family weights in guided mode
                 if args.mode == "guided":
-                    family_weights_map = controller.get_family_weights()
-                    # Filter to only allowed families (--attack-families)
-                    family_weights_map = {f: w for f, w in family_weights_map.items() if f in families}
-                    family_population = list(family_weights_map.keys())
-                    family_weights = list(family_weights_map.values())
-                    attack_family = random.choices(family_population, weights=family_weights, k=1)[0]
-                else:
-                    attack_family = random.choice(families)
-                family_counts[attack_family] += 1
-                if attack_family == "gadget":
-                    if weights:
-                        chosen_callable = random.choices(population, weights=weights, k=1)[0]
+                    # Use combo weights with semantic novelty bias for synthesis exploration
+                    combo = controller.sample_with_novelty(
+                        random, set(families), novelty,
+                        fixed_strategies=frozenset(fixed_strategies) if fixed_strategies else None,
+                        fixed_transport="splice" if (args.evasion_mode != "off" or fixed_strategies is not None) else None
+                    )
+                    if combo:
+                        attack_family, cand_transport, cand_strategies_fs = combo
+                        cand_strategies = list(cand_strategies_fs)
                     else:
-                        chosen_callable = random.choice(population)
-                else:
-                    chosen_callable = None
+                        # Fallback to family weights
+                        family_weights_map = controller.get_family_weights()
+                        family_weights_map = {f: w for f, w in family_weights_map.items() if f in families}
+                        family_population = list(family_weights_map.keys())
+                        family_weights = list(family_weights_map.values())
+                        attack_family = random.choices(family_population, weights=family_weights, k=1)[0]
+                        cand_strategies = _pick_strategies()
+                        cand_transport = "splice" if (args.evasion_mode != "off" or fixed_strategies is not None) else None
+                    attack_family = _quota_pick(attack_family, family_counts)
 
-                trigger_file = os.path.join(temp_dir, f"trigger_{r}_{i}.txt")
-                payload = f"with open('{trigger_file}', 'w') as f: f.write('1')"
-                cand_strategies = _pick_strategies()
-                # Splice transport whenever evasion research is active, even
-                # when the sampled strategy subset is empty: falling back to
-                # the legacy loads-wrap would re-introduce the flagged
-                # _pickle.loads signature at random.
-                cand_transport = (
-                    "splice"
-                    if (args.evasion_mode != "off" or fixed_strategies is not None)
-                    else None
-                )
+                    # Coverage-gap sampling: occasionally pick unseen callable/opcode
+                    gap_chosen_callable = None
+                    if random.random() < 0.1:
+                        gap = controller.sample_coverage_gaps(random, tracker, set(families))
+                        if gap:
+                            gap_family, gap_item = gap
+                            gap_family = _quota_pick(gap_family, family_counts)
+                            attack_family = gap_family
+                            if isinstance(gap_item, tuple) and gap_item[0] == "opcode":
+                                pass  # opcode gap handled via op_swap_prob increase
+                            elif attack_family == "gadget":
+                                gap_chosen_callable = gap_item
 
-                # Feedback-controlled mutation parameters. In guided mode the
-                # controller's probs (from the previous round's fitness) drive
-                # the operators; in unguided mode they stay at fixed baselines.
-                if args.mode == "guided":
+                    if attack_family == "gadget":
+                        if gap_chosen_callable is not None:
+                            chosen_callable = gap_chosen_callable
+                        else:
+                            callable_weights_map = controller.get_callable_weights()
+                            callable_weights_map = {c: w for c, w in callable_weights_map.items() if c in population}
+                            callable_population = list(callable_weights_map.keys())
+                            callable_weights = list(callable_weights_map.values())
+                            chosen_callable = random.choices(callable_population, weights=callable_weights, k=1)[0]
+                    else:
+                        chosen_callable = None
+
+                    family_counts[attack_family] += 1
+
                     op_swap_prob = controller.op_swap_prob
                     callable_sub_prob = controller.callable_sub_prob
                     arg_fuzz_prob = controller.arg_fuzz_prob
                 else:
+                    attack_family = random.choice(families)
+                    attack_family = _quota_pick(attack_family, family_counts)
+                    family_counts[attack_family] += 1
+                    if attack_family == "gadget":
+                        chosen_callable = random.choice(population)
+                    else:
+                        chosen_callable = None
+                    cand_strategies = _pick_strategies()
+                    cand_transport = "splice" if (args.evasion_mode != "off" or fixed_strategies is not None) else None
                     op_swap_prob = 0.15
                     callable_sub_prob = 0.15
                     arg_fuzz_prob = 0.15
-                try:
-                    cand_bytes = generator.generate_candidate_pt(
-                        benign_pt_bytes=benign_pt_bytes,
-                        payload_code=payload,
-                        dangerous_callable=chosen_callable,
-                        mutate_meta=True,
-                        mutation_prob=0.15,
-                        op_swap_prob=op_swap_prob,
-                        callable_sub_prob=callable_sub_prob,
-                        arg_fuzz_prob=arg_fuzz_prob,
-                        stack_prob=0.05,
-                        attack_family=attack_family,
-                        evasion_strategies=cand_strategies,
-                        injection_transport=cand_transport,
-                    )
-                except ValueError as e:
-                    # Unsupported callable (e.g. runpy.run_module cannot execute
-                    # inline code). Resample a supported callable for this slot.
-                    print(f"  [skip] {chosen_callable}: {e}")
-                    supported = [c for c in population if c != chosen_callable] or population
-                    chosen_callable = random.choice(supported)
-                    cand_bytes = generator.generate_candidate_pt(
-                        benign_pt_bytes=benign_pt_bytes,
-                        payload_code=payload,
-                        dangerous_callable=chosen_callable,
-                        mutate_meta=True,
-                        mutation_prob=0.15,
-                        op_swap_prob=op_swap_prob,
-                        callable_sub_prob=callable_sub_prob,
-                        arg_fuzz_prob=arg_fuzz_prob,
-                        stack_prob=0.05,
-                        attack_family=attack_family,
-                        evasion_strategies=cand_strategies,
-                        injection_transport=cand_transport,
-                    )
 
-                cand_path = os.path.join(round_dir, f"candidate_{i}.pt")
-                with open(cand_path, "wb") as f:
-                    f.write(cand_bytes)
-                candidates.append((cand_path, cand_bytes, chosen_callable,
-                                   trigger_file, attack_family, cand_strategies))
+                trigger_file = os.path.join(temp_dir, f"trigger_{r}_{i}.txt")
+                payload = f"with open('{trigger_file}', 'w') as f: f.write('1')"
+
+                candidate_params.append({
+                    "index": i,
+                    "trigger_file": trigger_file,
+                    "payload": payload,
+                    "chosen_callable": chosen_callable,
+                    "attack_family": attack_family,
+                    "cand_strategies": cand_strategies,
+                    "cand_transport": cand_transport,
+                    "op_swap_prob": op_swap_prob,
+                    "callable_sub_prob": callable_sub_prob,
+                    "arg_fuzz_prob": arg_fuzz_prob,
+                    "rng_seed": _candidate_rng_seed(args.seed, r, i),
+                })
+
+            # Phase 5: Parallel generation with ProcessPoolExecutor
+            candidates = []
+            with concurrent.futures.ProcessPoolExecutor(max_workers=gen_workers) as executor:
+                futures = {}
+                for params in candidate_params:
+                    fut = executor.submit(
+                        _generate_candidate_worker,
+                        benign_pt_bytes,
+                        params["payload"],
+                        params["chosen_callable"],
+                        params["attack_family"],
+                        params["cand_strategies"],
+                        params["cand_transport"],
+                        True,  # mutate_meta
+                        0.15,  # mutation_prob
+                        params["op_swap_prob"],
+                        params["callable_sub_prob"],
+                        params["arg_fuzz_prob"],
+                        0.05,  # stack_prob
+                        args.differential_prob,   # Phase 3a
+                        args.family_synthesis_prob,  # Phase 3b
+                        params.get("rng_seed"),   # deterministic reseed
+                    )
+                    futures[fut] = params
+
+                for fut in concurrent.futures.as_completed(futures):
+                    params = futures[fut]
+                    i = params["index"]
+                    try:
+                        cand_bytes = fut.result()
+                    except ValueError as e:
+                        # Unsupported callable - resample
+                        print(f"  [skip] {params['chosen_callable']}: {e}")
+                        supported = [c for c in population if c != params["chosen_callable"]] or population
+                        new_callable = random.choice(supported)
+                        params["chosen_callable"] = new_callable
+                        # Retry once (distinct seed so the resample mutates
+                        # differently than the failed attempt)
+                        retry_seed = params.get("rng_seed")
+                        if retry_seed is not None:
+                            retry_seed = (retry_seed + 0x9E3779B9) % (2**32)
+                        fut2 = executor.submit(
+                            _generate_candidate_worker,
+                            benign_pt_bytes,
+                            params["payload"],
+                            new_callable,
+                            params["attack_family"],
+                            params["cand_strategies"],
+                            params["cand_transport"],
+                            True, 0.15,
+                            params["op_swap_prob"],
+                            params["callable_sub_prob"],
+                            params["arg_fuzz_prob"],
+                            0.05,
+                            args.differential_prob,
+                            args.family_synthesis_prob,
+                            retry_seed,
+                        )
+                        try:
+                            cand_bytes = fut2.result()
+                        except ValueError as e:
+                            # The resample also failed (e.g. plausibility
+                            # constraints reject the new callable too); drop
+                            # this candidate slot instead of aborting the
+                            # campaign. A sibling except clause cannot catch
+                            # an exception raised inside this handler, so this
+                            # must be a nested try.
+                            print(f"  [skip] {params['chosen_callable']} retry failed: {e}")
+                            continue
+
+                    cand_path = os.path.join(round_dir, f"candidate_{i}.pt")
+                    with open(cand_path, "wb") as f:
+                        f.write(cand_bytes)
+                    candidates.append((cand_path, cand_bytes, params["chosen_callable"],
+                                       params["trigger_file"], params["attack_family"], params["cand_strategies"]))
 
             print(f"Generated {len(candidates)} candidate checkpoints "
                   f"(families: {family_counts}).")
@@ -361,6 +553,7 @@ def run_campaign(args: argparse.Namespace) -> int:
                 backend=args.backend, tag=args.tag,
                 max_workers=args.workers, timeout=args.timeout,
                 oracle=True, pre_filter=args.pre_filter,
+                oracle_model_dir=args.oracle_model_dir,
             )
             panel = args.panel_scanners or PANEL_SCANNERS
             runner = Runner(config, scanners=panel + ["dynahug"])
@@ -382,18 +575,19 @@ def run_campaign(args: argparse.Namespace) -> int:
 
             for filepath, cand_bytes, chosen_callable, trigger_file, attack_family, cand_strategies in candidates:
                 cand_results = results_by_file.get(filepath, [])
-                is_valid = oracle_val.validate_torch(cand_bytes, trigger_file)
+                is_valid = plausibility.confirm(cand_bytes, trigger_file)
                 cand_id = hashlib.md5(filepath.encode("utf-8")).hexdigest()
 
                 panel_verdicts = []
                 scanner_verdicts: dict[str, str] = {}
                 matched_rules: list[str] = []
-                oracle_verdict = "benign"
+                dynahug_verdict = "benign"
                 decision_score = 0.0
                 for r_scan in cand_results:
                     if r_scan.scanner == "dynahug":
-                        # Fail-closed: an errored oracle is never "benign".
-                        oracle_verdict = r_scan.verdict or "error"
+                        # DynaHug provides supplementary decision_score signal only.
+                        # Execution oracle (plausibility/validity) is the primary for bypass confirmation.
+                        dynahug_verdict = r_scan.verdict or "error"
                         decision_score = r_scan.decision_score or 0.0
                     else:
                         # Fail-closed: a scanner that errors (parse failure, scan
@@ -404,6 +598,19 @@ def run_campaign(args: argparse.Namespace) -> int:
                         panel_verdicts.append(v)
                         if r_scan.matched_rules:
                             matched_rules.extend(r_scan.matched_rules)
+
+                # Execution oracle verdict for bypass confirmation: "malicious" = trigger fired
+                execution_oracle_verdict = "malicious" if is_valid else "benign"
+
+                # Compute coverage delta for fitness modes that use it
+                # Track with family signal so family coverage is meaningful.
+                is_bypass = is_valid and check_bypass(panel_verdicts, execution_oracle_verdict)
+                tracker.track_candidate(filepath, family=attack_family, is_bypass=is_bypass)
+                new_opcodes = tracker.seen_opcodes - prev_opcodes
+                new_callables = tracker.seen_callables - prev_callables
+                coverage_delta = len(new_opcodes) + len(new_callables)
+                prev_opcodes = set(tracker.seen_opcodes)
+                prev_callables = set(tracker.seen_callables)
 
                 use_multi_fitness = (
                     is_valid
@@ -416,20 +623,20 @@ def run_campaign(args: argparse.Namespace) -> int:
                         sig_ops, frozenset(cand_strategies)))
                     fit_score = compute_fitness_lexicographic(
                         scanner_verdicts=scanner_verdicts,
-                        oracle_verdict=oracle_verdict,
+                        oracle_verdict=execution_oracle_verdict,
                         is_valid=is_valid,
                         novelty_score=nov if args.mode == "guided" else 0.0,
-                        coverage_delta=0.0,  # Will be computed below
+                        coverage_delta=coverage_delta,
                     )
                 elif fitness_mode == FitnessMode.ORACLE_AWARE:
-                    # Oracle-aware: panel evasion + oracle bonus + boundary + novelty
+                    # Oracle-aware: panel evasion + execution oracle multiplier + boundary + novelty
                     if use_multi_fitness:
                         sig_ops = _candidate_signature(filepath)
                         nov = novelty.score(novelty.signature(
                             sig_ops, frozenset(cand_strategies)))
                         fit_score = compute_fitness_oracle_aware(
                             scanner_verdicts=scanner_verdicts,
-                            oracle_verdict=oracle_verdict,
+                            oracle_verdict=execution_oracle_verdict,
                             is_valid=is_valid,
                             decision_score=decision_score,
                             novelty_score=nov if args.mode == "guided" else 0.0,
@@ -437,10 +644,60 @@ def run_campaign(args: argparse.Namespace) -> int:
                     elif is_valid:
                         fit_score = compute_fitness_oracle_aware(
                             scanner_verdicts=scanner_verdicts,
-                            oracle_verdict=oracle_verdict,
+                            oracle_verdict=execution_oracle_verdict,
                             is_valid=is_valid,
                             decision_score=decision_score,
                             novelty_score=0.0,
+                        )
+                    else:
+                        fit_score = 0.0
+                elif fitness_mode == FitnessMode.CONTINUOUS:
+                    # Continuous: smooth multi-objective (evasion * oracle_mult + boundary + novelty + coverage)
+                    if use_multi_fitness:
+                        sig_ops = _candidate_signature(filepath)
+                        nov = novelty.score(novelty.signature(
+                            sig_ops, frozenset(cand_strategies)))
+                        fit_score = compute_fitness_continuous(
+                            scanner_verdicts=scanner_verdicts,
+                            execution_oracle_verdict=execution_oracle_verdict,
+                            is_valid=is_valid,
+                            decision_score=decision_score,
+                            novelty_score=nov if args.mode == "guided" else 0.0,
+                            coverage_delta=coverage_delta,
+                        )
+                    elif is_valid:
+                        fit_score = compute_fitness_continuous(
+                            scanner_verdicts=scanner_verdicts,
+                            execution_oracle_verdict=execution_oracle_verdict,
+                            is_valid=is_valid,
+                            decision_score=decision_score,
+                            novelty_score=0.0,
+                            coverage_delta=coverage_delta,
+                        )
+                    else:
+                        fit_score = 0.0
+                elif fitness_mode == FitnessMode.COVERAGE_GUIDED:
+                    # Coverage-guided: coverage delta as primary when evasion plateaus
+                    if use_multi_fitness:
+                        sig_ops = _candidate_signature(filepath)
+                        nov = novelty.score(novelty.signature(
+                            sig_ops, frozenset(cand_strategies)))
+                        fit_score = compute_fitness_coverage_guided(
+                            scanner_verdicts=scanner_verdicts,
+                            execution_oracle_verdict=execution_oracle_verdict,
+                            is_valid=is_valid,
+                            decision_score=decision_score,
+                            novelty_score=nov if args.mode == "guided" else 0.0,
+                            coverage_delta=coverage_delta,
+                        )
+                    elif is_valid:
+                        fit_score = compute_fitness_coverage_guided(
+                            scanner_verdicts=scanner_verdicts,
+                            execution_oracle_verdict=execution_oracle_verdict,
+                            is_valid=is_valid,
+                            decision_score=decision_score,
+                            novelty_score=0.0,
+                            coverage_delta=coverage_delta,
                         )
                     else:
                         fit_score = 0.0
@@ -467,7 +724,7 @@ def run_campaign(args: argparse.Namespace) -> int:
                 if is_valid:
                     valid_cnt += 1
 
-                is_bypass = is_valid and check_bypass(panel_verdicts, oracle_verdict)
+                is_bypass = is_valid and check_bypass(panel_verdicts, execution_oracle_verdict)
                 if is_bypass:
                     bypasses_cnt += 1
                     # Register confirmed bypass for shelf-life tracking (H3)
@@ -490,7 +747,8 @@ def run_campaign(args: argparse.Namespace) -> int:
                             artifact_path=filepath,
                             scanner_versions=scanner_versions,
                             panel_verdicts=scanner_verdicts,
-                            oracle_verdict=oracle_verdict,
+                            oracle_verdict=execution_oracle_verdict,
+                            dynahug_verdict=dynahug_verdict,
                             decision_score=decision_score,
                         )
                     except Exception as e:
@@ -510,14 +768,6 @@ def run_campaign(args: argparse.Namespace) -> int:
                     panel_verdict_summary = "error"
                 else:
                     panel_verdict_summary = "none"
-
-                # Compute coverage delta
-                tracker.track_candidate(filepath)
-                new_opcodes = tracker.seen_opcodes - prev_opcodes
-                new_callables = tracker.seen_callables - prev_callables
-                coverage_delta = len(new_opcodes) + len(new_callables)
-                prev_opcodes = set(tracker.seen_opcodes)
-                prev_callables = set(tracker.seen_callables)
 
                 # Compute novelty score (already computed above for fitness)
                 sig_ops = _candidate_signature(filepath)
@@ -539,12 +789,14 @@ def run_campaign(args: argparse.Namespace) -> int:
                     mutation_strategy=",".join(cand_strategies) if cand_strategies else "none",
                     parent_id=None,  # No parent tracking in current implementation
                     generation=1,     # No generational tracking in current implementation
-                    oracle_verdict=oracle_verdict,
+                    oracle_verdict=execution_oracle_verdict,
                     panel_verdict=panel_verdict_summary,
                     coverage_delta=coverage_delta,
                     novelty_score=nov_score,
                 )
-                log_fitness(db_path, cand_id, fit_score, is_valid)
+                log_fitness(db_path, cand_id, fit_score, is_valid,
+                            transport=cand_transport or "loads",
+                            strategies=",".join(cand_strategies) if cand_strategies else None)
 
                 round_results.append({
                     "callable": chosen_callable,
@@ -552,6 +804,8 @@ def run_campaign(args: argparse.Namespace) -> int:
                     "fitness": fit_score,
                     "evaded_all": all(v == "benign" for v in panel_verdicts),
                     "valid": is_valid,
+                    "transport": cand_transport or "loads",
+                    "strategies": list(cand_strategies or []),
                     # Phase-2 grey-box keys (FeedbackController ingests them).
                     "scanner_verdicts": scanner_verdicts,
                     "matched_rules": matched_rules,
@@ -562,6 +816,8 @@ def run_campaign(args: argparse.Namespace) -> int:
                 controller.update(round_results)
 
             mean_fitness = sum(x["fitness"] for x in round_results) / len(round_results)
+            fam_explored, fam_bypass = tracker.family_coverage()
+            entropy = CoverageTracker.family_entropy(family_counts)
             round_summaries.append({
                 "round": r,
                 "generated_count": len(candidates),
@@ -570,13 +826,17 @@ def run_campaign(args: argparse.Namespace) -> int:
                 "mean_fitness": mean_fitness,
                 "opcode_cov": opcode_cov,
                 "callable_cov": callable_cov,
+                "fam_explored": fam_explored,
+                "fam_bypass": fam_bypass,
+                "entropy": entropy,
                 "families": family_counts,
                 "evasion_hits": dict(evasion_hits),
             })
 
             print(f"Round {r} Complete: Valid={valid_cnt}/{len(candidates)}, "
                   f"Bypasses={bypasses_cnt}, Mean Fitness={mean_fitness:.3f}, "
-                  f"Opcode Cov={opcode_cov * 100:.1f}%, Callable Cov={callable_cov * 100:.1f}%, "
+                  f"Opcode Cov={opcode_cov * 100:.1f}% (reachable), Callable Cov={callable_cov * 100:.1f}%, "
+                  f"Family={fam_explored*100:.0f}%/{fam_bypass*100:.0f}% ent={entropy:.2f}, "
                   f"Per-scanner evasions={evasion_hits or '{}'}")
 
         # If the time budget cut the campaign short, correct the recorded
@@ -609,14 +869,15 @@ def run_campaign(args: argparse.Namespace) -> int:
             f"- Time budget: {args.time_budget_hours}h",
             f"- DB: `{db_path}`",
             "",
-            "| Round | Valid / Generated | Confirmed Bypasses | Mean Fitness | Opcode Coverage | Callable Coverage |",
-            "| :---: | :---: | :---: | :---: | :---: | :---: |",
+            "| Round | Valid / Generated | Confirmed Bypasses | Mean Fitness | Opcode Coverage (reachable) | Callable Coverage | Family bypass | Entropy |",
+            "| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
         ]
         for s in round_summaries:
             report_lines.append(
                 f"| {s['round']} | {s['valid_count']} / {s['generated_count']} | "
                 f"{s['bypass_count']} | {s['mean_fitness']:.3f} | "
-                f"{s['opcode_cov'] * 100:.1f}% | {s['callable_cov'] * 100:.1f}% |"
+                f"{s['opcode_cov'] * 100:.1f}% | {s['callable_cov'] * 100:.1f}% | "
+                f"{s.get('fam_bypass',0)*100:.0f}% | {s.get('entropy',0):.2f} |"
             )
         report_lines += [
             "",

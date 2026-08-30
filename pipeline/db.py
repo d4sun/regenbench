@@ -152,6 +152,16 @@ def init_db(db_path: str) -> None:
         ]:
             if col_name not in cand_cols:
                 cursor.execute(f"ALTER TABLE candidates ADD COLUMN {col_name} {col_type}")
+
+        # Migration: add RQ2 combo columns (transport / strategies) to
+        # campaign_fitness so analyses can group combo effectiveness.
+        fit_cols = {row[1] for row in cursor.execute("PRAGMA table_info(campaign_fitness)").fetchall()}
+        for col_name, col_type in [
+            ("transport", "TEXT"),
+            ("strategies", "TEXT"),
+        ]:
+            if col_name not in fit_cols:
+                cursor.execute(f"ALTER TABLE campaign_fitness ADD COLUMN {col_name} {col_type}")
     # _session() commits and closes on exit.
 
 
@@ -308,14 +318,20 @@ def log_oracle_result(
         )
 
 
-def log_fitness(db_path: str, candidate_id: str, fitness_score: float, is_valid: bool) -> None:
-    """Insert or replace fitness evaluation."""
+def log_fitness(db_path: str, candidate_id: str, fitness_score: float, is_valid: bool,
+                transport: str | None = None, strategies: str | None = None) -> None:
+    """Insert or replace fitness evaluation.
+
+    ``transport`` / ``strategies`` are the RQ2 combo dimensions recorded so
+    analysis scripts can group fitness/bypass outcomes by configuration.
+    """
     with _session(db_path) as (cursor, _):
         cursor.execute(
-            """INSERT OR REPLACE INTO campaign_fitness 
-            (candidate_id, fitness_score, is_valid) 
-            VALUES (?, ?, ?)""",
-            (candidate_id, fitness_score, 1 if is_valid else 0),
+            """INSERT OR REPLACE INTO campaign_fitness
+            (candidate_id, fitness_score, is_valid, transport, strategies)
+            VALUES (?, ?, ?, ?, ?)""",
+            (candidate_id, fitness_score, 1 if is_valid else 0,
+             transport, strategies),
         )
 
 

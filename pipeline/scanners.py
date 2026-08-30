@@ -40,6 +40,21 @@ GGUF_EXTENSIONS = {".gguf"}
 ORACLE_MODEL_DIR_ENV = "REGENBENCH_ORACLE_MODEL_DIR"
 
 
+def default_backend(prefer: str = "podman") -> str:
+    """Pick a usable container runtime, preferring ``prefer`` when present.
+
+    podman was the original assumption; docker-only hosts (the lab baseline)
+    should not need an explicit --backend on every command. Falls back to
+    docker when podman is not on PATH, and to ``prefer`` otherwise.
+    """
+    import shutil
+    if shutil.which(prefer) is not None:
+        return prefer
+    if shutil.which("docker") is not None:
+        return "docker"
+    return prefer
+
+
 @dataclass
 class ScanResult:
     """Outcome of running one scanner image on one artifact."""
@@ -72,12 +87,14 @@ def run_scan(backend: str, image_full: str, src: str,
     DynaHug model dir and sets DYNAHUG_MODEL_DIR inside the container."""
     cmd = [
         backend, "run", "--rm",
-        # Container-side timeout: conmon SIGKILLs the container after N
-        # seconds. Without this, the subprocess timeout below only kills the
-        # podman client, orphaning the container which keeps consuming CPU.
-        "--timeout", str(timeout),
         "-v", f"{os.path.abspath(src)}:/artifact:ro,z",
     ]
+    # Container-side timeout via conmon is a podman feature; docker run has no
+    # --timeout flag and rejects it ("unknown flag"). The host-side subprocess
+    # timeout below bounds the docker path instead.
+    if backend == "podman":
+        cmd.insert(2, "--timeout")
+        cmd.insert(3, str(timeout))
     model_dir = oracle_model_dir or os.environ.get(ORACLE_MODEL_DIR_ENV)
     if model_dir:
         if not os.path.isdir(model_dir):
@@ -90,6 +107,8 @@ def run_scan(backend: str, image_full: str, src: str,
                               timeout=timeout + 15)
     except subprocess.TimeoutExpired:
         return None, f"timeout running {image_full} on {src}"
+    except OSError as exc:
+        return None, f"could not run {backend}: {exc}"
     try:
         out = json.loads((proc.stdout or "").strip().splitlines()[-1])
     except (json.JSONDecodeError, IndexError):
@@ -118,3 +137,39 @@ def expected_scanners(spec: dict[str, dict] | None = None,
     if selected:
         return {k: v for k, v in spec.items() if k in selected}
     return dict(spec)
+
+
+def get_scanner_version(backend: str, image: str) -> str:
+    """Get the image ID/hash for a scanner image using podman/docker inspect.
+    
+    Returns the first 12 characters of the image ID, or 'unknown' on failure.
+    """
+    import subprocess
+    try:
+        inspect = subprocess.run(
+            [backend, "inspect", image, "--format", "{{.Id}}"],
+            capture_output=True, text=True, timeout=30
+        )
+        if inspect.returncode == 0:
+            return inspect.stdout.strip()[:12]
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+    return "unknown"
+
+
+def pull_scanner_image(backend: str, image: str) -> tuple[bool, str]:
+    """Pull the latest scanner image and return (success, version)."""
+    import subprocess
+    try:
+        print(f"[scanner] Pulling {image}...")
+        result = subprocess.run([backend, "pull", image], capture_output=True, text=True, timeout=300)
+        if result.returncode == 0:
+            version = get_scanner_version(backend, image)
+            print(f"  {image}: {version}")
+            return True, version
+        else:
+            print(f"  {image}: pull failed - {result.stderr[:200]}")
+            return False, "error"
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError) as e:
+        print(f"  {image}: pull error - {e}")
+        return False, "error"

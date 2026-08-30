@@ -1,6 +1,9 @@
 __pycache__/
 *.pyc
 
+# Rust build artifacts (crates/)
+target/
+
 # T0.9 MLflow file-backed store (local experiment tracking output)
 mlruns/
 .mlflow/
@@ -31,3 +34,7 @@ data/campaign_results.db
 data/candidates/
 data/bypasses/
 data/*.checkpoint.json
+
+# Unified demo outputs (regenerable via scripts/demo_task3.py; contains
+# generated malicious candidates and GGUF artifacts)
+demo-artifacts/

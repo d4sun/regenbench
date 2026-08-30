@@ -55,9 +55,16 @@ def main() -> int:
 
     try:
         if os.path.isdir(target):
-            scan_result = scan_directory_path(target, scan_filter=ScanFilter(), strict=args.strict)
+            try:
+                scan_result = scan_directory_path(target, scan_filter=ScanFilter(), strict=args.strict)
+            except TypeError:
+                # Older picklescan releases predate the strict kwarg.
+                scan_result = scan_directory_path(target, scan_filter=ScanFilter())
         else:
-            scan_result = scan_file_path(target, strict=args.strict)
+            try:
+                scan_result = scan_file_path(target, strict=args.strict)
+            except TypeError:
+                scan_result = scan_file_path(target)
     except Exception as exc:  # noqa: BLE001 - any scanner failure maps to error
         print(json.dumps({
             "scanner": "picklescan",

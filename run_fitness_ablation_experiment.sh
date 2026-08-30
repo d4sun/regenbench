@@ -45,7 +45,7 @@ run_campaign() {
             --candidates-per-round $CAND_PER_ROUND \
             --replicate $replicate \
             --db $DB \
-            --backend podman \
+            --backend docker \
             --pre-filter \
             --seed $seed \
             --evasion-mode adaptive \
@@ -58,7 +58,7 @@ run_campaign() {
             --candidates-per-round $CAND_PER_ROUND \
             --replicate $replicate \
             --db $DB \
-            --backend podman \
+            --backend docker \
             --pre-filter \
             --seed $seed \
             --evasion-mode adaptive \
@@ -80,7 +80,7 @@ mkdir -p logs
 
 # Record container image digests for reproducibility
 echo "Recording container image digests..."
-podman images --digests | grep regenbench > logs/container_digests.txt
+docker images --digests | grep regenbench > logs/container_digests.txt
 cat logs/container_digests.txt
 
 # Run order: counterbalanced to avoid temporal bias

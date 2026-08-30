@@ -13,6 +13,7 @@ from typing import Any
 
 from pipeline.opcodes import parse_pickle, OPCODES_BY_BYTE, OPCODES_BY_NAME, OpcodeCategory, OpcodeClassification
 from pipeline.registry import get_all_entries
+from pipeline.templates import FAMILY_TEMPLATES
 from pipeline.evasion import _enc_short_binunicode, _ensure_proto
 
 
@@ -150,6 +151,83 @@ class PickleMutator:
         extra_bytes = pickle.dumps({"fuzzed_stack_payload": True})
         return pkl_bytes + extra_bytes
 
+    def mutate_family_synthesis(
+        self,
+        pkl_bytes: bytes,
+        target_family: str,
+        donor_family: str
+    ) -> bytes:
+        """Synthesize a new pickle by combining opcode signatures from two families.
+
+        This creates novel attack variants by:
+        1. Parsing the base pickle to extract its opcode sequence
+        2. Generating a template pickle from the donor family
+        3. Merging structural elements (GLOBAL patterns, string encoding, etc.)
+
+        This explores the (family1 × family2) product space for novel bypasses.
+        """
+        template_donor = FAMILY_TEMPLATES.get(donor_family)
+        template_target = FAMILY_TEMPLATES.get(target_family)
+        
+        if not template_donor or not template_target:
+            return pkl_bytes
+
+        try:
+            # Generate a donor template payload to extract structural patterns
+            donor_payload = template_donor.generate_pickle_payload("pass")
+            donor_parsed = parse_pickle(donor_payload)
+            
+            # Parse the target/base pickle
+            target_parsed = parse_pickle(pkl_bytes)
+            
+            # Extract signature patterns from donor: GLOBAL imports, string encodings, etc.
+            donor_globals = [(op, arg) for op, arg in donor_parsed if op.name in ("GLOBAL", "INST", "STACK_GLOBAL")]
+            donor_strings = [(op, arg) for op, arg in donor_parsed if op.name in ("SHORT_BINUNICODE", "BINUNICODE", "UNICODE")]
+            
+            # Mutate target by injecting donor patterns
+            mutated = []
+            for i, (op, arg) in enumerate(target_parsed):
+                if op.name == "STOP":
+                    mutated.append((op, arg))
+                    continue
+                    
+                # Inject donor GLOBAL patterns at random positions
+                if donor_globals and random.random() < 0.15:
+                    donor_op, donor_arg = random.choice(donor_globals)
+                    # Insert before current op
+                    mutated.append((donor_op, donor_arg))
+                    
+                mutated.append((op, arg))
+            
+            # Also inject string encoding variations from donor
+            if donor_strings:
+                for i, (op, arg) in enumerate(mutated):
+                    if op.name in ("SHORT_BINUNICODE", "BINUNICODE", "UNICODE") and random.random() < 0.2:
+                        donor_op, donor_arg = random.choice(donor_strings)
+                        # Preserve payload but use donor's encoding style
+                        if op.name != donor_op.name:
+                            # Convert encoding
+                            payload = None
+                            if op.name == "SHORT_BINUNICODE":
+                                payload = arg[1:].decode("utf-8", "replace")
+                            elif op.name == "BINUNICODE":
+                                payload = arg[4:].decode("utf-8", "replace")
+                            elif op.name == "UNICODE":
+                                payload = arg.strip(b"\r\n").decode("utf-8", "replace")
+                            
+                            if payload is not None:
+                                if donor_op.name == "SHORT_BINUNICODE" and len(payload) <= 255:
+                                    mutated[i] = (donor_op, bytes([len(payload)]) + payload.encode("utf-8"))
+                                elif donor_op.name == "BINUNICODE" and len(payload) <= 0xFFFFFFFF:
+                                    mutated[i] = (donor_op, len(payload).to_bytes(4, "little") + payload.encode("utf-8"))
+                                elif donor_op.name == "UNICODE":
+                                    mutated[i] = (donor_op, payload.encode("utf-8") + b"\n")
+            
+            return b"".join(op.code + arg for op, arg in mutated)
+            
+        except Exception:
+            return pkl_bytes
+
     def mutate(
         self,
         pkl_bytes: bytes,
@@ -158,16 +236,27 @@ class PickleMutator:
         arg_fuzz_prob: float = 0.2,
         stack_prob: float = 0.05,
         encoding_prob: float = 0.0,
+        family_synthesis_prob: float = 0.0,
+        target_family: str = "gadget",
+        donor_family: str = "overwritten",
     ) -> bytes:
         """Parse, apply selected mutation operators, and reconstruct the pickle stream.
 
         ``encoding_prob`` (Phase 1 evasion operator) rewrites GLOBAL/INST
         imports to STACK_GLOBAL form; when it fires at least once the stream
         is rebuilt at protocol >= 4 so the result stays loadable.
+        
+        ``family_synthesis_prob`` (Phase 3b) combines structural signatures
+        from a donor ShadowPickle family into the target family's stream,
+        exploring the (family1 × family2) product space for novel bypasses.
         """
         # 1. Structural stacking mutation
         if random.random() < stack_prob:
             pkl_bytes = self.mutate_structural_stacking(pkl_bytes)
+
+        # 1b. Family synthesis mutation (Phase 3b)
+        if family_synthesis_prob and random.random() < family_synthesis_prob:
+            pkl_bytes = self.mutate_family_synthesis(pkl_bytes, target_family, donor_family)
 
         parsed = parse_pickle(pkl_bytes)
         mutated_parsed = []

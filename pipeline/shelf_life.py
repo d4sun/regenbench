@@ -38,7 +38,8 @@ class BypassRecord:
     discovered_at: str
     scanner_versions: dict[str, str]
     panel_verdicts: dict[str, str]
-    oracle_verdict: str
+    oracle_verdict: str          # Execution oracle verdict (trigger fired = "malicious")
+    dynahug_verdict: str         # Supplementary DynaHug anomaly detector verdict
     decision_score: float
 
 @dataclass
@@ -80,6 +81,7 @@ class ShelfLifeTracker:
                 scanner_versions TEXT,
                 panel_verdicts TEXT,
                 oracle_verdict TEXT,
+                dynahug_verdict TEXT,
                 decision_score REAL
             )
         """)
@@ -100,8 +102,21 @@ class ShelfLifeTracker:
         conn.execute("""
             CREATE INDEX IF NOT EXISTS idx_rescans_candidate ON rescans(candidate_id)
         """)
+        self._migrate(conn)
         conn.commit()
         conn.close()
+
+    @staticmethod
+    def _migrate(conn: sqlite3.Connection) -> None:
+        """Idempotent migrations for schema additions (pre-created DBs).
+
+        ``CREATE TABLE IF NOT EXISTS`` cannot add columns to an existing
+        table, so columns added after the table's first creation must be
+        applied via ALTER TABLE when absent.
+        """
+        cols = {row[1] for row in conn.execute("PRAGMA table_info(bypass_records)")}
+        if "dynahug_verdict" not in cols:
+            conn.execute("ALTER TABLE bypass_records ADD COLUMN dynahug_verdict TEXT")
 
     def record_bypass(self, record: BypassRecord) -> None:
         """Store a confirmed bypass for future re-scanning."""
@@ -110,14 +125,14 @@ class ShelfLifeTracker:
             INSERT OR REPLACE INTO bypass_records
             (candidate_id, run_id, family, callable, transport, strategies,
              artifact_path, discovered_at, scanner_versions, panel_verdicts,
-             oracle_verdict, decision_score)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             oracle_verdict, dynahug_verdict, decision_score)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
             record.candidate_id, record.run_id, record.family, record.callable,
             record.transport, json.dumps(record.strategies), record.artifact_path,
             record.discovered_at, json.dumps(record.scanner_versions),
             json.dumps(record.panel_verdicts), record.oracle_verdict,
-            record.decision_score
+            record.dynahug_verdict, record.decision_score
         ))
         conn.commit()
         conn.close()
@@ -147,6 +162,7 @@ class ShelfLifeTracker:
                 scanner_versions=json.loads(row["scanner_versions"]),
                 panel_verdicts=json.loads(row["panel_verdicts"]),
                 oracle_verdict=row["oracle_verdict"],
+                dynahug_verdict=row["dynahug_verdict"] if "dynahug_verdict" in row.keys() else "unknown",
                 decision_score=row["decision_score"]
             )
             for row in rows
@@ -262,6 +278,7 @@ def register_confirmed_bypass(
     scanner_versions: dict[str, str],
     panel_verdicts: dict[str, str],
     oracle_verdict: str,
+    dynahug_verdict: str,
     decision_score: float,
     db_path: str = DEFAULT_DB_PATH
 ) -> None:
@@ -279,9 +296,73 @@ def register_confirmed_bypass(
         scanner_versions=scanner_versions,
         panel_verdicts=panel_verdicts,
         oracle_verdict=oracle_verdict,
+        dynahug_verdict=dynahug_verdict,
         decision_score=decision_score
     )
     tracker.record_bypass(record)
+
+
+def register_bypasses_from_campaign_db(campaign_db: str,
+                                       shelf_db_path: str | None = None) -> int:
+    """Bulk-register confirmed bypasses from a campaign DB into the shelf DB.
+
+    A confirmed bypass is a valid candidate (f.is_valid=1) whose panel verdict
+    is all-benign (no malicious/error panel row). The campaign driver calls
+    register_confirmed_bypass per candidate during a run, but bulk
+    registration is needed when rescans run against a campaign DB whose
+    shelf records were not all persisted (e.g. earlier registration errors or
+    INSERT OR REPLACE collisions on reused run_ids).
+
+    Returns the number of bypass records (re)registered.
+    """
+    import json as _json
+    if not os.path.exists(campaign_db):
+        raise FileNotFoundError(f"campaign DB not found: {campaign_db}")
+    conn = sqlite3.connect(campaign_db)
+    conn.row_factory = sqlite3.Row
+    rows = conn.execute("""
+        SELECT c.candidate_id, c.filepath, c.run_id, c.mutation_template,
+               c.mutation_strategy, c.callables_used, c.oracle_verdict
+        FROM candidates c
+        JOIN campaign_fitness f ON f.candidate_id = c.candidate_id
+        WHERE f.is_valid = 1 AND c.panel_verdict = 'all_benign'
+    """).fetchall()
+    conn.close()
+
+    # Per-candidate scanner verdicts from panel_results.
+    panel_by_cand: dict[str, dict[str, str]] = {}
+    conn = sqlite3.connect(campaign_db)
+    conn.row_factory = sqlite3.Row
+    for r in conn.execute(
+        "SELECT candidate_id, scanner, verdict FROM panel_results"
+    ):
+        panel_by_cand.setdefault(r["candidate_id"], {})[r["scanner"]] = r["verdict"]
+    conn.close()
+
+    tracker = ShelfLifeTracker(db_path=campaign_db, shelf_db_path=shelf_db_path)
+    registered = 0
+    for row in rows:
+        cid = row["candidate_id"]
+        if not os.path.isfile(row["filepath"]):
+            continue
+        record = BypassRecord(
+            candidate_id=cid,
+            run_id=row["run_id"],
+            family=row["mutation_template"],
+            callable=row["callables_used"] or "unknown",
+            transport="splice",  # post-fix bypasses use splice transport
+            strategies=(row["mutation_strategy"] or "").split(",") or [],
+            artifact_path=row["filepath"],
+            discovered_at=datetime.utcnow().isoformat(),
+            scanner_versions={},  # filled at rescan time
+            panel_verdicts=panel_by_cand.get(cid, {}),
+            oracle_verdict=row["oracle_verdict"] or "malicious",
+            dynahug_verdict="unknown",
+            decision_score=0.0,
+        )
+        tracker.record_bypass(record)
+        registered += 1
+    return registered
 
 
 if __name__ == "__main__":

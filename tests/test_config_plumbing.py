@@ -185,6 +185,7 @@ class TestFieldCoverage(unittest.TestCase):
     COVERED_FIELDS = {
         "backend", "tag", "max_workers", "timeout", "extensions", "min_size",
         "skip", "oracle", "pre_filter", "oracle_model_dir",
+        "sanitize_mode", "repair_dir",
     }
 
     def test_all_fields_covered(self):
@@ -195,6 +196,35 @@ class TestFieldCoverage(unittest.TestCase):
             f"Config gained unplumbed/untested fields: {missing}. "
             f"Add sentinel assertions to tests/test_config_plumbing.py.",
         )
+
+
+class TestDefaultBackend(unittest.TestCase):
+    """The runtime default must prefer podman but fall back to docker on
+    docker-only hosts (the lab baseline), so commands need no --backend."""
+
+    def _patch_which(self, available: set[str]):
+        return mock.patch("shutil.which",
+                          side_effect=lambda name: f"/usr/bin/{name}" if name in available else None)
+
+    def test_prefers_podman_when_present(self):
+        from pipeline.scanners import default_backend
+        with self._patch_which({"podman", "docker"}):
+            self.assertEqual(default_backend(), "podman")
+
+    def test_falls_back_to_docker_without_podman(self):
+        from pipeline.scanners import default_backend
+        with self._patch_which({"docker"}):
+            self.assertEqual(default_backend(), "docker")
+
+    def test_returns_prefer_when_none_available(self):
+        from pipeline.scanners import default_backend
+        with self._patch_which(set()):
+            self.assertEqual(default_backend(), "podman")
+
+    def test_config_default_resolves_to_available_runtime(self):
+        with self._patch_which({"docker"}):
+            cfg = Config()
+            self.assertEqual(cfg.backend, "docker")
 
 
 if __name__ == "__main__":

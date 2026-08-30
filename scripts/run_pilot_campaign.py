@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 from pipeline.generator import CandidateGenerator
 from pipeline.runner import Runner, Config
 from pipeline.validity import ValidityOracle
+from pipeline.plausibility import PlausibilityOracle
 from pipeline.db import (init_db, log_candidate, log_fitness, log_campaign_run,
                          complete_campaign_run)
 from pipeline.comparator import check_bypass
@@ -120,7 +121,8 @@ def main(argv: list[str] | None = None) -> int:
 
     # Core fuzzing engines
     generator = CandidateGenerator()
-    oracle_val = ValidityOracle(container_backend="podman")
+    oracle_val = ValidityOracle(container_backend="docker")
+    plausibility = PlausibilityOracle(oracle_val)
     tracker = CoverageTracker(args.db, run_id=run_id)
     controller = FeedbackController()
 
@@ -215,7 +217,7 @@ def main(argv: list[str] | None = None) -> int:
                 candidates.append((cand_path, cand_bytes, chosen_callable, trigger_file, attack_family))
 
             # 2. Run scanners and dynahug oracle
-            config = Config(backend="podman", tag=":latest", max_workers=concurrency_limit,
+            config = Config(backend="docker", tag=":latest", max_workers=concurrency_limit,
                             timeout=timeout_seconds, oracle=True, pre_filter=True)
             runner = Runner(config, scanners=scanners)
 
@@ -234,19 +236,23 @@ def main(argv: list[str] | None = None) -> int:
             for filepath, cand_bytes, chosen_callable, trigger_file, attack_family in candidates:
                 cand_results = results_by_file.get(filepath, [])
 
-                is_valid = oracle_val.validate_torch(cand_bytes, trigger_file)
+                is_valid = plausibility.confirm(cand_bytes, trigger_file)
 
                 panel_verdicts = []
-                oracle_verdict = "benign"
+                dynahug_verdict = "benign"
                 decision_score = 0.0
 
                 for r_scan in cand_results:
                     if r_scan.scanner == "dynahug":
-                        # Fail-closed: an errored oracle never counts as benign.
-                        oracle_verdict = r_scan.verdict or "error"
+                        # DynaHug provides supplementary decision_score signal only.
+                        # Execution oracle (plausibility/validity) is the primary for bypass confirmation.
+                        dynahug_verdict = r_scan.verdict or "error"
                         decision_score = r_scan.decision_score or 0.0
                     else:
                         panel_verdicts.append(r_scan.verdict or "error")
+
+                # Execution oracle verdict for bypass confirmation: "malicious" = trigger fired
+                execution_oracle_verdict = "malicious" if is_valid else "benign"
 
                 if is_valid:
                     valid_cnt += 1
@@ -258,7 +264,7 @@ def main(argv: list[str] | None = None) -> int:
                 else:
                     fit_score = 0.0
 
-                is_bypass = is_valid and check_bypass(panel_verdicts, oracle_verdict)
+                is_bypass = is_valid and check_bypass(panel_verdicts, execution_oracle_verdict)
                 if is_bypass:
                     bypasses_cnt += 1
 

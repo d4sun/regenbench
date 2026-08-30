@@ -37,7 +37,7 @@ corpus:
 
 oracle_validation:
   script: "scripts/validate_oracle.py"
-  backend: "podman"
+  backend: "docker"
   image: "regenbench/dynahug"
 
 campaign:
@@ -47,17 +47,17 @@ campaign:
   base_checkpoint: "real_benign_corpus/all/text-generation__HuggingFaceM4_tiny-random-LlamaForCausalLM.bin"
   rounds: 5
   candidates_per_round: 20
-  backend: "podman"
+  backend: "docker"
   tag: ":latest"
   timeout_seconds: 120
   concurrency_limit: 2
   time_budget_hours: 24
   # Static panel scanners; dynahug is appended as the behavioral oracle.
+  # modeltracer excluded: cannot analyze torch artifacts (strace-based).
   panel_scanners:
     - "picklescan"
     - "fickling"
     - "modelscan"
-    - "modeltracer"
   oracle_scanners:
     - "dynahug"
 

