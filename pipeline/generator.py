@@ -112,8 +112,9 @@ def _plausible_candidate(
         return False
 
     if attack_family == "pypi_injected":
-        # Check that PyPI modules are from known allowlist
-        pypi_modules = {"IPython.utils.process", "IPython", "numpy"}
+        # Check that PyPI modules are from allowlist (expanded for callable diversification)
+        pypi_modules = {"IPython.utils.process", "IPython", "numpy",
+                        "os", "posix", "nt", "subprocess", "builtins"}
         globals_found = [
             arg.decode("latin1").split("\n")[0]
             for op, arg in parsed
@@ -122,6 +123,12 @@ def _plausible_candidate(
         for module in globals_found:
             if module not in pypi_modules:
                 return False
+        # Also allow STACK_GLOBAL encoded modules (check via _import_pairs)
+        for mod, _name in _import_pairs(parsed):
+            if mod not in pypi_modules and mod not in {"IPython.utils.process"}:
+                # Allow system-like modules for diversification
+                if mod not in {"os", "posix", "nt", "subprocess", "builtins", "IPython"}:
+                    return False
 
     # 3. Gadget family: callable must be armable (can carry inline payload).
     #    The stream may have already been rewritten by an evasion strategy
@@ -423,17 +430,30 @@ class CandidateGenerator:
                 base_pkl = random.choice(diff_variants)
 
         # Callable substitution: re-roll the injected dangerous callable.
-        # Non-armable entries (runpy.run_module, pandas.eval, sympy.sympify,
-        # yaml.unsafe_load) cannot carry the inline payload and are excluded.
-        if callable_sub_prob and dangerous_callable is not None and random.random() < callable_sub_prob:
-            entries = get_armable_entries()
-            alternatives = [
-                e for e in entries
-                if (e.module, e.name) != dangerous_callable
-            ]
-            if alternatives:
-                entry = random.choice(alternatives)
-                dangerous_callable = (entry.module, entry.name)
+        # For gadget this is the direct sink; for template families we also
+        # allow diversification across alternative sinks (payload-level mutation).
+        if callable_sub_prob and random.random() < callable_sub_prob:
+            if attack_family == "gadget" and dangerous_callable is not None:
+                entries = get_armable_entries()
+                alternatives = [
+                    e for e in entries
+                    if (e.module, e.name) != dangerous_callable
+                ]
+                if alternatives:
+                    entry = random.choice(alternatives)
+                    dangerous_callable = (entry.module, entry.name)
+            elif attack_family != "gadget":
+                from pipeline.templates import TEMPLATE_FAMILY_SINKS
+                alts = TEMPLATE_FAMILY_SINKS.get(attack_family, [])
+                if alts:
+                    # If dangerous_callable is None, sample from family alts
+                    # directly; otherwise try to diversify away from it.
+                    pool = alts
+                    if dangerous_callable is not None:
+                        pool = [c for c in alts if c != dangerous_callable]
+                        if not pool:
+                            pool = alts
+                    dangerous_callable = random.choice(pool)
 
         # Metadata mutation + payload injection into the mutated base.
         if attack_family == "gadget":
@@ -447,12 +467,19 @@ class CandidateGenerator:
         else:
             # ShadowPickle-family stream: a self-contained malicious pickle
             # whose trigger (exec/system/runstring) fires the payload side
-            # effect. Metadata mutation is intentionally not applied -- the
-            # template stream is the attack itself.
-            template = family_template(attack_family)
-            if template is None:
-                raise ValueError(f"unknown attack_family: {attack_family}")
-            malicious_pkl = template.generate_pickle_payload(payload_code)
+            # effect.  When dangerous_callable is set (payload-level mutation)
+            # we route through the diversified helper so alternative sinks
+            # are actually exercised.
+            if dangerous_callable is not None:
+                from pipeline.templates import template_payload_for_callable
+                malicious_pkl = template_payload_for_callable(
+                    attack_family, dangerous_callable[0], dangerous_callable[1],
+                    payload_code)
+            else:
+                template = family_template(attack_family)
+                if template is None:
+                    raise ValueError(f"unknown attack_family: {attack_family}")
+                malicious_pkl = template.generate_pickle_payload(payload_code)
 
         # Phase-1 evasion pipeline: hide static signatures post-construction
         # (strategies preserve execution semantics; see tests/test_evasion.py).

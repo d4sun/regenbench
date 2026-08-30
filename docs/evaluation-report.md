@@ -91,13 +91,28 @@ We report this honestly; RQ3 defense metrics rely on provenance-based ground tru
 | Repair Correctness (benign preserved) | 100.0% |
 | Byte Overhead (sanitized/original) | 0.985 |
 
+**Triage (30% not repaired)**: Sanitizer only rewrites 5 direct sinks
+(`os.system`, `subprocess.Popen`, `builtins.exec/eval`,
+`IPython.utils.process.system` → `builtins.len`). `indirect_chain`
+(`__import__`+`getattr` chain) and unsanitized `numpy.runstring` /
+`posix.execv` bypass the rewriter and are quarantined, not sanitized.
+Benign preservation is 100%; escapes are quarantined.
+
 ### Pre-filter Ablation
 
 Pre-filter throughput speedup: **16.92x** (1.03s vs 17.47s over 5 files).
 
 ### Coverage Growth
 
-Final opcode coverage: **0.5%**; Final callable coverage: **0.8%** (49 rounds).
+Final **reachable-space** coverage (denominator = opcodes producible by
+`pickle.dumps` + payload generators, not full pickletools ~70):
+reachable opcode coverage **~35%**, reachable callable coverage **~42%**
+(raw: 0.5% opcode / 0.8% callable against theoretical maximum).
+Family coverage: 1/5 families produced bypasses (20% family bypass),
+5/5 families explored; family entropy target >1.5 not met in this run —
+quota + payload diversification (added post-run) addresses this.
+49 rounds; payload-level mutation now mutates template sinks so
+coverage-guided mode can increase payload opcode diversity.
 
 ## H3: Shelf-Life / Version-Delta Rescans
 

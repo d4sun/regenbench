@@ -21,11 +21,13 @@ Campaign loop lives in `scripts/run_fuzzing_campaign.py`; per-candidate verdicts
 
 | H | Verdict | Evidence |
 |---|---|---|
-| **H1** | **Supported** (reframed to proposal wording: relative improvement over baseline, not an absolute 70% threshold) | Fuzzing 47.2% vs ShadowPickle baseline 25.0% confirmed bypass rate; per-scanner PickleScan 47.2% vs 25%, ModelScan 62.9% vs 50%, Fickling 100% vs 100% |
-| **H2** | **Valid negative result** | Uncorroborated == confirmed (446); the static panel already detects all non-executing candidates, so the dual-oracle adds no precision — dynamic validation's value is confirming payload execution (trigger polling), not filtering false evasions |
-| **H3** | **Supported** | 100% retention of 446 bypasses across 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10) |
+| **H1** | **Supported** (reframed to proposal wording: relative improvement over baseline, not an absolute 70% threshold) | Fuzzing 51.9% vs ShadowPickle baseline 25.0% confirmed bypass rate; per-scanner PickleScan 51.9% vs 25%, ModelScan 62.9% vs 50%, Fickling 94.2% vs 100% |
+| **H2** | **Valid negative result** | Uncorroborated == confirmed (514); the static panel already detects all non-executing candidates, so the dual-oracle adds no precision — dynamic validation's value is confirming payload execution (trigger polling), not filtering false evasions |
+| **H3** | **Supported** | 100% retention of 514 bypasses across 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10) |
 
-Scaled proof campaign (this host, docker): guided 365/494 valid bypasses (73.9%), unguided 81/451 (18.0%), Fisher p≈0; Q_first guided [2], unguided [2]. Full details in `docs/evaluation-report.md` (regenerate with `scripts/run_evaluation_suite.py`).
+Scaled proof campaign (this host, docker): guided 428/554 valid bypasses (77.3%), unguided 86/436 (19.7%), Fisher p≈0; Q_first guided [1], unguided [12]. Full details in `docs/evaluation-report.md` (regenerate with `scripts/run_evaluation_suite.py`).
+
+**Peer-review fixes (2026-08-30)**: reachable-space coverage (was 0.5% opcode / 0.8% callable against theoretical max; now ~45% opcode / ~42% callable reachable + family entropy + family bypass coverage), per-round family quotas (≤40% per family, ≥1 per family, entropy target 1.5), payload-level callable diversification for template families (5→12 sinks), `StraceOracle` (0% FP strace-based syscall oracle replacing DynaHug 63.5% FP), GGUF re-scoped as format-complexity demo, repair triage (30% escapes are `indirect_chain`/`runstring` quarantined, not sanitized).
 
 ## Module map
 
@@ -38,6 +40,7 @@ Scaled proof campaign (this host, docker): guided 365/494 valid bypasses (73.9%)
 | `pipeline/mutators.py` | opcode swap / callable sub / arg fuzz / stacking / encoding | `PickleMutator.mutate` (Python); Rust `crates/regenbench-core/src/mutators.rs` (not wired) |
 | `pipeline/evasion.py` | 11 static-signature evasion strategies + `apply_pipeline` | `STRATEGIES`, `PIPELINE_ORDER` |
 | `pipeline/validity.py` | container-sandboxed load + trigger poll ("did it execute") | `ValidityOracle`, `_trigger_exists` |
+| `pipeline/monitor.py` | strace syscall oracle (0% FP) + load-time monitor | `StraceOracle`, `LoadTimeMonitor` |
 | `pipeline/pre_filter.py` | static admission gate for the oracle (fail-open on malformed) | `is_admitted` |
 | `pipeline/runner.py` | generator→filter→scanner fan-out, Config dataclass | `Runner.run`, `Config` |
 | `pipeline/scanners.py` | image registry + container launch primitive | `run_scan`, `SCANNERS` |

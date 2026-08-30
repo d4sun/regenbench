@@ -16,55 +16,12 @@ from pipeline.templates import FAMILIES, FAMILY_TEMPLATES
 from pipeline.db import log_coverage
 
 
-# RQ2 combo-reinforcement tiers, mirroring compute_fitness_lexicographic:
-# Tier 1 = oracle-confirmed + valid (fit >= TIER1_FIT), Tier 2 = panel-evading +
-# valid (fit >= TIER2_FIT, or a valid candidate that evaded the whole panel
-# under the continuous fitness modes), Tier 3 = merely-valid (fit > 0). The
-# winning configuration on this corpus (e.g. the pypi_injected family + splice
-# transport + a stacked strategy set) lives in the (family, transport,
-# strategies) product space, so the feedback loop must reward the full combo --
-# not just the family -- to keep guided search from losing to uniform-random.
-TIER1_FIT = 10000.0
-TIER2_FIT = 1000.0
+# RQ2 combo-reinforcement tiers, mirroring compute_fitness_lexicographic.
+TIER1_FIT = 10000.0  # oracle-confirmed + valid
+TIER2_FIT = 1000.0   # panel-evading + valid
 TIER1_WEIGHT = 5.0
 TIER2_WEIGHT = 2.0
 TIER3_WEIGHT = 0.1
-
-
-# RQ2 combo-reinforcement tiers, mirroring compute_fitness_lexicographic:
-# Tier 1 = oracle-confirmed + valid (fit >= TIER1_FIT), Tier 2 = panel-evading +
-# valid (fit >= TIER2_FIT, or any valid candidate that evaded the whole panel),
-# Tier 3 = merely-valid (fit > 0). The winning configuration on this corpus
-# (pypi_injected family + splice transport + a stacked strategy set) lives in
-# the (family, transport, strategies) product space, so the feedback loop must
-# reward the full combo -- not just the family -- to restore guided > unguided.
-TIER1_FIT = 10000.0
-TIER2_FIT = 1000.0
-TIER1_WEIGHT = 5.0
-TIER2_WEIGHT = 2.0
-TIER3_WEIGHT = 0.1
-
-
-# RQ2 combo-reinforcement tiers, mirroring compute_fitness_lexicographic:
-# Tier 1 = oracle-confirmed + valid (fit >= 10000), Tier 2 = panel-evading +
-# valid (fit >= 1000, or a valid candidate that evaded the whole panel under the
-# continuous fitness modes), Tier 3 = merely-valid. The winning configuration on
-# the current corpus (e.g. the pypi_injected family + splice transport + a
-# stacked strategy set) lives in the (family, transport, strategies) product
-# space, so the feedback loop must reward the full combo -- not just the family
-# -- to restore guided > unguided.
-TIER1_FIT = 10000.0
-TIER2_FIT = 1000.0
-TIER1_WEIGHT = 5.0
-TIER2_WEIGHT = 2.0
-TIER3_WEIGHT = 0.1
-
-
-TIER1_FIT = 10000.0  # lexicographic Tier 1 boundary: oracle-confirmed + valid
-TIER2_FIT = 1000.0   # lexicographic Tier 2 boundary: panel-evading + valid
-TIER1_WEIGHT = 5.0   # reward for oracle-confirmed + valid configurations
-TIER2_WEIGHT = 2.0   # reward for panel-evading + valid configurations
-TIER3_WEIGHT = 0.1   # small reward for merely-valid configurations
 
 
 def compute_semantic_fingerprint(file_path: str) -> tuple:
@@ -156,21 +113,49 @@ def _string_value(op, arg: bytes) -> str | None:
     return None
 
 
+REACHABLE_OPCODES: frozenset[str] = frozenset({
+    # Opcodes actually producible by pickle.dumps on dict/list primitives +
+    # the payload generators (GLOBAL/REDUCE/STACK_GLOBAL) + evasion encodings.
+    # Full pickletools (~70) includes never-emitted ops like PERSID/BINPERSID.
+    "PROTO", "FRAME", "STOP", "EMPTY_DICT", "EMPTY_LIST", "EMPTY_TUPLE",
+    "BINGET", "LONG_BINGET", "GET", "PUT", "BINPUT", "LONG_BINPUT", "MEMOIZE",
+    "MARK", "TUPLE", "TUPLE1", "TUPLE2", "TUPLE3", "EMPTY_SET", "ADDITEMS",
+    "SETITEM", "SETITEMS", "APPEND", "APPENDS", "BUILD", "REDUCE", "GLOBAL",
+    "STACK_GLOBAL", "INST", "OBJ", "NEWOBJ", "NEWOBJ_EX",
+    "BINUNICODE", "SHORT_BINUNICODE", "UNICODE", "BINSTRING", "SHORT_BINSTRING",
+    "BINBYTES", "SHORT_BINBYTES", "BINBYTES8",
+    "BININT", "BININT1", "BININT2", "INT", "LONG", "LONG1", "LONG4",
+    "BINFLOAT", "FLOAT", "NONE", "NEWTRUE", "NEWFALSE",
+    "POP", "POP_MARK", "DUP", "EXT1", "EXT2", "EXT4",
+})
+
+
 class CoverageTracker:
-    """Logs non-decreasing opcode and dangerous-callable coverage over rounds."""
+    """Logs non-decreasing opcode, callable and family coverage over rounds."""
 
     def __init__(self, db_path: str, run_id: str = ""):
         self.db_path = db_path
         self.run_id = run_id
         self.seen_opcodes: set[str] = set()
         self.seen_callables: set[tuple[str, str]] = set()
-        
-        # Determine total possible coverage items
-        self.total_opcodes = max(1, len(OPCODES_BY_BYTE))
-        self.total_callables = max(1, len(get_all_entries()))
+        self.seen_families: set[str] = set()
+        self.seen_families_with_bypass: set[str] = set()
 
-    def track_candidate(self, file_path: str) -> None:
-        """Parse a candidate file and log all seen opcodes and dangerous callables."""
+        # Denominator = reachable space, not theoretical maximum.  Full
+        # pickletools (~70) includes never-emitted ops (PERSID etc.); registry
+        # includes platform-excluded + NON_ARMABLE entries that can never be
+        # selected.  Reachable denominator makes the % meaningful.
+        self.total_opcodes = len(REACHABLE_OPCODES)
+        self.total_callables = max(1, len(get_armable_entries()))
+        self.total_families = len(FAMILIES)
+
+    def track_candidate(self, file_path: str, family: str | None = None,
+                        is_bypass: bool = False) -> None:
+        """Parse a candidate file and log all seen opcodes, callables and families."""
+        if family is not None:
+            self.seen_families.add(family)
+            if is_bypass:
+                self.seen_families_with_bypass.add(family)
         if not os.path.exists(file_path):
             return
 
@@ -181,7 +166,7 @@ class CoverageTracker:
                 return
 
             is_zip = magic.startswith(b"PK\x03\x04")
-            
+
             if is_zip:
                 with zipfile.ZipFile(file_path) as z:
                     pkl_name = [name for name in z.namelist() if name.endswith("data.pkl")]
@@ -249,11 +234,34 @@ class CoverageTracker:
 
     def log_round(self, round_num: int) -> tuple[float, float]:
         """Calculate and log current coverage percentages to the database."""
-        opcode_cov = len(self.seen_opcodes) / self.total_opcodes
-        callable_cov = len(self.seen_callables) / self.total_callables
-        
+        # Reachable-space coverage (primary)
+        opcode_cov = len(self.seen_opcodes & REACHABLE_OPCODES) / max(1, self.total_opcodes)
+        callable_cov = len(self.seen_callables) / max(1, self.total_callables)
+        family_cov = len(self.seen_families) / max(1, self.total_families)
+        family_bypass_cov = len(self.seen_families_with_bypass) / max(1, self.total_families)
+
         log_coverage(self.db_path, round_num, opcode_cov, callable_cov, run_id=self.run_id)
         return opcode_cov, callable_cov
+
+    def family_coverage(self) -> tuple[float, float]:
+        """(family_explored, family_with_bypass) as fractions."""
+        explored = len(self.seen_families) / max(1, self.total_families)
+        with_bypass = len(self.seen_families_with_bypass) / max(1, self.total_families)
+        return explored, with_bypass
+
+    @staticmethod
+    def family_entropy(family_counts: dict[str, int]) -> float:
+        """Shannon entropy of the family distribution.  Uniform 5 families = 1.61 nats."""
+        import math
+        total = sum(family_counts.values())
+        if total <= 0:
+            return 0.0
+        ent = 0.0
+        for c in family_counts.values():
+            if c > 0:
+                p = c / total
+                ent -= p * math.log(p)
+        return ent
 
 
 class NoveltyTracker:

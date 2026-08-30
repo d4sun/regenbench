@@ -274,6 +274,28 @@ def run_campaign(args: argparse.Namespace) -> int:
         fitness_mode=args.fitness_mode,
     )
 
+    # Family-quota: prevent single-family collapse (peer-review Weakness 2).
+    # Unguided already samples uniformly, but guided combo weights compound.
+    # Enforce per-round: each family gets >=1 when round size permits, and no
+    # family exceeds 40% of the round budget.
+    family_quota_min = 1 if args.candidates_per_round >= len(families) else 0
+    family_quota_max = max(1, int(0.4 * args.candidates_per_round) + 1)
+
+    def _quota_pick(desired: str, counts: dict[str, int]) -> str:
+        if counts.get(desired, 0) >= family_quota_max:
+            # Over cap -> pick least-represented family
+            under = sorted(families, key=lambda f: counts.get(f, 0))
+            for cand in under:
+                if counts.get(cand, 0) < family_quota_max:
+                    return cand
+        # Near end of round: force missing families to meet minimum
+        remaining = args.candidates_per_round - sum(counts.values()) - 1
+        missing = [f for f in families if counts.get(f, 0) < family_quota_min]
+        if missing and remaining < len(missing):
+            # Must allocate remaining slots to missing families
+            return random.choice(missing)
+        return desired
+
     # Candidates are persisted per-run so the DB filepaths never dangle and
     # export_bypasses can copy real artifacts. Only the trigger files (used by
     # the validity oracle, which mounts the system temp dir) are ephemeral.
@@ -383,23 +405,30 @@ def run_campaign(args: argparse.Namespace) -> int:
                         attack_family = random.choices(family_population, weights=family_weights, k=1)[0]
                         cand_strategies = _pick_strategies()
                         cand_transport = "splice" if (args.evasion_mode != "off" or fixed_strategies is not None) else None
+                    attack_family = _quota_pick(attack_family, family_counts)
 
                     # Coverage-gap sampling: occasionally pick unseen callable/opcode
+                    gap_chosen_callable = None
                     if random.random() < 0.1:
                         gap = controller.sample_coverage_gaps(random, tracker, set(families))
                         if gap:
-                            attack_family, gap_item = gap
+                            gap_family, gap_item = gap
+                            gap_family = _quota_pick(gap_family, family_counts)
+                            attack_family = gap_family
                             if isinstance(gap_item, tuple) and gap_item[0] == "opcode":
                                 pass  # opcode gap handled via op_swap_prob increase
-                            else:
-                                chosen_callable = gap_item
+                            elif attack_family == "gadget":
+                                gap_chosen_callable = gap_item
 
                     if attack_family == "gadget":
-                        callable_weights_map = controller.get_callable_weights()
-                        callable_weights_map = {c: w for c, w in callable_weights_map.items() if c in population}
-                        callable_population = list(callable_weights_map.keys())
-                        callable_weights = list(callable_weights_map.values())
-                        chosen_callable = random.choices(callable_population, weights=callable_weights, k=1)[0]
+                        if gap_chosen_callable is not None:
+                            chosen_callable = gap_chosen_callable
+                        else:
+                            callable_weights_map = controller.get_callable_weights()
+                            callable_weights_map = {c: w for c, w in callable_weights_map.items() if c in population}
+                            callable_population = list(callable_weights_map.keys())
+                            callable_weights = list(callable_weights_map.values())
+                            chosen_callable = random.choices(callable_population, weights=callable_weights, k=1)[0]
                     else:
                         chosen_callable = None
 
@@ -410,6 +439,7 @@ def run_campaign(args: argparse.Namespace) -> int:
                     arg_fuzz_prob = controller.arg_fuzz_prob
                 else:
                     attack_family = random.choice(families)
+                    attack_family = _quota_pick(attack_family, family_counts)
                     family_counts[attack_family] += 1
                     if attack_family == "gadget":
                         chosen_callable = random.choice(population)
@@ -573,7 +603,9 @@ def run_campaign(args: argparse.Namespace) -> int:
                 execution_oracle_verdict = "malicious" if is_valid else "benign"
 
                 # Compute coverage delta for fitness modes that use it
-                tracker.track_candidate(filepath)
+                # Track with family signal so family coverage is meaningful.
+                is_bypass = is_valid and check_bypass(panel_verdicts, execution_oracle_verdict)
+                tracker.track_candidate(filepath, family=attack_family, is_bypass=is_bypass)
                 new_opcodes = tracker.seen_opcodes - prev_opcodes
                 new_callables = tracker.seen_callables - prev_callables
                 coverage_delta = len(new_opcodes) + len(new_callables)
@@ -784,6 +816,8 @@ def run_campaign(args: argparse.Namespace) -> int:
                 controller.update(round_results)
 
             mean_fitness = sum(x["fitness"] for x in round_results) / len(round_results)
+            fam_explored, fam_bypass = tracker.family_coverage()
+            entropy = CoverageTracker.family_entropy(family_counts)
             round_summaries.append({
                 "round": r,
                 "generated_count": len(candidates),
@@ -792,13 +826,17 @@ def run_campaign(args: argparse.Namespace) -> int:
                 "mean_fitness": mean_fitness,
                 "opcode_cov": opcode_cov,
                 "callable_cov": callable_cov,
+                "fam_explored": fam_explored,
+                "fam_bypass": fam_bypass,
+                "entropy": entropy,
                 "families": family_counts,
                 "evasion_hits": dict(evasion_hits),
             })
 
             print(f"Round {r} Complete: Valid={valid_cnt}/{len(candidates)}, "
                   f"Bypasses={bypasses_cnt}, Mean Fitness={mean_fitness:.3f}, "
-                  f"Opcode Cov={opcode_cov * 100:.1f}%, Callable Cov={callable_cov * 100:.1f}%, "
+                  f"Opcode Cov={opcode_cov * 100:.1f}% (reachable), Callable Cov={callable_cov * 100:.1f}%, "
+                  f"Family={fam_explored*100:.0f}%/{fam_bypass*100:.0f}% ent={entropy:.2f}, "
                   f"Per-scanner evasions={evasion_hits or '{}'}")
 
         # If the time budget cut the campaign short, correct the recorded
@@ -831,14 +869,15 @@ def run_campaign(args: argparse.Namespace) -> int:
             f"- Time budget: {args.time_budget_hours}h",
             f"- DB: `{db_path}`",
             "",
-            "| Round | Valid / Generated | Confirmed Bypasses | Mean Fitness | Opcode Coverage | Callable Coverage |",
-            "| :---: | :---: | :---: | :---: | :---: | :---: |",
+            "| Round | Valid / Generated | Confirmed Bypasses | Mean Fitness | Opcode Coverage (reachable) | Callable Coverage | Family bypass | Entropy |",
+            "| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |",
         ]
         for s in round_summaries:
             report_lines.append(
                 f"| {s['round']} | {s['valid_count']} / {s['generated_count']} | "
                 f"{s['bypass_count']} | {s['mean_fitness']:.3f} | "
-                f"{s['opcode_cov'] * 100:.1f}% | {s['callable_cov'] * 100:.1f}% |"
+                f"{s['opcode_cov'] * 100:.1f}% | {s['callable_cov'] * 100:.1f}% | "
+                f"{s.get('fam_bypass',0)*100:.0f}% | {s.get('entropy',0):.2f} |"
             )
         report_lines += [
             "",

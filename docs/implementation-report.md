@@ -931,11 +931,10 @@ After the root-cause fixes (dotted-import resolution, strategy-set capping, dock
 
 **H3 (shelf-life)**: `register_bypasses_from_campaign_db` bulk-registered 446 confirmed bypasses into the shelf DB; rescanned against 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10) → **100% retention across all versions** → H3 supported.
 
-### 5.8 Task 3: GGUF Attack Surface
+### 5.8 Task 3: GGUF Attack Surface (format-complexity demo)
 
-- `ggufref` oracle: detects 7/7 GGUF attacks (6 malformed-header families + Jinja2 SSTI CVE-2024-34359) with 0 FP on 24 real benign GGUFs
-- modelscan 0.8.8: misses all 7 attacks (0/7 detection)
-- fickling: flags every benign GGUF as malicious (24/24 FP)
+- `ggufref` oracle (reference parser): detects 7/7 GGUF attacks (6 malformed-header families + Jinja2 SSTI CVE-2024-34359) with 0 FP on 24 real benign GGUFs — the **dedicated oracle contribution**.
+- Pickle-oriented panel is not applicable to GGUF: modelscan 0.8.8 misses all 7 (0/7, no GGUF rules); fickling flags 24/24 benign as malicious (catastrophic FP). GGUF results demonstrate format complexity, not scanner robustness.
 
 ---
 
