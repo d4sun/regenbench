@@ -2,6 +2,16 @@
 
 Backend: `docker`; seed subset: `ci/corpus`.
 
+## 4b. LoadTimeMonitor
+
+| candidate | verdict | suspicious syscalls | files created | network |
+| :--- | :---: | :---: | :---: | :---: |
+| gadget | suspicious | 3 | 0 | False |
+| overwritten | suspicious | 1 | 0 | False |
+| external | suspicious | 1 | 0 | False |
+| indirect_chain | suspicious | 3 | 0 | False |
+| pypi_injected | suspicious | 3 | 0 | False |
+
 ## 1. Generated candidates (one per attack family)
 
 - **gadget** -> `inject_payload_into_torch.pt`
@@ -14,7 +24,7 @@ Backend: `docker`; seed subset: `ci/corpus`.
 
 | candidate | picklescan | modelscan | fickling | confirmed bypass |
 | :--- |:---: | :---: | :---: | :---: |
-| gadget | malicious | malicious | benign | False |
+| gadget | benign | benign | benign | True |
 | overwritten | malicious | malicious | benign | False |
 | external | malicious | benign | benign | False |
 | indirect_chain | malicious | malicious | benign | False |
@@ -34,7 +44,7 @@ Backend: `docker`; seed subset: `ci/corpus`.
 
 | candidate | verdict | reason |
 | :--- | :---: | :--- |
-| gadget | quarantined | Dangerous callables or malicious scanner verdicts: [('subprocess', 'Popen')] |
+| gadget | quarantined | Dangerous callables or malicious scanner verdicts: [('IPython.utils.process', 'system')] |
 | overwritten | quarantined | Dangerous callables or malicious scanner verdicts: [('builtins', 'exec')] |
 | external | quarantined | Dangerous callables or malicious scanner verdicts: [('numpy.testing._private.utils', 'runstring')] |
 | indirect_chain | quarantined | Dangerous callables or malicious scanner verdicts: [('builtins', 'getattr'), ('builtins', '__import__')] |
@@ -53,18 +63,11 @@ Backend: `docker`; seed subset: `ci/corpus`.
 | gguf_malformed_version_zero.gguf | malicious | benign |
 | benign-synth.gguf | benign | benign |
 
-## 5b. Load-time monitoring
-
-The unified demo now runs `LoadTimeMonitor` against each Torch candidate inside
-the base container. It records `execve`, file-open, and network syscalls plus
-files created during loading. Runtime or image absence is reported explicitly
-in `demo-artifacts/demo-report.json`, never as a benign result.
-
 ## 6. Baseline comparison
 
 ShadowPickle baseline (reproduced by `scripts/run_shadowpickle_baseline.py`): 10/40 valid candidates bypassed (25.0%). Fuzzing campaigns: 446/945 (47.2%).
 
-In this demo subset, 1/5 generated candidates evaded the full panel while still executing (ExecutionOracle-confirmed). See `docs/evaluation-report.md` for the scaled campaign numbers and `docs/related-works-comparison.md` for how these compare to ShadowPickle / PickleFuzzer / DynaHug.
+In this demo subset, 2/5 generated candidates evaded the full panel while still executing (ExecutionOracle-confirmed). See `docs/evaluation-report.md` for the scaled campaign numbers and `docs/related-works-comparison.md` for how these compare to ShadowPickle / PickleFuzzer / DynaHug.
 
 ## Note on safety
 

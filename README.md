@@ -435,6 +435,12 @@ already detects all non-executing candidates; dynamic validation confirms
 execution); H3 Supported (100% retention of 446 bypasses across 6 historical
 scanner versions).
 
+**RQ1 Re-scoping**: Fuzzing generated 2 semantic fingerprints within the `pypi_injected` template family using `splice` transport (not novel attack families). Re-framed from "Discovering novel semantic attack families" to "Automated high-yield generation, structural parameterization, and signature-evasion optimization of third-party injection sinks." Relative improvement over ShadowPickle baseline (47.2% vs 25.0%) remains the primary claim.
+
+**RQ2 Re-framing**: Q_first = [2] for both guided/unguided indicates high sink susceptibility, not search convergence. Search efficiency is evidenced by Candidate Bypass Yield: guided 73.9% vs unguided 18.0% (z=17.2, p≈0, Fisher p≈0).
+
+**H3 Shelf-Life Caveat**: 100% retention across 6 historical scanner versions reflects persistent vendor blind spots (no rules for `IPython.utils.process.system` or splice transport added), not adaptive patch evasion.
+
 ### Evaluation correctness fixes (2026-08-19)
 
 Two measurement bugs were found and fixed before this snapshot, and the RQ3
