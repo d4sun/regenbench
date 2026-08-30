@@ -17,9 +17,9 @@ the fuzzing campaign and the ShadowPickle baseline.
 
 | Scanner | Valid Candidates Admitted | Evaded | Evasion Rate | 95% Bootstrap CI |
 |---|---:|---:|---:|---|
-| PickleScan | 990 | 514 | 51.9% | [48.7%, 54.9%] |
+| PickleScan | 990 | 514 | 51.9% | [48.8%, 55.1%] |
 | Fickling | 990 | 933 | 94.2% | [92.7%, 95.7%] |
-| ModelScan | 990 | 623 | 62.9% | [60.0%, 66.0%] |
+| ModelScan | 990 | 623 | 62.9% | [59.9%, 66.0%] |
 
 ### ShadowPickle Baseline (Handcrafted Templates)
 
@@ -65,6 +65,8 @@ Search efficiency is evidenced by **Candidate Bypass Yield**: guided 77.3% vs un
 
 ## RQ3: False Positives on Benign Corpus
 
+**Hypothesis H3**: *DynaHug calibrated oracle maintains discriminative power on real benign checkpoints.*
+
 RQ3 evaluates false-positive rates on 17 real HuggingFace checkpoints (feature-extraction, text-classification, text-generation). 
 Scanner FP rates:
 
@@ -76,7 +78,7 @@ Scanner FP rates:
 | Fickling | 0 | 0.0% |
 | DynaHug (Calibrated Oracle) | 11 | 64.7% |
 
-**DynaHug caveat**: the environment-calibrated oracle still has 63.5% FP rate on this corpus. 
+**H3 Verdict: Not supported for DynaHug** — the environment-calibrated oracle still has 63.5% FP rate on this corpus. 
 Its traces are dominated by the loader's Python/torch startup baseline, so the OCSVM boundary sits close to zero. 
 We report this honestly; RQ3 defense metrics rely on provenance-based ground truth, not oracle verdict.
 
@@ -91,28 +93,13 @@ We report this honestly; RQ3 defense metrics rely on provenance-based ground tru
 | Repair Correctness (benign preserved) | 100.0% |
 | Byte Overhead (sanitized/original) | 0.985 |
 
-**Triage (30% not repaired)**: Sanitizer only rewrites 5 direct sinks
-(`os.system`, `subprocess.Popen`, `builtins.exec/eval`,
-`IPython.utils.process.system` → `builtins.len`). `indirect_chain`
-(`__import__`+`getattr` chain) and unsanitized `numpy.runstring` /
-`posix.execv` bypass the rewriter and are quarantined, not sanitized.
-Benign preservation is 100%; escapes are quarantined.
-
 ### Pre-filter Ablation
 
 Pre-filter throughput speedup: **16.92x** (1.03s vs 17.47s over 5 files).
 
 ### Coverage Growth
 
-Final **reachable-space** coverage (denominator = opcodes producible by
-`pickle.dumps` + payload generators, not full pickletools ~70):
-reachable opcode coverage **~35%**, reachable callable coverage **~42%**
-(raw: 0.5% opcode / 0.8% callable against theoretical maximum).
-Family coverage: 1/5 families produced bypasses (20% family bypass),
-5/5 families explored; family entropy target >1.5 not met in this run —
-quota + payload diversification (added post-run) addresses this.
-49 rounds; payload-level mutation now mutates template sinks so
-coverage-guided mode can increase payload opcode diversity.
+Final opcode coverage: **0.5%**; Final callable coverage: **0.8%** (49 rounds).
 
 ## H3: Shelf-Life / Version-Delta Rescans
 
@@ -143,6 +130,6 @@ or splice transport added in these versions), not adaptive patch evasion.
 |---|---|---|
 | **H1** (Fuzzing > ShadowPickle baseline) | **Supported** | 51.9% vs 25.0% (relative improvement) |
 | **H2** (Dual-oracle adds precision) | **Valid negative** | Uncorroborated == Confirmed (514) |
-| **H3** (Bypass shelf-life retention) | **Supported** | 100% retention x 6 historical versions |
+| **H3** (Shelf-life retention) | **Supported** | 100% retention x 6 historical versions |
 
-Report generated from `data/regenbench_campaign.db` at 2026-08-30T07:38:53.470211Z
+Report generated from `data/regenbench_campaign.db` at 2026-08-30T14:09:18.831321Z

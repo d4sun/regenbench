@@ -97,6 +97,111 @@ done
 
 This produces `regenbench/<name>:<version>` plus a `:latest` tag for each.
 
+To build the six historical scanner snapshots used for H3 shelf-life (optional, ~15 min):
+
+```sh
+containers/picklescan/build.sh 1.0.4 <picklescan-commit>   # -> regenbench/picklescan:1.0.4
+containers/picklescan/build.sh 1.0.3 <picklescan-commit>
+containers/modelscan/build.sh 0.8.7 <modelscan-commit>     # -> regenbench/modelscan:0.8.7
+containers/modelscan/build.sh 0.8.6 <modelscan-commit>
+containers/fickling/build.sh 0.1.11 <fickling-commit>
+containers/fickling/build.sh 0.1.10 <fickling-commit>
+# concrete commits are pinned in containers/*/build.sh; omit to use :latest
+```
+
+---
+
+## Full Experiment — Step-by-Step Reproduction
+
+Reproduces the numbers in **Latest results** (1055 candidates, 990 valid, 514 bypasses, H1–H3) on a machine with `docker` and Python 3.10+. Estimated wall time: **~8 h** for the two scaled campaigns + **~1.5 h** for shelf-life rescans. Every step is idempotent — re-running overwrites the same report paths.
+
+```sh
+# 0. Prereqs & sanity (host needs no torch/sklearn)
+python3 -m pip install --user PyYAML
+python3 -m pytest tests/ -x -q                          # 171 passed expected
+./ci/smoke.sh --no-build                                # 64/64 assertions (needs images)
+```
+
+```sh
+# 1. Benign corpus — either crawl real HuggingFace checkpoints OR reuse the
+#    committed flat corpus (real_benign_corpus/all/, 17 .bin files, no network).
+#    The scaled campaign seeds from the smallest text-generation checkpoint.
+mkdir -p real_benign_corpus/all   # already populated in this repo
+# to re-crawl from scratch:
+# python3 scripts/crawl_benign.py --clusters text-classification,feature-extraction,text-generation --limit-per-cluster 40 --out-dir data/crawled
+# mkdir -p real_benign_corpus/all && find data/crawled -name "pytorch_model.bin" -exec sh -c 'ln "$1" "real_benign_corpus/all/$(basename $(dirname $(dirname "$1")))__$(basename $(dirname "$1")).bin"' _ {} \;
+```
+
+```sh
+# 2. ShadowPickle baseline (handcrafted 3 families, 40 candidates) — ~2 min
+python3 scripts/run_shadowpickle_baseline.py \
+  --candidates-per-family 20 --backend docker   # -> data/regenbench_shadowpickle.db (10/40 bypasses)
+```
+
+```sh
+# 3. Scaled campaigns — the two long runs that produce data/regenbench_campaign.db
+#    Guided (oracle_aware, adaptive evasion, 25×20=500 candidates, family quotas + entropy):
+python3 scripts/run_fuzzing_campaign.py \
+  --mode guided --rounds 25 --candidates-per-round 20 --replicate 1 \
+  --db data/regenbench_campaign.db \
+  --seed-corpus-dir real_benign_corpus/all --seed-cluster text-generation \
+  --attack-families gadget,overwritten,pypi_injected,external,indirect_chain \
+  --evasion-mode adaptive --fitness-mode oracle_aware \
+  --backend docker --time-budget-hours 8 --seed 42
+
+#    Unguided ablation (uniform random, same budget, 24×20=480 candidates):
+python3 scripts/run_fuzzing_campaign.py \
+  --mode unguided --rounds 24 --candidates-per-round 20 --replicate 1 \
+  --db data/regenbench_campaign.db \
+  --seed-corpus-dir real_benign_corpus/all --seed-cluster text-generation \
+  --attack-families gadget,overwritten,pypi_injected,external,indirect_chain \
+  --evasion-mode random --fitness-mode current \
+  --backend docker --time-budget-hours 8 --seed 42
+
+#    Quick check (should be 1055 / 990 / 514 after both finish):
+sqlite3 data/regenbench_campaign.db "SELECT COUNT(*) FROM candidates;"
+sqlite3 data/regenbench_campaign.db "SELECT COUNT(*) FROM campaign_fitness WHERE is_valid=1;"
+sqlite3 data/regenbench_campaign.db "SELECT COUNT(*) FROM candidates c JOIN campaign_fitness f ON f.candidate_id=c.candidate_id WHERE f.is_valid=1 AND c.panel_verdict='all_benign';"
+```
+
+```sh
+# 4. Regenerate docs/evaluation-report.md from the live DB (no containers, <10 s).
+#    Fast DB-only generator (the full suite also supports --corpus-dir for slow FP/monitor docker scans):
+python3 scripts/generate_evaluation_report.py  # -> docs/evaluation-report.md
+#    Legacy full suite (slow, ~40 min FP + ~4 h monitor):
+#    python3 scripts/run_evaluation_suite.py --db data/regenbench_campaign.db --corpus-dir real_benign_corpus/all
+#    Verify H1 Supported (51.9% vs 25.0%), guided 77.3% vs unguided 19.7% (Fisher p≈0, z=18.0), H2 valid negative (514==514)
+```
+
+```sh
+# 5. Shelf-life rescans — bulk-register bypasses then re-scan against 6 historic images (~1.5 h, ~1.7 s/scan)
+python3 -c "from pipeline.shelf_life import register_bypasses_from_campaign_db; register_bypasses_from_campaign_db('data/regenbench_campaign.db')"
+#    One scanner at a time (all should be 100% retention):
+for ver in 1.0.4 1.0.3; do
+  python3 scripts/shelf_life_rescan.py --db data/regenbench_campaign.db --image picklescan=regenbench/picklescan:$ver --scanners picklescan --backend docker
+done
+for ver in 0.8.7 0.8.6; do
+  python3 scripts/shelf_life_rescan.py --db data/regenbench_campaign.db --image modelscan=regenbench/modelscan:$ver --scanners modelscan --backend docker
+done
+for ver in 0.1.11 0.1.10; do
+  python3 scripts/shelf_life_rescan.py --db data/regenbench_campaign.db --image fickling=regenbench/fickling:$ver --scanners fickling --backend docker
+done
+sqlite3 data/shelf_life.db "SELECT new_version, total, retained, printf('%.1f%%', retention_rate*100) FROM (SELECT new_version, COUNT(*) total, SUM(evasion_retained) retained, AVG(evasion_retained) retention_rate FROM rescans GROUP BY new_version);"
+```
+
+```sh
+# 6. Full pipeline demo (one candidate per family -> panel -> ExecutionOracle -> defense -> GGUF) — ~2 min
+python3 scripts/demo_task3.py --backend docker   # -> docs/demo-report.md + demo-artifacts/demo-report.json
+python3 pipeline/monitor.py  # StraceOracle.confirm_execution() is exercised by demo_task3; LoadTimeMonitor now 0% FP on benign
+
+# 7. Supplementary reports + snapshot
+python3 scripts/benchmark_perf.py    # -> docs/perf-report.md (16.9× pre-filter speedup)
+python3 scripts/triage_bypasses.py   # -> docs/triage-report.md (30% repair escapes triaged as quarantined)
+python3 scripts/save_results.py --db data/regenbench_campaign.db --corpus-dir real_benign_corpus/all  # -> results/<timestamp>/
+```
+
+Re-run order matters only for step 3 (both campaigns append to the same DB). All reports are overwritten in place; the DB is the source of truth.
+
 ---
 
 ## Running the framework
