@@ -24,7 +24,7 @@ Backend: `docker`; seed subset: `ci/corpus`.
 
 | candidate | picklescan | modelscan | fickling | confirmed bypass |
 | :--- |:---: | :---: | :---: | :---: |
-| gadget | benign | benign | benign | True |
+| gadget | malicious | malicious | benign | False |
 | overwritten | malicious | malicious | benign | False |
 | external | malicious | benign | benign | False |
 | indirect_chain | malicious | malicious | benign | False |
@@ -44,7 +44,7 @@ Backend: `docker`; seed subset: `ci/corpus`.
 
 | candidate | verdict | reason |
 | :--- | :---: | :--- |
-| gadget | quarantined | Dangerous callables or malicious scanner verdicts: [('IPython.utils.process', 'system')] |
+| gadget | quarantined | Dangerous callables or malicious scanner verdicts: [('subprocess', 'getstatusoutput')] |
 | overwritten | quarantined | Dangerous callables or malicious scanner verdicts: [('builtins', 'exec')] |
 | external | quarantined | Dangerous callables or malicious scanner verdicts: [('numpy.testing._private.utils', 'runstring')] |
 | indirect_chain | quarantined | Dangerous callables or malicious scanner verdicts: [('builtins', 'getattr'), ('builtins', '__import__')] |
@@ -67,7 +67,7 @@ Backend: `docker`; seed subset: `ci/corpus`.
 
 ShadowPickle baseline (reproduced by `scripts/run_shadowpickle_baseline.py`): 10/40 valid candidates bypassed (25.0%). Fuzzing campaigns: 446/945 (47.2%).
 
-In this demo subset, 2/5 generated candidates evaded the full panel while still executing (ExecutionOracle-confirmed). See `docs/evaluation-report.md` for the scaled campaign numbers and `docs/related-works-comparison.md` for how these compare to ShadowPickle / PickleFuzzer / DynaHug.
+In this demo subset, 1/5 generated candidates evaded the full panel while still executing (ExecutionOracle-confirmed). See `docs/evaluation-report.md` for the scaled campaign numbers and `docs/related-works-comparison.md` for how these compare to ShadowPickle / PickleFuzzer / DynaHug.
 
 ## Note on safety
 

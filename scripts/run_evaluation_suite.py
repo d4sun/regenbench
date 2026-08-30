@@ -59,6 +59,72 @@ def compute_defense_metrics(repair_rows: list[dict], monitor_rows: list[dict] | 
     return metrics
 
 
+def collect_monitor_metrics(db_path: str, benign_corpus_dir: str) -> dict:
+    """Collect LoadTimeMonitor detection and false-alarm rates (T7.5 extension).
+
+    Runs the monitor on confirmed bypass artifacts and a sample of benign
+    corpus, then returns detection_rate and false_alarm_rate.
+    """
+    import os
+    from pipeline.monitor import LoadTimeMonitor
+
+    db = sqlite3.connect(db_path)
+    bypass_rows = db.execute(
+        """
+        SELECT c.candidate_id, c.filepath
+        FROM candidates c
+        JOIN campaign_fitness f ON f.candidate_id = c.candidate_id
+        WHERE f.is_valid = 1
+          AND EXISTS (
+              SELECT 1 FROM panel_results p
+              WHERE p.candidate_id = c.candidate_id AND p.verdict = 'benign'
+          )
+          AND NOT EXISTS (
+              SELECT 1 FROM panel_results p
+              WHERE p.candidate_id = c.candidate_id
+                AND p.verdict IN ('malicious', 'error')
+          )
+        """
+    ).fetchall()
+
+    monitor = LoadTimeMonitor()
+    det = 0
+    for cid, path in bypass_rows:
+        if not os.path.exists(path):
+            continue
+        try:
+            r = monitor.monitor_load(path)
+            if r.get("verdict") == "suspicious":
+                det += 1
+        except Exception:
+            pass
+
+    # Benign false alarms
+    benign_files = []
+    if os.path.isdir(benign_corpus_dir):
+        benign_files = sorted([
+            os.path.join(benign_corpus_dir, f)
+            for f in os.listdir(benign_corpus_dir)
+            if f.endswith((".pt", ".bin", ".pth"))
+        ])[:5]
+
+    fp = 0
+    for path in benign_files:
+        try:
+            r = monitor.monitor_load(path)
+            if r.get("verdict") == "suspicious":
+                fp += 1
+        except Exception:
+            pass
+
+    return {
+        "monitor_detection_rate": det / len(bypass_rows) if bypass_rows else None,
+        "monitor_false_alarm_rate": fp / len(benign_files) if benign_files else None,
+        "bypasses_tested": len(bypass_rows),
+        "benign_tested": len(benign_files),
+    }
+
+
 def collect_repair_metrics(malicious_dir: str, benign_dir: str, output_dir: str) -> tuple[dict, list[dict]]:
     """Run static repair over a small pickle/Torch corpus without loading it on host."""
     from pipeline.repair import ModelRepair
@@ -1052,6 +1118,14 @@ def main(argv: list[str] | None = None) -> int:
         defense_metrics, _ = collect_repair_metrics(
             "ci/corpus/pkl/malicious", "ci/corpus/pkl/benign", args.defense_output)
         print(f"Defense repair metrics: {defense_metrics}")
+
+    # Collect monitor metrics separately (works with or without --defense)
+    monitor_metrics = collect_monitor_metrics(args.db, args.corpus_dir)
+    if defense_metrics is None:
+        defense_metrics = monitor_metrics
+    else:
+        defense_metrics.update(monitor_metrics)
+    print(f"Monitor metrics: {monitor_metrics}")
 
     scanners = ["picklescan", "fickling", "modelscan", "modeltracer", "dynahug"]
     fp_sample = 20 if args.quick else args.fp_sample

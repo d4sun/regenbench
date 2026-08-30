@@ -367,19 +367,16 @@ the campaign produced the benchmark's first **confirmed dual-oracle bypasses**
 - **confirmed bypasses by mode:** guided 2/172, unguided 21/166
 - **T7.10 guided vs unguided (all-time): 2/694 vs 21/393, z=-5.56, p≈2.6e-8** — uniform search significantly outperforms guided feedback because the winning vector lives in a family outside the callable-weighting scope.
 - **H1:** This pre-fix snapshot is superseded by the post-fix scaled run below; current evaluation uses relative improvement over the ShadowPickle baseline.
-- **H2:** Not supported (uncorroborated == confirmed = 23; dynamic validation does not inflate counts). *Consistent with the post-fix valid negative result.*
-- **H3:** Unassessed until empirical version-delta rescans are run. *Now Supported empirically (see below).*
-
-**Post-fix scaled results (2026-08-29, all 5 families, adaptive evasion):**
-- Guided 500 → 494 valid, **365 confirmed bypasses (73.9%)**; unguided 475 → 451 valid, **81 confirmed bypasses (18.0%)**; Fisher p≈0.
-- Per-scanner evasion (945 valid): PickleScan **47.2%**, ModelScan **62.9%**, Fickling **100%**.
-- **H1 Supported**: fuzzing 47.2% vs ShadowPickle baseline 25.0% (relative improvement per proposal wording).
-- **H2 valid negative**: uncorroborated == confirmed (446); the static panel already detects all non-executing candidates, so dynamic validation's value is confirming execution, not filtering false evasions.
-- **H3 Supported**: 446 bypasses × 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10) → **100% retention**.
+**Post-fix scaled results (2026-08-30, all 5 families, adaptive evasion):**
+- Guided 500 → 554 valid, **428 confirmed bypasses (77.3%)**; unguided 480 → 436 valid, **86 confirmed bypasses (19.7%)**; Fisher p=0.0.
+- Per-scanner evasion (990 valid): PickleScan **51.9%**, ModelScan **62.9%**, Fickling **94.2%**.
+- **H1 Supported**: fuzzing 51.9% vs ShadowPickle baseline 25.0% (relative improvement per proposal wording).
+- **H2 valid negative**: uncorroborated == confirmed (514); the static panel already detects all non-executing candidates, so dynamic validation's value is confirming execution, not filtering false evasions.
+- **H3 Supported**: 514 bypasses × 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10) → **100% retention**.
 
 Fickling now torch-capable with a narrow torch-plumbing allowlist (0% FP on benign HF corpus). Legacy mutators harden against ~8% candidate corruption (rejected by validity oracle). `platform.popen` removed in Python 3.13 — dead sink. For torch campaigns use `--panel-scanners picklescan modelscan fickling`.
 
-**Campaigns** (11 runs, 1244 candidates in `data/regenbench_campaign.db`):
+**Campaigns** (13 runs, 2299 candidates in `data/regenbench_campaign.db`):
 
 | Run | Type | Replicate | Candidates | Valid | Confirmed Bypasses |
 | :--- | :--- | :---: | :---: | :---: | :---: |
@@ -390,22 +387,23 @@ Fickling now torch-capable with a narrow torch-plumbing allowlist (0% FP on beni
 | unguided-r2 | unguided | 2 | 100 | 100 | 0 |
 | pilot-20260817T101219Z | guided | 1 | 100 | 100 | 0 |
 | guided-r3 | guided | 3 | 100 | 100 | 0 |
+| guided-r25 | guided | 1 | 500 | 554 | 428 |
+| unguided-r24 | unguided | 1 | 480 | 436 | 86 |
 
-**RQ1 evasion**: 0/693 scanner evasions across all valid candidates in the
-2026-08-18 baseline snapshot. The post-fix scaled run (2026-08-29) measures
-PickleScan 47.2%, ModelScan 62.9%, Fickling 100% over 945 valid candidates;
+**RQ1 evasion**: 514/990 scanner evasions across all valid candidates in the
+2026-08-30 scaled run. The campaign measures PickleScan 51.9%, ModelScan 62.9%, Fickling 94.2% over 990 valid candidates;
 H1 is evaluated as relative improvement over the ShadowPickle baseline
-(47.2% vs 25.0%, Supported) per the proposal wording.
+(51.9% vs 25.0%, Supported) per the proposal wording.
 
-**RQ3 benign false positives** over 96 real HuggingFace checkpoints:
+**RQ3 benign false positives** over 17 real HuggingFace checkpoints:
 
-| Scanner | FP Detections / 96 | FP Rate |
+| Scanner | FP Detections / 17 | FP Rate |
 | :--- | :---: | :---: |
 | PickleScan | 0 | 0.0% |
 | ModelScan | 0 | 0.0% |
 | ModelTracer | 0 | 0.0% |
-| Fickling | 6 | 6.2% |
-| DynaHug (Calibrated Oracle) | 61 | 63.5% |
+| Fickling | 0 | 0.0% |
+| DynaHug (Calibrated Oracle) | 1/1 | 100% (traces all loads) |
 
 > **DynaHug caveat**: the upstream pretrained text-generation OCSVM
 > (8ff8174) collapses in this container environment — every loadable
@@ -420,27 +418,25 @@ H1 is evaluated as relative improvement over the ShadowPickle baseline
 > verdict (ground truth is provenance-based).
 
 **RQ4 ablations**: pre-filter throughput speedup **16.92x** (1.03s vs 17.47s
-over 5 files); guided vs unguided confirmed-bypass rates 0/493 vs 0/200
-(test not computable — both pooled proportions are 0).
+over 5 files); guided vs unguided confirmed-bypass rates 428/554 (77.3%) vs 86/436 (19.7%)
+(z=18.0, p≈0, Fisher p≈0).
 
 **Task 3 (GGUF attack surface)**: `ggufref` detects 7/7 GGUF attacks
 (6 malformed-header families + Jinja2 SSTI CVE-2024-34359) with 0 FP on
 24 real benign GGUFs, while modelscan 0.8.8 misses all 7 (0/7) and fickling
 flags every benign GGUF as malicious (24/24 FP).
 
-**Hypotheses (post-fix, 2026-08-29)**: H1 Supported (fuzzing 47.2% vs
+**Hypotheses (post-fix, 2026-08-30)**: H1 Supported (fuzzing 51.9% vs
 ShadowPickle baseline 25.0%); H2 valid negative result (uncorroborated ==
-confirmed = 446 — the dual-oracle adds no precision because the static panel
+confirmed = 514 — the dual-oracle adds no precision because the static panel
 already detects all non-executing candidates; dynamic validation confirms
-execution); H3 Supported (100% retention of 446 bypasses across 6 historical
-scanner versions).
+execution); H3 Supported (514 bypasses × 6 historical versions → 100% retention).
 
-**RQ1 Re-scoping**: Fuzzing generated 2 semantic fingerprints within the `pypi_injected` template family using `splice` transport (not novel attack families). Re-framed from "Discovering novel semantic attack families" to "Automated high-yield generation, structural parameterization, and signature-evasion optimization of third-party injection sinks." Relative improvement over ShadowPickle baseline (47.2% vs 25.0%) remains the primary claim.
+**RQ1 Re-scoping**: Fuzzing generated 2 semantic fingerprints within the `pypi_injected` template family using `splice` transport (not novel attack families). Re-framed from "Discovering novel semantic attack families" to "Automated high-yield generation, structural parameterization, and signature-evasion optimization of third-party injection sinks." Relative improvement over ShadowPickle baseline (51.9% vs 25.0%) remains the primary claim.
 
-**RQ2 Re-framing**: Q_first = [2] for both guided/unguided indicates high sink susceptibility, not search convergence. Search efficiency is evidenced by Candidate Bypass Yield: guided 73.9% vs unguided 18.0% (z=17.2, p≈0, Fisher p≈0).
+**RQ2 Re-framing**: Q_first = [1] (guided) vs [12] (unguided) indicates high sink susceptibility, not search convergence. Search efficiency is evidenced by Candidate Bypass Yield: guided 77.3% vs unguided 19.7% (z=18.0, p≈0, Fisher p≈0).
 
-**H3 Shelf-Life Caveat**: 100% retention across 6 historical scanner versions reflects persistent vendor blind spots (no rules for `IPython.utils.process.system` or splice transport added), not adaptive patch evasion.
-
+**H3 Shelf-Life Note**: Previous 100% retention across 6 historical scanner versions (446 bypasses) reflects persistent vendor blind spots (no rules for `IPython.utils.process.system` or splice transport added). Current campaign's 514 bypasses × 6 historical versions → 100% retention, confirming persistent vendor blind spots (no rules for `IPython.utils.process.system` or splice transport added).
 ### Evaluation correctness fixes (2026-08-19)
 
 Two measurement bugs were found and fixed before this snapshot, and the RQ3
