@@ -132,4 +132,4 @@ or splice transport added in these versions), not adaptive patch evasion.
 | **H2** (Dual-oracle adds precision) | **Valid negative** | Uncorroborated == Confirmed (514) |
 | **H3** (Shelf-life retention) | **Supported** | 100% retention x 6 historical versions |
 
-Report generated from `data/regenbench_campaign.db` at 2026-08-30T14:09:18.831321Z
+Report generated from `data/regenbench_campaign.db` at 2026-08-30T14:34:17.680310Z
