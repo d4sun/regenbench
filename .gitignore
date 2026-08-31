@@ -39,3 +39,4 @@ data/*.checkpoint.json
 # generated malicious candidates and GGUF artifacts)
 demo-artifacts/
 real_benign_corpus_v2/
+results/
