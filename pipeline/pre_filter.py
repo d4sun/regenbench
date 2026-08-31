@@ -1,6 +1,13 @@
 """T4.1 — Static Pre-Filter Admission Gate.
 
-Filters out benign/malformed candidates before dynamic container execution.
+Filters out benign candidates before dynamic container execution. Used by
+`pipeline/runner.py:192` to gate the DynaHug oracle: if ``is_admitted`` is
+False, the oracle is skipped and a synthetic ``benign`` verdict is logged.
+For malformed/unparseable bytes this function is **fail-closed** (returns
+True) so the artifact still reaches the sandboxed oracle — see open question
+in ``CLAUDE.md``: the fail-open downgrade in the runner (synthetic benign)
+can blunt confirmation for obfuscated candidates that hide imports in
+nested payloads; treat as Phase-2 design note (see ``docs/related-works-comparison.md``).
 """
 
 from __future__ import annotations

@@ -124,6 +124,9 @@ class Runner:
         for name, meta in self.spec.items():
             if meta.get("mount_only_pt") and not self.config.oracle:
                 continue
+            # P5.2: format-aware routing — panel scanners now declare exts
+            if "exts" in meta and ext not in meta["exts"]:
+                continue
             if name == "dynahug":
                 if not self.config.oracle:
                     continue

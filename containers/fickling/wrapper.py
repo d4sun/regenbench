@@ -120,6 +120,41 @@ def main() -> int:
             "raw_output": f"Path {target} is a directory, not a pickle file",
         })
 
+    # P5.1: GGUF format pre-filter — fickling is pickle-only, GGUF bytes as pickle
+    # would be 100% FP (24/24 benign). Check magic and return unsupported-format.
+    try:
+        with open(target, "rb") as _f:
+            _gguf_magic = _f.read(4)
+        if _gguf_magic == b"GGUF":
+            return emit({
+                "scanner": "fickling",
+                "version": VERSION,
+                "commit": COMMIT,
+                "target": target,
+                "verdict": "error",
+                "exit_code": 2,
+                "findings": [{"rule": "unsupported-format:gguf"}],
+                "matched_rules": ["unsupported-format:gguf"],
+                "summary": {"scanned": 0, "dangerous": 0, "suspicious": 0},
+                "raw_output": "unsupported format: gguf for pickle scanner (magic GGUF)",
+            })
+        # Also check extension for truncated header case (bad_magic.gguf with bad magic but .gguf ext)
+        if target.lower().endswith(".gguf"):
+            return emit({
+                "scanner": "fickling",
+                "version": VERSION,
+                "commit": COMMIT,
+                "target": target,
+                "verdict": "error",
+                "exit_code": 2,
+                "findings": [{"rule": "unsupported-format:gguf"}],
+                "matched_rules": ["unsupported-format:gguf"],
+                "summary": {"scanned": 0, "dangerous": 0, "suspicious": 0},
+                "raw_output": "unsupported format: gguf extension for pickle scanner",
+            })
+    except OSError:
+        pass
+
     if os.path.exists(REPORT_FILE):
         os.remove(REPORT_FILE)
 

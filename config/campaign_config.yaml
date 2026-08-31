@@ -43,8 +43,11 @@ oracle_validation:
 campaign:
   # Real task-cluster seed (text-generation) rather than the synthetic toy
   # checkpoint, so the bounded pilot matches the Phase-1 methodology
-  # ("benign Hugging Face models, one task cluster").
-  base_checkpoint: "real_benign_corpus/all/text-generation__HuggingFaceM4_tiny-random-LlamaForCausalLM.bin"
+  # ("benign Hugging Face models, one task cluster"). The runner's
+  # --seed-corpus-dir mode (used by the scaled campaigns) auto-picks the
+  # smallest matching file, so this path is only the pilot default.
+  # Lives in real_benign_corpus/all/; re-crawl or link if missing.
+  base_checkpoint: "real_benign_corpus/all/text-generation__Maykeye_TinyLLama-v0.bin"
   rounds: 5
   candidates_per_round: 20
   backend: "docker"
@@ -52,6 +55,12 @@ campaign:
   timeout_seconds: 120
   concurrency_limit: 2
   time_budget_hours: 24
+  # Family diversity: stratified sampling to test RQ1 novel families claim.
+  # Default 15% per family per round (e.g. 3/20); max 40% to prevent collapse
+  # into pypi_injected+splice local optimum. See pipeline/feedback.py.
+  family_quota_min_pct: 0.15
+  family_quota_max_frac: 0.40
+  entropy_target: 1.5
   # Static panel scanners; dynahug is appended as the behavioral oracle.
   # modeltracer excluded: cannot analyze torch artifacts (strace-based).
   panel_scanners:

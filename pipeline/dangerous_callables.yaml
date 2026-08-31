@@ -156,3 +156,99 @@ dangerous_callables:
     category: "command_execution"
     description: "Replaces the running process image with a new executable."
     genuine_code_exec: true
+
+  - module: "builtins"
+    name: "compile"
+    category: "runtime_compile"
+    description: "Compiles Python source string to code object; REDUCE with (source, '<string>', 'exec') yields executable code object."
+    genuine_code_exec: true
+
+  - module: "types"
+    name: "CodeType"
+    category: "runtime_compile"
+    description: "Low-level code object constructor; final stage of compile→CodeType chain for arbitrary code execution."
+    genuine_code_exec: true
+
+  - module: "types"
+    name: "FunctionType"
+    category: "runtime_compile"
+    description: "Constructs function from CodeType; wraps CodeType for direct invocation via REDUCE."
+    genuine_code_exec: true
+
+  - module: "ctypes"
+    name: "CDLL"
+    category: "constructor"
+    description: "Constructor-based sink: loads shared library via __init__ (e.g. CDLL('libc.so.6')); bypasses top-level GLOBAL name scanners."
+    genuine_code_exec: true
+
+  - module: "urllib.request"
+    name: "urlopen"
+    category: "constructor"
+    description: "Constructor/network sink: opens URL; payload can be file:// or http:// with attacker-controlled handler."
+    genuine_code_exec: true
+
+  - module: "http.client"
+    name: "HTTPConnection"
+    category: "constructor"
+    description: "Constructor sink: instantiating HTTPConnection triggers socket creation; usable as nested REDUCE target."
+    genuine_code_exec: true
+
+  - module: "asyncio"
+    name: "create_subprocess_exec"
+    category: "async_injection"
+    description: "Async subprocess creation; REDUCE with (prog, args) spawns shell without subprocess.Popen string."
+    genuine_code_exec: true
+
+  - module: "asyncio"
+    name: "create_subprocess_shell"
+    category: "async_injection"
+    description: "Async shell subprocess; equivalent to system() in async context, evades sync-only scanners."
+    genuine_code_exec: true
+
+  - module: "multiprocessing"
+    name: "Process"
+    category: "async_injection"
+    description: "Constructor sink: Process(target=callable) spawns new process; payload via target arg."
+    genuine_code_exec: true
+
+  - module: "socket"
+    name: "socket"
+    category: "constructor"
+    description: "Constructor/network sink: socket() creation for exfiltration; chained with connect/sendto."
+    genuine_code_exec: true
+
+  - module: "builtins"
+    name: "__build_class__"
+    category: "descriptor_abuse"
+    description: "Descriptor abuse: __build_class__(exec, 'X', ()) triggers metaclass code execution."
+    genuine_code_exec: true
+
+  - module: "builtins"
+    name: "property"
+    category: "descriptor_abuse"
+    description: "Descriptor abuse: property(fget=eval) triggers via attribute access in BUILD."
+    genuine_code_exec: true
+
+  - module: "builtins"
+    name: "classmethod"
+    category: "descriptor_abuse"
+    description: "Descriptor abuse: classmethod(eval) wrapping for indirection via descriptor protocol."
+    genuine_code_exec: true
+
+  - module: "builtins"
+    name: "staticmethod"
+    category: "descriptor_abuse"
+    description: "Descriptor abuse: staticmethod wrapper for callable indirection."
+    genuine_code_exec: true
+
+  - module: "os"
+    name: "execv"
+    category: "command_execution"
+    description: "OS execv variant (POSIX); replaces current process image."
+    genuine_code_exec: true
+
+  - module: "os"
+    name: "execl"
+    category: "command_execution"
+    description: "OS execl variant; vararg exec, scanner evasion via execl vs execv."
+    genuine_code_exec: true

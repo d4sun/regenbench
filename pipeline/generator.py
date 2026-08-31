@@ -353,6 +353,9 @@ class CandidateGenerator:
         injection_transport: str | None = None,
         differential_prob: float = 0.0,
         family_synthesis_prob: float = 0.0,
+        gadget_to_overwritten_prob: float = 0.0,
+        external_to_pypi_prob: float = 0.0,
+        nested_reduce_prob: float = 0.0,
     ) -> bytes:
         """Inject a mutated pickle payload into a PyTorch checkpoint file.
 
@@ -421,6 +424,9 @@ class CandidateGenerator:
             family_synthesis_prob=family_synthesis_prob,
             target_family=attack_family,
             donor_family="overwritten" if attack_family != "overwritten" else "pypi_injected",
+            gadget_to_overwritten_prob=gadget_to_overwritten_prob,
+            external_to_pypi_prob=external_to_pypi_prob,
+            nested_reduce_prob=nested_reduce_prob,
         )
 
         # Phase-3a: Differential pickle-parser mutation (cross-parser disagreements)

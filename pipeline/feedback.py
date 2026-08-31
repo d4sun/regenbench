@@ -232,15 +232,18 @@ class CoverageTracker:
                     except Exception:
                         pass
 
-    def log_round(self, round_num: int) -> tuple[float, float]:
+    def log_round(self, round_num: int, family_counts: dict[str, int] | None = None) -> tuple[float, float]:
         """Calculate and log current coverage percentages to the database."""
         # Reachable-space coverage (primary)
         opcode_cov = len(self.seen_opcodes & REACHABLE_OPCODES) / max(1, self.total_opcodes)
         callable_cov = len(self.seen_callables) / max(1, self.total_callables)
         family_cov = len(self.seen_families) / max(1, self.total_families)
         family_bypass_cov = len(self.seen_families_with_bypass) / max(1, self.total_families)
+        entropy = self.family_entropy(family_counts) if family_counts is not None else 0.0
 
-        log_coverage(self.db_path, round_num, opcode_cov, callable_cov, run_id=self.run_id)
+        log_coverage(self.db_path, round_num, opcode_cov, callable_cov,
+                     run_id=self.run_id, family_cov=family_cov,
+                     family_bypass_cov=family_bypass_cov, entropy=entropy)
         return opcode_cov, callable_cov
 
     def family_coverage(self) -> tuple[float, float]:
@@ -314,7 +317,9 @@ class NoveltyTracker:
 class FeedbackController:
     """Adjusts selection weights and mutation parameters using round results."""
 
-    def __init__(self):
+    def __init__(self, family_quota_min_pct: float = 0.15,
+                 family_quota_max_frac: float = 0.40,
+                 entropy_target: float = 1.5):
         # Fetch all registered dangerous callables (armable subset only: the
         # non-armable sinks cannot carry the inline payload, so selecting them
         # would waste campaign budget on candidates that can never trigger).
@@ -326,6 +331,13 @@ class FeedbackController:
         # gadget family uses callable weights; template families use family weight
         self.families = list(FAMILIES)
         self.family_weights = {f: 1.0 for f in self.families}
+        # P1.1 quotas for stratified sampling
+        self.family_quota_min_pct = family_quota_min_pct
+        self.family_quota_max_frac = family_quota_max_frac
+        self.entropy_target = entropy_target
+        # Global family counts for cross-round quota
+        self.global_family_counts: dict[str, int] = {f: 0 for f in self.families}
+        self.per_family_bypass_yield: dict[str, dict[str, int]] = {f: {"valid": 0, "bypass": 0} for f in self.families}
 
         # RQ2 combo weights: (family, transport, frozenset(strategies)) -> weight.
         # The lexicographic Tier-1/Tier-2 boundaries live in the combo space, so
@@ -361,7 +373,7 @@ class FeedbackController:
         """Normalized weights over (family, transport, strategies) combos.
 
         Empty before the first rewarded combo is observed; callers fall back to
-        family-only / strategy sampling when empty.
+        family-weighted sampling when empty.
         """
         total = sum(self.combo_weights.values())
         if total <= 0.0:
@@ -394,259 +406,6 @@ class FeedbackController:
         fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
         return fam, transport, strategies
 
-    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
-        """Normalized weights over (family, transport, strategies) combos.
-
-        Empty before the first rewarded combo is observed; callers fall back to
-        family-weighted sampling when empty.
-        """
-        total = sum(self.combo_weights.values())
-        if total <= 0.0:
-            return {}
-        return {k: w / total for k, w in self.combo_weights.items()}
-
-    def sample_combo(
-        self,
-        rng,
-        allowed_families: set[str],
-        fixed_strategies: frozenset[str] | None = None,
-        fixed_transport: str | None = None,
-    ) -> tuple[str, str, list[str]] | None:
-        """One weighted draw over known-rewarded combos restricted to
-        ``allowed_families``.
-
-        When ``fixed_strategies`` (``--evasion-strategies``) or
-        ``fixed_transport`` is pinned, only combos matching it are eligible.
-        Returns ``None`` when no combo evidence exists for the allowed set;
-        callers then use the family/callable/strategy fallback path.
-        """
-        pool = [
-            (k, w) for k, w in self.combo_weights.items()
-            if k[0] in allowed_families
-            and (fixed_strategies is None or k[2] == fixed_strategies)
-            and (fixed_transport is None or k[1] == fixed_transport)
-        ]
-        if not pool:
-            return None
-        keys = [k for k, _ in pool]
-        probs = [w for _, w in pool]
-        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
-        return fam, transport, sorted(strategies)
-
-    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
-        """Normalized weights over (family, transport, strategies) combos.
-
-        Empty before the first rewarded combo is observed; callers fall back
-        to family-weighted sampling when empty.
-        """
-        total = sum(self.combo_weights.values())
-        if total <= 0.0:
-            return {}
-        return {k: w / total for k, w in self.combo_weights.items()}
-
-    def sample_combo(
-        self,
-        rng,
-        allowed_families: set[str],
-        fixed_strategies: frozenset[str] | None = None,
-        fixed_transport: str | None = None,
-    ) -> tuple[str, str, list[str]] | None:
-        """One weighted draw over known-rewarded combos restricted to
-        ``allowed_families`` (and any fixed strategy/transport pins).
-
-        Returns ``None`` when no combo evidence exists for the allowed set;
-        callers then use the family/callable/strategy fallback path.
-        """
-        pool = [
-            (k, w) for k, w in self.combo_weights.items()
-            if k[0] in allowed_families
-            and (fixed_strategies is None or k[2] == fixed_strategies)
-            and (fixed_transport is None or k[1] == fixed_transport)
-        ]
-        if not pool:
-            return None
-        keys = [k for k, _ in pool]
-        probs = [w for _, w in pool]
-        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
-        return fam, transport, sorted(strategies)
-
-    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
-        """Normalized weights over (family, transport, strategies) combos.
-
-        Empty before the first rewarded combo is observed; callers fall back to
-        family-weighted sampling when empty.
-        """
-        total = sum(self.combo_weights.values())
-        if total <= 0.0:
-            return {}
-        return {k: w / total for k, w in self.combo_weights.items()}
-
-    def sample_combo(self, rng, allowed_families,
-                     fixed_strategies: frozenset[str] | None = None,
-                     fixed_transport: str | None = None):
-        """One weighted draw over known-rewarded combos restricted to
-        ``allowed_families``.
-
-        When ``fixed_strategies`` (``--evasion-strategies``) or
-        ``fixed_transport`` is pinned, only combos matching it are eligible.
-        Returns ``None`` when no combo evidence exists for the allowed set;
-        callers then use the family/callable/strategy fallback path.
-        """
-        pool = [
-            (k, w) for k, w in self.combo_weights.items()
-            if k[0] in allowed_families
-            and (fixed_strategies is None or k[2] == fixed_strategies)
-            and (fixed_transport is None or k[1] == fixed_transport)
-        ]
-        if not pool:
-            return None
-        keys = [k for k, _ in pool]
-        probs = [w for _, w in pool]
-        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
-        return fam, transport, sorted(strategies)
-
-    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
-        """Normalized weights over (family, transport, strategies) combos.
-
-        Empty before the first rewarded combo is observed; callers fall back
-        to family-weighted sampling when empty.
-        """
-        total = sum(self.combo_weights.values())
-        if total <= 0.0:
-            return {}
-        return {k: w / total for k, w in self.combo_weights.items()}
-
-    def sample_combo(self, rng, allowed_families,
-                     fixed_strategies: frozenset[str] | None = None,
-                     fixed_transport: str | None = None):
-        """One weighted draw over known-rewarded combos restricted to
-        ``allowed_families``.
-
-        When ``fixed_strategies`` (``--evasion-strategies``) or
-        ``fixed_transport`` is pinned, only combos matching it are eligible.
-        Returns ``None`` when no combo evidence exists for the allowed set;
-        callers then use the family/callable/strategy fallback path.
-        """
-        pool = [
-            (k, w) for k, w in self.combo_weights.items()
-            if k[0] in allowed_families
-            and (fixed_strategies is None or k[2] == fixed_strategies)
-            and (fixed_transport is None or k[1] == fixed_transport)
-        ]
-        if not pool:
-            return None
-        keys = [k for k, _ in pool]
-        probs = [w for _, w in pool]
-        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
-        return fam, transport, sorted(strategies)
-
-    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
-        """Normalized weights over (family, transport, strategies) combos.
-
-        Empty before the first rewarded combo is observed; callers fall back
-        to family-weighted sampling when empty.
-        """
-        total = sum(self.combo_weights.values())
-        if total <= 0.0:
-            return {}
-        return {k: w / total for k, w in self.combo_weights.items()}
-
-    def sample_combo(self, rng, allowed_families,
-                     fixed_strategies: frozenset[str] | None = None,
-                     fixed_transport: str | None = None):
-        """One weighted draw over known-rewarded combos restricted to
-        ``allowed_families``.
-
-        When ``fixed_strategies`` (``--evasion-strategies``) or
-        ``fixed_transport`` is pinned, only combos matching it are eligible.
-        Returns ``None`` when no combo evidence exists for the allowed set;
-        callers then use the family/callable/strategy fallback path.
-        """
-        pool = [
-            (k, w) for k, w in self.combo_weights.items()
-            if k[0] in allowed_families
-            and (fixed_strategies is None or k[2] == fixed_strategies)
-            and (fixed_transport is None or k[1] == fixed_transport)
-        ]
-        if not pool:
-            return None
-        keys = [k for k, _ in pool]
-        probs = [w for _, w in pool]
-        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
-        return fam, transport, sorted(strategies)
-
-    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
-        """Normalized weights over (family, transport, strategies) combos.
-
-        Empty before the first rewarded combo is observed; callers fall back
-        to family-weighted sampling when empty.
-        """
-        total = sum(self.combo_weights.values())
-        if total <= 0.0:
-            return {}
-        return {k: w / total for k, w in self.combo_weights.items()}
-
-    def sample_combo(self, rng, allowed_families,
-                     fixed_strategies: frozenset[str] | None = None):
-        """One weighted draw over known-rewarded combos restricted to
-        ``allowed_families``.
-
-        When ``fixed_strategies`` is pinned (``--evasion-strategies``), only
-        combos whose strategy set exactly matches it are eligible. Returns
-        ``None`` when no combo evidence exists for the allowed set; callers
-        then use the family/callable/strategy fallback path.
-        """
-        pool = [
-            (k, w) for k, w in self.combo_weights.items()
-            if k[0] in allowed_families
-            and (fixed_strategies is None or k[2] == fixed_strategies)
-        ]
-        if not pool:
-            return None
-        keys = [k for k, _ in pool]
-        probs = [w for _, w in pool]
-        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
-        return fam, transport, sorted(strategies)
-
-    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
-        """Normalized weights over (family, transport, strategies) combos.
-
-        Empty before the first rewarded combo is observed; callers fall back
-        to family-weighted sampling when empty.
-        """
-        total = sum(self.combo_weights.values())
-        if total <= 0.0:
-            return {}
-        return {k: w / total for k, w in self.combo_weights.items()}
-
-    def sample_combo(self, rng, allowed_families,
-                     default_transport: str | None = None,
-                     fixed_strategies: set[str] | None = None):
-        """One weighted draw over known-rewarded combos restricted to
-        ``allowed_families`` (and ``fixed_strategies`` when pinned).
-
-        Returns ``None`` when no combo evidence exists for the allowed set;
-        callers then use the family/callable/strategy fallback path.
-        """
-        pool = [
-            (k, w) for k, w in self.combo_weights.items()
-            if k[0] in allowed_families
-            and (fixed_strategies is None or fixed_strategies <= k[2])
-        ]
-        if not pool:
-            return None
-        keys = [k for k, _ in pool]
-        probs = [w for _, w in pool]
-        fam, transport, strategies = rng.choices(keys, weights=probs, k=1)[0]
-        return fam, transport, sorted(strategies)
-
-    def get_combo_weights(self) -> dict[tuple[str, str, frozenset[str]], float]:
-        """Return normalized weights over (family, transport, strategies) combos."""
-        total = sum(self.combo_weights.values())
-        if total <= 0.0:
-            return {}
-        return {k: w / total for k, w in self.combo_weights.items()}
-
     def sample_family(self, rng, allowed_families) -> str:
         """Weighted family draw over the allowed attack families."""
         weighted = {f: w for f, w in self.family_weights.items() if f in allowed_families}
@@ -656,17 +415,60 @@ class FeedbackController:
         probs = [weighted[f] for f in population]
         return rng.choices(population, weights=probs, k=1)[0]
 
-    def sample_combo(self, rng, allowed_families: set[str], default_transport: str,
-                     pick_strategies) -> tuple[str, str, list[str]] | None:
-        """Draw (family, transport, strategies) as one weighted combo sample.
+    def sample_family_with_quota(self, rng, allowed_families: set[str],
+                                  round_counts: dict[str, int],
+                                  candidates_per_round: int) -> str:
+        """Quota-aware family draw: enforces min_pct and max_frac per round.
 
-        Returns ``None`` when no combo evidence exists yet (callers fall back to
-        a family-weighted draw); otherwise returns a stored successful combo.
-        ``pick_strategies`` is only used on an empty combo space and is never
-        invoked here (kept for API symmetry with the campaign's fallback).
+        If a family is below min quota and remaining slots require it, force it.
+        If desired family exceeds max, pick least-represented. Otherwise weighted.
+        Updates round_counts in-place for caller convenience.
         """
-        pool = [(k, w) for k, w in self.combo_weights.items()
-                if k[0] in allowed_families]
+        # Compute quotas from config
+        quota_min = max(1, int(self.family_quota_min_pct * candidates_per_round)) if candidates_per_round >= len(allowed_families) else 0
+        quota_max = max(1, int(self.family_quota_max_frac * candidates_per_round) + 1)
+        # First check max cap via weighted desire
+        desired = self.sample_family(rng, allowed_families)
+        if round_counts.get(desired, 0) >= quota_max:
+            under = sorted(allowed_families, key=lambda f: round_counts.get(f, 0))
+            for cand in under:
+                if round_counts.get(cand, 0) < quota_max:
+                    desired = cand
+                    break
+        # Enforce min near end of round
+        remaining = candidates_per_round - sum(round_counts.values()) - 1
+        missing = [f for f in allowed_families if round_counts.get(f, 0) < quota_min]
+        if missing and remaining < len(missing):
+            desired = rng.choice(missing)
+        # Entropy auto-boost: if family distribution is low entropy, boost missing
+        if self.entropy_target and sum(round_counts.values()) > 0:
+            ent = CoverageTracker.family_entropy(round_counts)
+            if ent < self.entropy_target and missing:
+                # bias toward missing to raise entropy
+                if rng.random() < 0.5:
+                    desired = rng.choice(missing)
+        return desired
+
+    def sample_combo(
+        self,
+        rng,
+        allowed_families: set[str],
+        fixed_strategies: frozenset[str] | None = None,
+        fixed_transport: str | None = None,
+    ) -> tuple[str, str, list[str]] | None:
+        """One weighted draw over known-rewarded combos restricted to ``allowed_families``.
+
+        When ``fixed_strategies`` (``--evasion-strategies``) or
+        ``fixed_transport`` is pinned, only combos matching it are eligible.
+        Returns ``None`` when no combo evidence exists for the allowed set;
+        callers then use the family/callable/strategy fallback path.
+        """
+        pool = [
+            (k, w) for k, w in self.combo_weights.items()
+            if k[0] in allowed_families
+            and (fixed_strategies is None or k[2] == fixed_strategies)
+            and (fixed_transport is None or k[1] == fixed_transport)
+        ]
         if not pool:
             return None
         keys = [k for k, _ in pool]
@@ -768,6 +570,18 @@ class FeedbackController:
             return family, ("opcode", rng.choice(list(unseen_opcodes)))
         return None
 
+    def _update_per_family_yield(self, round_results: list[dict[str, Any]]) -> None:
+        """Track per-family bypass yield as secondary fitness signal (P1.1)."""
+        for res in round_results:
+            fam = res.get("family")
+            if fam not in self.per_family_bypass_yield:
+                continue
+            self.global_family_counts[fam] += 1
+            if res.get("valid"):
+                self.per_family_bypass_yield[fam]["valid"] += 1
+                if res.get("evaded_all"):
+                    self.per_family_bypass_yield[fam]["bypass"] += 1
+
     def _ingest_greybox(self, round_results: list[dict[str, Any]]) -> None:
         """Update per-scanner tallies and penalize rules-flagged callables."""
         for res in round_results:
@@ -806,6 +620,7 @@ class FeedbackController:
 
         # 0. Phase-2 grey-box ingestion (optional keys; no-ops when absent).
         self._ingest_greybox(round_results)
+        self._update_per_family_yield(round_results)
 
         # 1. Bias dangerous callables towards higher fitness outcomes
         for res in round_results:

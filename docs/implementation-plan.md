@@ -1,4 +1,6 @@
-# RegenBench Implementation Plan
+# RegenBench Implementation Plan — ARCHIVAL (pre-fix, 2026-08-28 context)
+
+> This plan's 4 critical issues are **fixed in the current codebase** (see `CLAUDE.md` Known bugs / Fixed). Retained as design history; live hypothesis status is H1 Supported 51.9% vs 25%, H2 valid negative, H3 Supported 100% (see `docs/evaluation-report.md`).
 
 ## Context
 

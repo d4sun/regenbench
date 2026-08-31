@@ -1,7 +1,7 @@
-# ReGenBench Fuzzing Report (guided, replicate 3)
+# ReGenBench Fuzzing Report (guided, replicate 3) — ARCHIVAL (pre-fix pilot, not in live DB `data/regenbench_campaign.db`)
 
 - Mode: **guided**  
-- Base checkpoint: `/home/d4sun/Projects/PhD/regenbench/real_benign_corpus/all/text-generation__HuggingFaceM4_tiny-random-LlamaForCausalLM.bin`  
+- Base checkpoint: `real_benign_corpus/all/text-generation__Maykeye_TinyLLama-v0.bin`  
 - Attack families: gadget  
 - Rounds: 5, candidates/round: 20
 - Time budget: 24.0h

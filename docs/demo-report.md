@@ -65,7 +65,7 @@ Backend: `docker`; seed subset: `ci/corpus`.
 
 ## 6. Baseline comparison
 
-ShadowPickle baseline (reproduced by `scripts/run_shadowpickle_baseline.py`): 10/40 valid candidates bypassed (25.0%). Fuzzing campaigns: 446/945 (47.2%).
+ShadowPickle baseline (reproduced by `scripts/run_shadowpickle_baseline.py`): 10/40 valid candidates bypassed (25.0%). Fuzzing campaigns: 514/990 (51.9%).
 
 In this demo subset, 1/5 generated candidates evaded the full panel while still executing (ExecutionOracle-confirmed). See `docs/evaluation-report.md` for the scaled campaign numbers and `docs/related-works-comparison.md` for how these compare to ShadowPickle / PickleFuzzer / DynaHug.
 

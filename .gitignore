@@ -38,3 +38,4 @@ data/*.checkpoint.json
 # Unified demo outputs (regenerable via scripts/demo_task3.py; contains
 # generated malicious candidates and GGUF artifacts)
 demo-artifacts/
+real_benign_corpus_v2/

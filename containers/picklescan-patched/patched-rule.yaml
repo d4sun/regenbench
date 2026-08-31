@@ -1,0 +1,6 @@
+# Synthetic patch for H3: detect IPython.utils.process.system
+rules:
+  - id: synthetic-pypi-injected
+    description: "Patched rule for IPython shell sink (validates benchmark killability)"
+    pattern: "IPython\\.utils\\.process\\.system"
+    severity: "malicious"

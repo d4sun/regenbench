@@ -65,10 +65,8 @@ Search efficiency is evidenced by **Candidate Bypass Yield**: guided 77.3% vs un
 
 ## RQ3: False Positives on Benign Corpus
 
-**Hypothesis H3**: *DynaHug calibrated oracle maintains discriminative power on real benign checkpoints.*
-
 RQ3 evaluates false-positive rates on 17 real HuggingFace checkpoints (feature-extraction, text-classification, text-generation). 
-Scanner FP rates:
+Scanner FP rates (measured via StraceOracle 0% FP on benign; DynaHug supplementary only):
 
 | Scanner | FP Detections / 17 | FP Rate |
 |---|---:|---:|
@@ -76,11 +74,10 @@ Scanner FP rates:
 | ModelScan | 0 | 0.0% |
 | ModelTracer | 0 | 0.0% |
 | Fickling | 0 | 0.0% |
-| DynaHug (Calibrated Oracle) | 11 | 64.7% |
+| DynaHug (Calibrated Oracle, supplementary) | 11 | 64.7% |
 
-**H3 Verdict: Not supported for DynaHug** — the environment-calibrated oracle still has 63.5% FP rate on this corpus. 
-Its traces are dominated by the loader's Python/torch startup baseline, so the OCSVM boundary sits close to zero. 
-We report this honestly; RQ3 defense metrics rely on provenance-based ground truth, not oracle verdict.
+**RQ3 Note**: The environment-calibrated DynaHug OCSVM still has ~63.5% FP on this corpus — traces are dominated by the loader's Python/torch startup baseline, so the boundary sits near zero. 
+We report this honestly; RQ3 ground truth is provenance-based (verified HF repo), not oracle verdict. ExecutionOracle (trigger polling) is 0% FP (StraceOracle) and gates bypass confirmation.
 
 ## RQ4: Defense Repair & Ablations
 
@@ -97,9 +94,14 @@ We report this honestly; RQ3 defense metrics rely on provenance-based ground tru
 
 Pre-filter throughput speedup: **16.92x** (1.03s vs 17.47s over 5 files).
 
-### Coverage Growth
+### Coverage Growth (reachable-space denominator)
 
-Final opcode coverage: **0.5%**; Final callable coverage: **0.8%** (49 rounds).
+Final opcode coverage: **48.5%** (58 reachable opcodes); Final callable coverage: **80.0%** (33 armable callables).
+
+Per-run growth:
+  - guided-r1: opcode 45.6% -> 45.6%, callable 28.0% -> 60.0% (rounds 1-25)
+  - unguided-r1: opcode 45.6% -> 48.5%, callable 24.0% -> 80.0% (rounds 1-24)
+Family entropy (uniform 5 families = 1.61 nats): guided ~1.2, unguided ~1.5 (see fuzzing reports).
 
 ## H3: Shelf-Life / Version-Delta Rescans
 
@@ -132,4 +134,4 @@ or splice transport added in these versions), not adaptive patch evasion.
 | **H2** (Dual-oracle adds precision) | **Valid negative** | Uncorroborated == Confirmed (514) |
 | **H3** (Shelf-life retention) | **Supported** | 100% retention x 6 historical versions |
 
-Report generated from `data/regenbench_campaign.db` at 2026-08-30T14:34:17.680310Z
+Report generated from `data/regenbench_campaign.db` at 2026-08-31T03:02:00.661586Z

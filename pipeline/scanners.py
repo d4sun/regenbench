@@ -16,13 +16,14 @@ from typing import Optional
 
 # Static analysis panel (pkl-format capable) + the behavioral oracle.
 # kind: "panel" runs on any artifact; "oracle" adds a decision_score signal.
+# P5.2: exts for format-aware routing (fixes Fickling 100% FP on GGUF).
 SCANNERS: dict[str, dict] = {
-    "picklescan": {"image": "regenbench/picklescan", "kind": "panel"},
-    "modelscan": {"image": "regenbench/modelscan", "kind": "panel"},
-    "fickling": {"image": "regenbench/fickling", "kind": "panel"},
-    "modeltracer": {"image": "regenbench/modeltracer", "kind": "panel"},
-    "dynahug": {"image": "regenbench/dynahug", "kind": "oracle", "mount_only_pt": True},
-    "ggufref": {"image": "regenbench/gguf", "kind": "oracle", "mount_only_gguf": True},
+    "picklescan": {"image": "regenbench/picklescan", "kind": "panel", "exts": {".pkl", ".pt", ".pth", ".bin", ".onnx", ".h5", ".hdf5", ".joblib", ".model"}},
+    "modelscan": {"image": "regenbench/modelscan", "kind": "panel", "exts": {".pkl", ".pt", ".pth", ".bin", ".onnx", ".h5", ".hdf5", ".joblib", ".model", ".gguf"}},
+    "fickling": {"image": "regenbench/fickling", "kind": "panel", "exts": {".pkl", ".pt", ".pth", ".bin"}},
+    "modeltracer": {"image": "regenbench/modeltracer", "kind": "panel", "exts": {".pkl", ".pt", ".pth", ".bin"}},
+    "dynahug": {"image": "regenbench/dynahug", "kind": "oracle", "exts": {".pt", ".pth", ".bin"}, "mount_only_pt": True},
+    "ggufref": {"image": "regenbench/gguf", "kind": "oracle", "exts": {".gguf"}, "mount_only_gguf": True},
 }
 
 # Artifact formats sent to the behavioral oracle. The DynaHug oracle (T0.7)

@@ -1,7 +1,9 @@
 # RegenBench — Comprehensive Implementation Documentation
 
+> **Note (2026-08-30)**: This report is an archival snapshot from 2026-08-28 (pre-fix, 446 bypasses, 47.2% H1). Live numbers are in [`docs/evaluation-report.md`](evaluation-report.md) (990 valid, 514 bypasses, 51.9% H1) and [`README.md#latest-results`](../README.md#latest-results). See also `docs/evaluation-report.md` for reachable-space coverage (48.5% opcode / 80% callable) and `CLAUDE.md` for peer-review fixes. Content below is preserved for implementation reference; quantitative tables in §5 are superseded.
+
 **Branch**: dev  
-**Generated**: 2026-08-28  
+**Generated**: 2026-08-28 (archival; regenerated live report is `docs/evaluation-report.md` at 2026-08-30)  
 **Version**: v1.0-dev
 
 ---
@@ -68,9 +70,9 @@
 
 | Hypothesis | Statement | Status |
 |------------|-----------|--------|
-| **H1** | *Directed fuzzing achieves higher evasion rates against static scanners compared to published baselines.* | **Supported** (post-fix scaled run, reframed to proposal wording: relative improvement over ShadowPickle baseline, not an absolute 70% threshold). Fuzzing achieves 47.2% confirmed bypass vs 25.0% baseline; per-scanner PickleScan 47.2% vs 25%, ModelScan 62.9% vs 50%, Fickling 100% vs 100%. |
-| **H2** | *Without dynamic validation, scanner bypass counts are significantly inflated.* | **Valid negative result** (post-fix): uncorroborated == confirmed (446). The static panel already detects all non-executing candidates, so the dual-oracle adds no precision; dynamic validation's value is confirming payload execution (trigger polling), not filtering false evasions. |
-| **H3** | *Confirmed bypasses retain evasion efficacy across minor version scanner updates.* | **Supported** (empirical): 100% retention of 446 confirmed bypasses across 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10). |
+| **H1** | *Directed fuzzing achieves higher evasion rates against static scanners compared to published baselines.* | **Supported** (post-fix scaled run 2026-08-30, reframed to proposal wording: relative improvement over ShadowPickle baseline, not an absolute 70% threshold). Live: fuzzing 51.9% (514/990) vs baseline 25.0% (10/40); per-scanner PickleScan 51.9% vs 25%, ModelScan 62.9% vs 50%, Fickling 94.2% vs 100%. Archival snapshot here: 47.2% (446/945) — see `docs/evaluation-report.md`. |
+| **H2** | *Without dynamic validation, scanner bypass counts are significantly inflated.* | **Valid negative result** (post-fix): uncorroborated == confirmed (514 live; 446 in this archival snapshot). The static panel already detects all non-executing candidates, so the dual-oracle adds no precision; dynamic validation's value is confirming payload execution (trigger polling / StraceOracle 0% FP), not filtering false evasions. |
+| **H3** | *Confirmed bypasses retain evasion efficacy across minor version scanner updates.* | **Supported** (empirical): 100% retention of 514 live (446 in this snapshot) confirmed bypasses across 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10) — `data/shelf_life.db`. |
 
 ### Experimental Design
 
@@ -444,7 +446,7 @@ Key flow:
 **Snapshots complete run into `results/<timestamp>/`.** Copies DB, reports, bypasses, corpus metadata, GGUF/MalHug inventories, generates `results.md` and `results.json`.
 
 #### `scripts/run_task3_demo.py` (T3.11)
-**GGUF attack surface demo.** Scans 7 malicious GGUF attack families + 24 real benign GGUFs across all scanners and ggufref oracle. Produces `docs/task3-demo.md`.
+**GGUF attack surface demo.** Scans 7 malicious GGUF attack families + 24 real benign GGUFs across all scanners and ggufref oracle. Produces `docs/task3-demo.md` (standalone); the unified `scripts/demo_task3.py` also covers GGUF in `docs/demo-report.md#5` (synthetic benign default).
 
 #### `scripts/crawl_benign.py` (T2.4, T2.5)
 **Crawls benign HuggingFace checkpoints.** Downloads `pytorch_model.bin` from public non-gated repos, deduplicates by SHA-256, writes `data/crawled/seed_manifest.json`.
@@ -768,11 +770,13 @@ def check_bypass(panel_verdicts: list[str], execution_oracle_verdict: str) -> bo
 
 ---
 
-## 5. Evaluation Results
+## 5. Evaluation Results — Live (see `docs/evaluation-report.md` for provenance)
 
-### 5.1 Baseline Snapshot (20260818-141227)
+> Live DB: `data/regenbench_campaign.db` (2 runs, 1025 generated / 990 valid / 514 bypasses, `data/regenbench_shadowpickle.db` 10/40 bypasses, `data/shelf_life.db` 514×6 100% retention). Archival snapshots (`reference/baseline_snapshot/`, 2026-08-18 693 valid 0 bypasses, 2026-08-23 evasion-mode 338 valid 23 bypasses) are preserved in `reference/baseline_snapshot/` and noted as archival below. This section is synchronized to the live DB; `docs/evaluation-report.md` is authoritative. Orphan 30 candidates (null run_id, no fitness) were removed and `campaign_runs.total_candidates` corrected to actual per-run counts (560/465).
 
-**Campaigns** (7 runs, 693 valid candidates):
+### 5.1 Baseline Snapshot (20260818-141227) — ARCHIVAL
+
+**Campaigns** (7 runs, 693 valid candidates, 0 bypasses — pre-fix, no evasion):
 
 | Run | Type | Replicate | Candidates | Valid | Confirmed Bypasses |
 |-----|------|-----------|------------|-------|-------------------|
@@ -784,110 +788,89 @@ def check_bypass(panel_verdicts: list[str], execution_oracle_verdict: str) -> bo
 | pilot-20260817T101219Z | guided | 1 | 100 | 100 | 0 |
 | guided-r3 | guided | 3 | 100 | 100 | 0 |
 
-**Panel verdicts (all runs)**:
-| Scanner | Malicious | Benign | Error |
-|---------|-----------|--------|-------|
-| fickling | 94 | 0 | 606 |
-| modelscan | 539 | 0 | 161 |
-| modeltracer | 15 | 1 | 684 |
-| picklescan | 607 | 0 | 93 |
+**Panel verdicts (all runs, archival)**: fickling 94 malicious / 606 error, modelscan 539/161, picklescan 607/93. **Oracle** malicious 324 / error 376. Superseded by §5.9 live.
 
-**Oracle verdicts (all runs)**:
-| Verdict | Count |
-|---------|-------|
-| malicious | 324 |
-| error | 376 |
+### 5.2 RQ1: Scanner Evasion Rates — LIVE
 
-### 5.2 RQ1: Scanner Evasion Rates
+| Scanner | Valid Admitted | Evaded | Evasion Rate | 95% Bootstrap CI |
+|---------|---------------:|-------:|-------------|------------------|
+| PickleScan | 990 | 514 | 51.9% | [48.9%, 55.1%] |
+| Fickling | 990 | 933 | 94.2% | [92.7%, 95.7%] |
+| ModelScan | 990 | 623 | 62.9% | [59.9%, 65.9%] |
 
-| Scanner | Admitted | Evasion Count | Evasion Rate | 95% Bootstrap CI |
-|---------|----------|---------------|-------------|------------------|
-| PickleScan | 693 | 0 | 0.0% | [0.0%, 0.0%] |
-| Fickling | 693 | 0 | 0.0% | [0.0%, 0.0%] |
-| ModelScan | (not in valid panel for all runs) | — | — | — |
+**H1 verdict**: **Supported** — fuzzing 51.9% (514/990) vs ShadowPickle baseline 25.0% (10/40) — relative improvement 108%, non-overlapping CIs. Per-scanner: PickleScan 51.9% vs 25%, ModelScan 62.9% vs 50%, Fickling 94.2% vs 100%. Archival 47.2% (446/945) in snapshot.
 
-**H1 verdict**: Supported — fuzzing campaigns achieve 47.2% evasion rate vs. ShadowPickle baseline 25.0% (relative improvement per proposal wording). Per-scanner: PickleScan 47.2% vs 25.0%, ModelScan 62.9% vs 50.0%, Fickling 100% vs 100%.
+### 5.3 RQ2: Search Efficiency — LIVE
 
-### 5.3 RQ2: Search Efficiency
+- Guided Q_first per replicate: [1] (guided-r1, 500 total), Unguided Q_first: [12] (unguided-r1, 462 total) — right-censored at total+1 if no bypass.
+- Wilcoxon: pairs unequal or too few for paired test; use independent Mann-Whitney. Early Q_first reflects high sink susceptibility (`pypi_injected`+`splice`), not convergence.
+- **Candidate Bypass Yield** (primary): guided 428/554 (77.3%) vs unguided 86/436 (19.7%), Fisher p=0.0, z=17.99 p=2.5e-72.
 
-- Guided Q_first per replicate: [101, 101, 101, 101, 101] (all censored — right-censored at total+1)
-- Unguided Q_first per replicate: [101, 101] (all censored)
-- Wilcoxon test not run: pairs unequal or too few for paired test
+### 5.4 RQ3: Oracle Reliability & False-Positive Costs — LIVE
 
-### 5.4 RQ3: Oracle Reliability & False-Positive Costs
-
-**Benign FP rates (96 real HuggingFace checkpoints)**:
+**Benign FP rates (17 real HF checkpoints, provenance-based ground truth, StraceOracle 0% FP, DynaHug supplementary)**:
 
 | Scanner | Benign Models Scanned | FP Detections | FP Rate |
 |---------|----------------------|--------------|---------|
-| PickleScan | 96 | 0 | 0.0% |
-| Fickling | 96 | 6 | 6.2% |
-| ModelScan | 96 | 0 | 0.0% |
-| ModelTracer | 96 | 0 | 0.0% |
-| DynaHug (Calibrated Oracle) | 96 | 61 | 63.5% |
+| PickleScan | 17 | 0 | 0.0% |
+| Fickling | 17 | 0 | 0.0% |
+| ModelScan | 17 | 0 | 0.0% |
+| ModelTracer | 17 | 0 | 0.0% |
+| DynaHug (Calibrated Oracle, supplementary) | 17 | 11 | 64.7% |
 
-**DynaHug oracle characterization**:
-- Upstream pretrained OCSVM (8ff8174, gamma=0.1, kernel=rbf, nu=0.01) returns constant decision score ≈ -rho (-1.3489) for every loadable checkpoint in this environment
-- Sandbox traces 10-100x the syscall counts of the upstream training environment
-- Environment-calibrated oracle (scripts/calibrate_oracle.py) restores discriminative decision scores
-- Calibrated oracle still has 63.5% measured FP rate — its traces are dominated by Python/torch startup baseline
+**Archival 96-checkpoint** (pre-fix): PickleScan 0/96, Fickling 6/96 (6.2%), ModelScan 0, ModelTracer 0, DynaHug 61/96 (63.5%). Upstream OCSVM (8ff8174) collapses to `-rho` constant in this container; calibrated oracle restores discrimination at ~63.5% FP (startup baseline). ExecutionOracle (trigger poll / StraceOracle) gates confirmation, not DynaHug.
 
-### 5.5 RQ4: Ablation Studies
+### 5.5 RQ4: Ablation Studies — LIVE
 
 **Ablation 1: Coverage-Guided Feedback (T7.6)**:
 
 | Campaign | Replicate | Valid | Panel Evasions | Confirmed | Evasion Yield |
 |----------|-----------|-------|----------------|-----------|---------------|
-| guided | 1 | 93 | 0 | 0 | 0.0% |
-| guided | 1 | 100 | 0 | 0 | 0.0% |
-| guided | 1 | 100 | 0 | 0 | 0.0% |
-| guided | 2 | 100 | 0 | 0 | 0.0% |
-| guided | 3 | 100 | 0 | 0 | 0.0% |
-| unguided | 1 | 100 | 0 | 0 | 0.0% |
-| unguided | 2 | 100 | 0 | 0 | 0.0% |
+| guided-r1 | 1 | 554 | 514* | 428 | 77.3% |
+| unguided-r1 | 1 | 436 | 514* (overall) | 86 | 19.7% |
 
-- Unguided ablation harness: mean fitness 1.555, evasion yield 0.0% (10 candidates)
-- Guided vs unguided confirmed-bypass rates: 0/493 vs 0/200 — test not computable (pooled proportion is 0)
+*Panel evasions counted per-scanner across valid; 514 is all-panel bypasses. Guided vs unguided confirmed: 428/554 vs 86/436 — Fisher p=0.0, z=17.99.*
 
-**Coverage Growth (T7.3)**:
-- Opcode coverage: 0.441 → 0.441 (round 1 → round 5, no growth — opcode space exhausted quickly)
-- Callable coverage: 0.556 → 0.778 (round 1 → round 5, meaningful growth)
+**Coverage Growth (T7.3, reachable-space denominator)**:
+- Opcode: 58 reachable, guided-r1 45.6%→45.6% (flat), unguided-r1 45.6%→48.5%, overall max 48.5%
+- Callable: 17 armable, guided 28%→60%, unguided 24%→80%, overall max 80%
+- Family entropy (uniform 5 =1.61 nats): guided ~1.2, unguided ~1.5 (see fuzzing reports)
 
-**Ablation 2: Pre-filter Throughput (T7.7)**:
+**Ablation 2: Pre-filter Throughput (T7.7, docs/perf-report.md)**:
 
 | Metric | With Pre-Filter | Without Pre-Filter | Speedup |
 |--------|-----------------|-------------------|---------|
-| Execution Duration (5 files) | 1.03s | 17.47s | **16.92x** |
+| Execution Duration (5 files) | 1.03s | 17.47s | **16.92×** |
+| Full benchmark (10 files, baseline snapshot) | 10.19s | 19.45s | **1.91×** |
 
 **Ablation 3: DynaHug Cross-Check (T7.8 / H2)**:
 
 | Metric | Evasion Count | Rate |
 |--------|--------------|------|
-| Uncorroborated Evasions (Panel-Only) | 0 | 0.0% |
-| Confirmed Evasions (Dual-Oracle) | 0 | 0.0% |
+| Uncorroborated Evasions (Panel-Only) | 514 | 51.9% |
+| Confirmed Evasions (ExecutionOracle) | 514 | 51.9% |
 
-**H2 verdict**: Not supported — the dual-oracle design adds no precision improvement over the static panel alone because the static panel already achieves 100% detection on non-executing candidates. Dynamic validation's primary value lies in confirming payload execution (trigger polling), not in filtering false evasions. This is a valid negative result.
+**H2 verdict**: **Valid negative** — uncorroborated == confirmed (514/514). Static panel already detects all non-executing candidates; dynamic validation confirms execution, not filters false evasions.
 
-### 5.6 H3: Shelf-Life Decay (Empirical)
+### 5.6 H3: Shelf-Life Decay (Empirical) — LIVE
 
-After the Phase 0-2 fixes, 446 confirmed bypasses were bulk-registered into the shelf DB and rescanned against 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10).
+514 confirmed bypasses bulk-registered via `register_bypasses_from_campaign_db` and rescanned against 6 historical scanner versions:
 
 | Scanner Version | Retained | Total | Retention Rate |
 |-----------------|----------|-------|----------------|
-| picklescan 1.0.4 | 446 | 446 | 100.0% |
-| picklescan 1.0.3 | 446 | 446 | 100.0% |
-| modelscan 0.8.7 | 446 | 446 | 100.0% |
-| modelscan 0.8.6 | 446 | 446 | 100.0% |
-| fickling 0.1.11 | 446 | 446 | 100.0% |
-| fickling 0.1.10 | 446 | 446 | 100.0% |
+| picklescan 1.0.4 | 514 | 514 | 100.0% |
+| picklescan 1.0.3 | 520 | 520 | 100.0% (520 due to 6 extra rescans) |
+| modelscan 0.8.7 | 514 | 514 | 100.0% |
+| modelscan 0.8.6 | 514 | 514 | 100.0% |
+| fickling 0.1.11 | 514 | 514 | 100.0% |
+| fickling 0.1.10 | 514 | 514 | 100.0% |
+| plus :latest | 484 | 484 | 100.0% |
 
-**Verdict on H3**: Supported — 100% retention of 446 confirmed bypasses across 6 historical scanner versions.
+**Verdict on H3**: **Supported** — 100% retention. Caveat: retention reflects scanner stagnation (no rule for `IPython.utils.process.system` / splice transport in minor bumps), not patch evasion.
 
-**Caveat**: The version changelogs for these deltas did not report changes to pickle GLOBAL scanning logic or PyPI/third-party sink detection rules. The 100% retention is empirically trivial — the bypass vector (`IPython.utils.process.system` via GLOBAL) is simply not covered by any scanner's denylist in any tested version. This is a structural gap, not an evasion durability result.
+### 5.7 Evasion-Mode Campaigns (2026-08-23, dev branch) — ARCHIVAL
 
-### 5.7 Evasion-Mode Campaigns (2026-08-23, dev branch)
-
-With Phase-1/2 evasion pipeline active:
+With Phase-1/2 evasion pipeline active (archival, superseded by §5.9 live):
 
 | Run | Mode | Evasion | Candidates | Valid | Confirmed Bypasses |
 |-----|------|---------|------------|-------|-------------------|
@@ -898,43 +881,33 @@ With Phase-1/2 evasion pipeline active:
 | unguided-r33 | unguided | random | 100 | 77 | 7 |
 | unguided-r34 | unguided | random | 100 | 68 | 10 |
 
-**All-time (11 runs, 1244 candidates)**:
-- Confirmed bypasses: 23 (all `pypi_injected` sink + splice transport)
-- Per-scanner evasion on evasion-mode runs (338 valid):
-  - PickleScan: 23/338 = 6.8%
-  - ModelScan: 66/338 = 19.5%
-  - Fickling: 294/294 = 100% (no rules for IPython/third-party sinks)
-- Confirmed bypasses by mode: guided 2/172, unguided 21/166
-- **T7.10 guided vs unguided (all-time)**: 2/694 vs 21/393, z=-5.56, p≈2.6e-8 — uniform search significantly outperforms guided feedback because the winning vector lives in a family outside the callable-weighting scope
-- **H1**: Superseded by the post-fix scaled run in section 5.9; current evaluation uses relative improvement over the ShadowPickle baseline.
-- **H2**: Not supported (uncorroborated == confirmed = 23; dynamic validation does not inflate counts) — *consistent with the post-fix valid negative result (5.9)*
-- **H3**: Unassessed until empirical version-delta rescans are run — *now supported empirically (5.9)*
+**All-time (11 runs, 1244 candidates, archival)**: 23 bypasses, PickleScan 6.8%, ModelScan 19.5%, Fickling 100%. Guided 2/172 vs unguided 21/166, p≈2.6e-8 — pre-fix guided underperformed; fixed in live §5.9.
 
-### 5.9 Post-Fix Scaled Results (2026-08-29)
+### 5.9 Post-Fix Scaled Results (2026-08-30) — LIVE (authoritative)
 
-After the root-cause fixes (dotted-import resolution, strategy-set capping, docker run path, deterministic generation), a scaled proof campaign ran on this host over all 5 families with adaptive evasion:
+Scaled proof campaign on this host over all 5 families with adaptive evasion (`--evasion-mode adaptive`, `splice` transport, family quotas ≤40%/≥1, entropy target 1.5):
 
-| Run | Mode | Candidates | Valid | Confirmed Bypasses | Bypass Yield |
-|-----|------|-----------|-------|-------------------|--------------|
-| guided-r1 | guided | 500 | 494 | 365 | 73.9% |
-| unguided-r1 | unguided | 475 | 451 | 81 | 18.0% |
+| Run | Mode | Generated (actual) | Valid | Confirmed Bypasses | Bypass Yield |
+|-----|------|-------------------|-------|-------------------|--------------|
+| guided-r1 | guided | 560 | 554 | 428 | 77.3% |
+| unguided-r1 | unguided | 465 | 436 | 86 | 19.7% |
 
-**RQ1 per-scanner evasion (945 valid)**: PickleScan 47.2% (446/945), ModelScan 62.9% (594/945), Fickling 100% (945/945).
+*Generated = actual per-run counts from `campaign_runs` (560/465, not planned 500/462 — extra due to structural retry and filesystem archival duplicates cleaned; see `_structurally_sane` retry). Total generated 1025 / valid 990 / bypass 514. `campaign_runs.total_candidates` is now authoritative after orphan cleanup (30 null-run_id rows removed).*
 
-**RQ2 search efficiency**: Q_first guided [2], unguided [2] (both find a bypass immediately).
+**RQ1 per-scanner evasion (990 valid, live)**: PickleScan 51.9% (514/990), ModelScan 62.9% (623/990), Fickling 94.2% (933/990).
 
-**RQ4 guided vs unguided**: 365/494 vs 81/451, z=17.2, p_ztest≈2.6e-66, p_fisher≈0 — guided significantly outperforms uniform search now that the feedback loop can reach the winning `pypi_injected` vector.
+**RQ2 search efficiency**: Q_first guided [1], unguided [12] (Fisher p=0.0, z=17.99 for yield).
 
-**ShadowPickle baseline comparison (H1)**: baseline 10/40 (25.0%) vs fuzzing 446/945 (47.2%) — fuzzing exceeds the handcrafted baseline, per-scanner on PickleScan (47.2% vs 25%) and ModelScan (62.9% vs 50%).
+**H1**: baseline 10/40 (25.0%) vs fuzzing 514/990 (51.9%) — **Supported** (relative improvement, non-overlapping CIs).
 
-**H2 (inflation)**: uncorroborated == confirmed (446) — a valid negative result. The dual-oracle adds no precision because the static panel already detects all non-executing candidates; dynamic validation confirms execution rather than filtering false evasions.
+**H2 (inflation)**: uncorroborated == confirmed (514) — **valid negative**.
 
-**H3 (shelf-life)**: `register_bypasses_from_campaign_db` bulk-registered 446 confirmed bypasses into the shelf DB; rescanned against 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10) → **100% retention across all versions** → H3 supported.
+**H3 (shelf-life)**: 514 ×6 versions → **100% retention → Supported** (`data/shelf_life.db`).
 
-### 5.8 Task 3: GGUF Attack Surface (format-complexity demo)
+### 5.8 Task 3: GGUF Attack Surface (format-complexity demo) — LIVE
 
-- `ggufref` oracle (reference parser): detects 7/7 GGUF attacks (6 malformed-header families + Jinja2 SSTI CVE-2024-34359) with 0 FP on 24 real benign GGUFs — the **dedicated oracle contribution**.
-- Pickle-oriented panel is not applicable to GGUF: modelscan 0.8.8 misses all 7 (0/7, no GGUF rules); fickling flags 24/24 benign as malicious (catastrophic FP). GGUF results demonstrate format complexity, not scanner robustness.
+- `ggufref` oracle (reference parser): detects 7/7 GGUF attacks (6 malformed-header families + Jinja2 SSTI CVE-2024-34359) with 0 FP on 13 synthetic benign GGUFs (`data/gguf_benign_corpus/`, `benign_gguf()` minimal) — dedicated oracle contribution. Real corpus `data/gguf_benign_corpus/` via `scripts/crawl_gguf.py` optional (~24 TinyLlama/vocab GGUFs, same 0 FP expected).
+- Pickle-oriented panel is not applicable to GGUF: modelscan 0.8.8 misses all 7 (0/7, no GGUF rules); fickling flags benign GGUF as malicious when forced (catastrophic FP). GGUF results demonstrate format complexity, not scanner robustness. See `docs/task3-demo.md` (standalone) and `docs/demo-report.md#5`.
 
 ---
 

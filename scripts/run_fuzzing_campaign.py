@@ -43,7 +43,7 @@ from pipeline.db import (
     log_candidate,
     log_fitness,
 )
-from pipeline.comparator import check_bypass
+from pipeline.comparator import check_bypass, check_bypass_tier
 from pipeline.fitness import compute_fitness, compute_fitness_multi, compute_fitness_oracle_aware, compute_fitness_lexicographic, compute_fitness_continuous, compute_fitness_coverage_guided, FitnessMode
 from pipeline.feedback import CoverageTracker, FeedbackController, NoveltyTracker
 from pipeline.registry import load_registry
@@ -126,6 +126,12 @@ def parse_args() -> argparse.Namespace:
                       help="probability of applying family-synthesis mutation (Phase 3b)")
     ap.add_argument("--oracle-model-dir", default="real_benign_corpus/oracle-calibrated/v5-recalibrated",
                       help="path to recalibrated DynaHug model directory")
+    ap.add_argument("--family-quota-min-pct", type=float, default=0.15,
+                    help="P1.1: minimum fraction per family per round (default 0.15, 0 to disable)")
+    ap.add_argument("--family-quota-max-frac", type=float, default=0.40,
+                    help="P1.1: maximum fraction per family per round (default 0.40)")
+    ap.add_argument("--entropy-target", type=float, default=1.5,
+                    help="P1.1: family entropy target (1.61 uniform); boost missing if below")
     ap.add_argument("--demo-subset", action="store_true",
                     help="Task 3 smoke mode: one round and five candidates from ci/corpus")
     ap.add_argument("--ensemble-oracle", action="store_true",
@@ -274,27 +280,43 @@ def run_campaign(args: argparse.Namespace) -> int:
         fitness_mode=args.fitness_mode,
     )
 
-    # Family-quota: prevent single-family collapse (peer-review Weakness 2).
-    # Unguided already samples uniformly, but guided combo weights compound.
-    # Enforce per-round: each family gets >=1 when round size permits, and no
-    # family exceeds 40% of the round budget.
-    family_quota_min = 1 if args.candidates_per_round >= len(families) else 0
-    family_quota_max = max(1, int(0.4 * args.candidates_per_round) + 1)
-
+    # Family-quota: prevent single-family collapse (P1.1, config-driven).
+    # Supports yaml via --family-quota-* and FeedbackController stratified sampling.
+    # Try yaml, else CLI defaults.
+    _cfg_min_pct = args.family_quota_min_pct
+    _cfg_max_frac = args.family_quota_max_frac
+    try:
+        import yaml as _yaml
+        with open("config/campaign_config.yaml") as _yf:
+            _cfg = _yaml.safe_load(_yf) or {}
+            _cc = _cfg.get("campaign", {})
+            # yaml overrides CLI if set
+            _cfg_min_pct = float(_cc.get("family_quota_min_pct", _cfg_min_pct))
+            _cfg_max_frac = float(_cc.get("family_quota_max_frac", _cfg_max_frac))
+            _cfg_entropy = float(_cc.get("entropy_target", args.entropy_target))
+        args.entropy_target = _cfg_entropy
+    except Exception:
+        pass
+    # Per-round quotas derived from pct/frac
+    if args.family_quota_min_pct == 0:
+        family_quota_min = 0
+    else:
+        family_quota_min = max(1, int(_cfg_min_pct * args.candidates_per_round)) if args.candidates_per_round >= len(families) else 0
+    family_quota_max = max(1, int(_cfg_max_frac * args.candidates_per_round) + 1)
+    # Keep legacy _quota_pick for unguided / fallback; guided will use controller.sample_family_with_quota
     def _quota_pick(desired: str, counts: dict[str, int]) -> str:
         if counts.get(desired, 0) >= family_quota_max:
-            # Over cap -> pick least-represented family
             under = sorted(families, key=lambda f: counts.get(f, 0))
             for cand in under:
                 if counts.get(cand, 0) < family_quota_max:
                     return cand
-        # Near end of round: force missing families to meet minimum
         remaining = args.candidates_per_round - sum(counts.values()) - 1
         missing = [f for f in families if counts.get(f, 0) < family_quota_min]
         if missing and remaining < len(missing):
-            # Must allocate remaining slots to missing families
             return random.choice(missing)
         return desired
+    # Also init controller with quotas for stratified sampling
+    # (will be used in per-round loop via controller.sample_family_with_quota)
 
     # Candidates are persisted per-run so the DB filepaths never dangle and
     # export_bypasses can copy real artifacts. Only the trigger files (used by
@@ -317,7 +339,11 @@ def run_campaign(args: argparse.Namespace) -> int:
                                     timeout=args.validity_timeout)
         plausibility = PlausibilityOracle(oracle_val)
         tracker = CoverageTracker(db_path, run_id=run_id)
-        controller = FeedbackController()
+        controller = FeedbackController(
+            family_quota_min_pct=_cfg_min_pct,
+            family_quota_max_frac=_cfg_max_frac,
+            entropy_target=args.entropy_target,
+        )
         novelty = NoveltyTracker()
 
         # Fixed strategy subset (--evasion-strategies) wins over mode logic.
@@ -396,16 +422,13 @@ def run_campaign(args: argparse.Namespace) -> int:
                     if combo:
                         attack_family, cand_transport, cand_strategies_fs = combo
                         cand_strategies = list(cand_strategies_fs)
+                        # Enforce quota even on combo hit
+                        attack_family = _quota_pick(attack_family, family_counts)
                     else:
-                        # Fallback to family weights
-                        family_weights_map = controller.get_family_weights()
-                        family_weights_map = {f: w for f, w in family_weights_map.items() if f in families}
-                        family_population = list(family_weights_map.keys())
-                        family_weights = list(family_weights_map.values())
-                        attack_family = random.choices(family_population, weights=family_weights, k=1)[0]
+                        # Fallback: quota-aware stratified sampling (P1.1)
+                        attack_family = controller.sample_family_with_quota(random, set(families), family_counts, args.candidates_per_round)
                         cand_strategies = _pick_strategies()
                         cand_transport = "splice" if (args.evasion_mode != "off" or fixed_strategies is not None) else None
-                    attack_family = _quota_pick(attack_family, family_counts)
 
                     # Coverage-gap sampling: occasionally pick unseen callable/opcode
                     gap_chosen_callable = None
@@ -774,6 +797,14 @@ def run_campaign(args: argparse.Namespace) -> int:
                 nov_score = novelty.score(novelty.signature(
                     sig_ops, frozenset(cand_strategies)))
 
+                # P2.3 consensus tier: strace proxy = execution verdict for now
+                # (when StraceOracle is wired, replace strace_verdict with its verdict)
+                try:
+                    strace_verdict = "malicious" if is_valid else "benign"
+                    consensus_tier = check_bypass_tier(panel_verdicts, strace_verdict, dynahug_verdict)
+                except Exception:
+                    consensus_tier = None
+
                 log_candidate(
                     db_path, cand_id, filepath, args.mode,
                     round_num=r,
@@ -793,10 +824,12 @@ def run_campaign(args: argparse.Namespace) -> int:
                     panel_verdict=panel_verdict_summary,
                     coverage_delta=coverage_delta,
                     novelty_score=nov_score,
+                    consensus_tier=consensus_tier,
                 )
                 log_fitness(db_path, cand_id, fit_score, is_valid,
                             transport=cand_transport or "loads",
-                            strategies=",".join(cand_strategies) if cand_strategies else None)
+                            strategies=",".join(cand_strategies) if cand_strategies else None,
+                            consensus_tier=consensus_tier)
 
                 round_results.append({
                     "callable": chosen_callable,
@@ -811,7 +844,8 @@ def run_campaign(args: argparse.Namespace) -> int:
                     "matched_rules": matched_rules,
                 })
 
-            opcode_cov, callable_cov = tracker.log_round(r)
+            # P1.4: log with family coverage + entropy (instruments post-mutation stream)
+            opcode_cov, callable_cov = tracker.log_round(r, family_counts)
             if args.mode == "guided":
                 controller.update(round_results)
 

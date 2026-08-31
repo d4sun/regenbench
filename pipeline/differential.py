@@ -3,6 +3,12 @@
 Generates pickle variants that parse differently between the standard
 pickle parser and cloudpickle, exposing parser-specific behaviors
 that can be weaponized for scanner evasion.
+
+Wired behind ``CandidateGenerator(differential_prob=0.0)`` — default 0.0
+(de-scoped from the headline 990-valid campaign in favor of coverage-guided
+mutation; see ``docs/related-works-comparison.md:18`` and
+``pipeline/generator.py:427``). Enable with ``--differential-prob 0.1``
+for RQ1 novelty experiments; unit-exercised but not the dominant signal.
 """
 
 from __future__ import annotations

@@ -119,6 +119,9 @@ def init_db(db_path: str) -> None:
                 round_num INTEGER,
                 opcode_coverage REAL,
                 callable_coverage REAL,
+                family_coverage REAL,
+                family_bypass_coverage REAL,
+                entropy REAL,
                 timestamp TEXT,
                 PRIMARY KEY (run_id, round_num)
             )
@@ -162,6 +165,24 @@ def init_db(db_path: str) -> None:
         ]:
             if col_name not in fit_cols:
                 cursor.execute(f"ALTER TABLE campaign_fitness ADD COLUMN {col_name} {col_type}")
+
+        # Migration: P1.4 family coverage + entropy
+        cov_cols2 = {row[1] for row in cursor.execute("PRAGMA table_info(campaign_coverage)").fetchall()}
+        for col_name, col_type in [
+            ("family_coverage", "REAL"),
+            ("family_bypass_coverage", "REAL"),
+            ("entropy", "REAL"),
+        ]:
+            if col_name not in cov_cols2:
+                cursor.execute(f"ALTER TABLE campaign_coverage ADD COLUMN {col_name} {col_type}")
+
+        # Migration: P2.3 consensus tier
+        cand_cols2 = {row[1] for row in cursor.execute("PRAGMA table_info(candidates)").fetchall()}
+        if "consensus_tier" not in cand_cols2:
+            cursor.execute("ALTER TABLE candidates ADD COLUMN consensus_tier TEXT")
+        fit_cols2 = {row[1] for row in cursor.execute("PRAGMA table_info(campaign_fitness)").fetchall()}
+        if "consensus_tier" not in fit_cols2:
+            cursor.execute("ALTER TABLE campaign_fitness ADD COLUMN consensus_tier TEXT")
     # _session() commits and closes on exit.
 
 
@@ -184,6 +205,7 @@ def log_candidate(
     panel_verdict: str | None = None,
     coverage_delta: float | None = None,
     novelty_score: float | None = None,
+    consensus_tier: str | None = None,
 ) -> None:
     """Insert a candidate; on conflict, fill in any newly-provided metadata fields.
 
@@ -198,8 +220,8 @@ def log_candidate(
             (candidate_id, filepath, source, created_at, round_num, seed_model, 
              mutation_template, mutation_depth, callables_used, campaign_type, run_id,
              mutation_strategy, parent_id, generation, oracle_verdict, panel_verdict,
-             coverage_delta, novelty_score) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             coverage_delta, novelty_score, consensus_tier) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(candidate_id) DO UPDATE SET
                 filepath = COALESCE(excluded.filepath, candidates.filepath),
                 source = COALESCE(excluded.source, candidates.source),
@@ -216,7 +238,8 @@ def log_candidate(
                 oracle_verdict = COALESCE(excluded.oracle_verdict, candidates.oracle_verdict),
                 panel_verdict = COALESCE(excluded.panel_verdict, candidates.panel_verdict),
                 coverage_delta = COALESCE(excluded.coverage_delta, candidates.coverage_delta),
-                novelty_score = COALESCE(excluded.novelty_score, candidates.novelty_score)
+                novelty_score = COALESCE(excluded.novelty_score, candidates.novelty_score),
+                consensus_tier = COALESCE(excluded.consensus_tier, candidates.consensus_tier)
             """,
             (
                 candidate_id,
@@ -237,6 +260,7 @@ def log_candidate(
                 panel_verdict,
                 coverage_delta,
                 novelty_score,
+                consensus_tier,
             ),
         )
 
@@ -319,19 +343,21 @@ def log_oracle_result(
 
 
 def log_fitness(db_path: str, candidate_id: str, fitness_score: float, is_valid: bool,
-                transport: str | None = None, strategies: str | None = None) -> None:
+                 transport: str | None = None, strategies: str | None = None,
+                 consensus_tier: str | None = None) -> None:
     """Insert or replace fitness evaluation.
 
     ``transport`` / ``strategies`` are the RQ2 combo dimensions recorded so
     analysis scripts can group fitness/bypass outcomes by configuration.
+    ``consensus_tier`` is P2.3 tier 1/2/3 (or None).
     """
     with _session(db_path) as (cursor, _):
         cursor.execute(
             """INSERT OR REPLACE INTO campaign_fitness
-            (candidate_id, fitness_score, is_valid, transport, strategies)
-            VALUES (?, ?, ?, ?, ?)""",
+            (candidate_id, fitness_score, is_valid, transport, strategies, consensus_tier)
+            VALUES (?, ?, ?, ?, ?, ?)""",
             (candidate_id, fitness_score, 1 if is_valid else 0,
-             transport, strategies),
+             transport, strategies, consensus_tier),
         )
 
 
@@ -367,13 +393,16 @@ def get_candidate_summary(db_path: str, candidate_id: str) -> dict[str, Any] | N
 
 
 def log_coverage(db_path: str, round_num: int, opcode_cov: float, callable_cov: float,
-                 run_id: str = "") -> None:
+                 run_id: str = "", family_cov: float = 0.0,
+                 family_bypass_cov: float = 0.0, entropy: float = 0.0) -> None:
     """Insert or replace round coverage statistics for a campaign run."""
     with _session(db_path) as (cursor, _):
         cursor.execute(
             """INSERT OR REPLACE INTO campaign_coverage 
-            (run_id, round_num, opcode_coverage, callable_coverage, timestamp) 
-            VALUES (?, ?, ?, ?, ?)""",
+            (run_id, round_num, opcode_coverage, callable_coverage,
+             family_coverage, family_bypass_coverage, entropy, timestamp) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
             (run_id, round_num, opcode_cov, callable_cov,
+             family_cov, family_bypass_cov, entropy,
              time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),
         )

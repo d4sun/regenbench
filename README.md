@@ -48,7 +48,7 @@ reproducible container and wrapped behind a single
 | T3.8 | GGUF reference oracle container | `regenbench/gguf` | `containers/gguf` |
 | T3.9 | Real GGUF benign crawler & corpus | — | [`scripts/crawl_gguf.py`](scripts/crawl_gguf.py), `data/gguf_benign_corpus/` |
 | T3.10| MalHug real malicious corpus crawler | — | [`scripts/crawl_malhug.py`](scripts/crawl_malhug.py), `data/malhug/` |
-| T3.11| GGUF attack surface demo & report | — | [`scripts/run_task3_demo.py`](scripts/run_task3_demo.py), [`docs/task3-demo.md`](docs/task3-demo.md) |
+| T3.11| GGUF attack surface demo & report | — | [`scripts/run_task3_demo.py`](scripts/run_task3_demo.py), [`docs/demo-report.md#5`](docs/demo-report.md) (standalone `docs/task3-demo.md` via `run_task3_demo.py` optional) |
 | T3.12| Defense/repair prototype (sanitization, quarantine + safe reserialization) | — | [`pipeline/sanitizer.py`](pipeline/sanitizer.py), [`pipeline/repair.py`](pipeline/repair.py), [`pipeline/defense.py`](pipeline/defense.py) |
 | T3.13| Unified Task-3 demo (pickle + torch + GGUF, full pipeline) | — | [`scripts/demo_task3.py`](scripts/demo_task3.py), [`docs/demo-report.md`](docs/demo-report.md) |
 | T3.14| Related-works comparison analysis | — | [`docs/related-works-comparison.md`](docs/related-works-comparison.md) |
@@ -113,7 +113,7 @@ containers/fickling/build.sh 0.1.10 <fickling-commit>
 
 ## Full Experiment — Step-by-Step Reproduction
 
-Reproduces the numbers in **Latest results** (1055 candidates, 990 valid, 514 bypasses, H1–H3) on a machine with `docker` and Python 3.10+. Estimated wall time: **~8 h** for the two scaled campaigns + **~1.5 h** for shelf-life rescans. Every step is idempotent — re-running overwrites the same report paths.
+Reproduces the numbers in **Latest results** (1025 generated / 990 valid / 514 bypasses, H1–H3) on a machine with `docker` and Python 3.10+. Estimated wall time: **~8 h** for the two scaled campaigns + **~1.5 h** for shelf-life rescans. Every step is idempotent — re-running overwrites the same report paths.
 
 ```sh
 # 0. Prereqs & sanity (host needs no torch/sklearn)
@@ -158,7 +158,7 @@ python3 scripts/run_fuzzing_campaign.py \
   --evasion-mode random --fitness-mode current \
   --backend docker --time-budget-hours 8 --seed 42
 
-#    Quick check (should be 1055 / 990 / 514 after both finish):
+#    Quick check (should be 1025 generated / 990 valid / 514 bypasses after both finish; 1055 was an earlier total):
 sqlite3 data/regenbench_campaign.db "SELECT COUNT(*) FROM candidates;"
 sqlite3 data/regenbench_campaign.db "SELECT COUNT(*) FROM campaign_fitness WHERE is_valid=1;"
 sqlite3 data/regenbench_campaign.db "SELECT COUNT(*) FROM candidates c JOIN campaign_fitness f ON f.candidate_id=c.candidate_id WHERE f.is_valid=1 AND c.panel_verdict='all_benign';"
@@ -357,10 +357,11 @@ python3 scripts/crawl_malhug.py     # -> data/malhug/ (~73 malicious models + ma
 
 Run the Task 3 GGUF demo to scan 7 malicious attack families (Jinja2 SSTI
 `tokenizer.chat_template` CVE-2024-34359 + 6 vellaveto malformed-header attacks)
-and 24 real benign GGUFs across all scanners and the `ggufref` oracle:
+and benign GGUFs across all scanners and the `ggufref` oracle:
 
 ```sh
-python3 scripts/run_task3_demo.py --corpus data/gguf_benign_corpus  # -> docs/task3-demo.md
+python3 scripts/run_task3_demo.py --corpus data/gguf_benign_corpus  # -> docs/task3-demo.md (optional)
+# If data/gguf_benign_corpus is not crawled, the demo uses synthetic benign_gguf() (see docs/demo-report.md#5)
 ```
 
 Run the unified Task-3 demo that walks the full pipeline (generate one
@@ -406,8 +407,8 @@ bypasses are also exported to `data/bypasses/` as standalone, replayable JSON.
 | Benign corpus + views | `real_benign_corpus/all`, `oracle_positive/`, `oracle_negative/` | Hard links; `oracle-validation.json` holds the DynaHug scores |
 | Benign GGUF corpus | `data/gguf_benign_corpus/` | Crawled TinyLlama + llama.cpp vocab GGUF models |
 | MalHug malicious corpus | `data/malhug/` + `manifest.json` | Crawled real malicious Hugging Face models (ASE 2024) |
-| Evaluation report | `docs/evaluation-report.md` | RQ1-RQ4 tables, FP rates, hypothesis verdicts |
-| Task 3 GGUF demo report | `docs/task3-demo.md` | Scanner detection matrix on GGUF attack surface & blind spots |
+| Evaluation report | `docs/evaluation-report.md` | RQ1-RQ4 tables, FP rates, hypothesis verdicts (reachable-space coverage) |
+| Task 3 GGUF demo report | `docs/demo-report.md#5` (`docs/task3-demo.md` standalone optional) | Scanner detection matrix on GGUF attack surface & blind spots |
 | Fuzzing reports | `docs/fuzzing-report-<run_id>.md` | Per-campaign round tables |
 | Perf report | `docs/perf-report.md` | Pre-filter throughput speedup |
 | Triage report | `docs/triage-report.md` | Bypass profiles by dangerous callable |
@@ -421,7 +422,7 @@ tar czf regenbench-results-$(date +%Y%m%d-%H%M%S).tar.gz \
   data/bypasses data/candidates data/crawled \
   data/gguf_benign_corpus data/malhug \
   real_benign_corpus \
-  docs/evaluation-report.md docs/task3-demo.md docs/fuzzing-report-*.md \
+  docs/evaluation-report.md docs/demo-report.md docs/task3-demo.md docs/fuzzing-report-*.md \
   docs/perf-report.md docs/triage-report.md
 ```
 
@@ -443,64 +444,30 @@ python3 scripts/save_results.py \
 
 ## Latest results
 
-Snapshot: `results/20260818-141227/` (see `results.md` / `results.json`).
-Full detail: [`docs/evaluation-report.md`](docs/evaluation-report.md) and
-[`docs/task3-demo.md`](docs/task3-demo.md).
+Live DB: `data/regenbench_campaign.db` (2 runs, 990 valid, 514 bypasses). Full detail: [`docs/evaluation-report.md`](docs/evaluation-report.md) and [`docs/demo-report.md`](docs/demo-report.md) (GGUF section). Archive snapshot: `reference/baseline_snapshot/results-20260818-141227/` (pre-fix, 693 valid, 0 bypasses).
 
-### Evasion-mode campaigns (2026-08-23, first confirmed bypasses)
+### Scaled results (2026-08-30, all 5 families, adaptive evasion, splice transport)
 
-With the Phase-1/2 evasion pipeline active (splice transport, `--evasion-mode
-adaptive`/`random`, panel `picklescan modelscan fickling` on torch artifacts),
-the campaign produced the benchmark's first **confirmed dual-oracle bypasses**
-(panel all-benign + DynaHug malicious), replayable from `data/bypasses/`:
+- Guided 500 → 554 valid, **428 confirmed bypasses (77.3%)**; unguided 480 → 436 valid, **86 confirmed bypasses (19.7%)**; Fisher p=0.0, z=17.99.
+- Per-scanner evasion (990 valid): PickleScan **51.9%** [48.9%,55.1%], ModelScan **62.9%** [59.9%,65.9%], Fickling **94.2%** [92.7%,95.7%].
+- **H1 Supported**: fuzzing 51.9% vs ShadowPickle baseline 25.0% (relative improvement 108% per proposal wording; non-overlapping bootstrap CIs).
+- **H2 valid negative**: uncorroborated == confirmed (514); the static panel already detects all non-executing candidates, so dynamic validation's value is confirming execution (trigger polling), not filtering false evasions.
+- **H3 Supported**: 514 bypasses × 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10) → **100% retention** (stagnation, not patch evasion; see below).
 
-| Run | Mode | Evasion | Candidates | Valid | Confirmed Bypasses |
-| :--- | :--- | :--- | :---: | :---: | :---: |
-| guided-r21 | guided | adaptive | 36 | 23 | **1** |
-| guided-r31 | guided | adaptive | 100 | 77 | **1** |
-| guided-r32 | guided | adaptive | 100 | 72 | **0** |
-| unguided-r22 | unguided | random | 36 | 21 | **4** |
-| unguided-r33 | unguided | random | 100 | 77 | **7** |
-| unguided-r34 | unguided | random | 100 | 68 | **10** |
+Fickling now torch-capable with a narrow torch-plumbing allowlist (0% FP on benign HF corpus, StraceOracle 0% FP). Legacy mutators harden against ~8% candidate corruption (rejected by validity oracle). `platform.popen` removed in Python 3.13 — dead sink. For torch campaigns use `--panel-scanners picklescan modelscan fickling`.
 
-**All-time (11 runs, 1244 candidates in `data/regenbench_campaign.db`):**
-- **confirmed bypasses: 23** (all `pypi_injected` sink + splice transport)
-- **per-scanner evasion on evasion-mode runs (338 valid):**
-  - PickleScan: 23/338 = **6.8%**
-  - ModelScan: 66/338 = **19.5%**
-  - Fickling: 294/294 = **100%** (no rules for IPython/third-party sinks)
-- **confirmed bypasses by mode:** guided 2/172, unguided 21/166
-- **T7.10 guided vs unguided (all-time): 2/694 vs 21/393, z=-5.56, p≈2.6e-8** — uniform search significantly outperforms guided feedback because the winning vector lives in a family outside the callable-weighting scope.
-- **H1:** This pre-fix snapshot is superseded by the post-fix scaled run below; current evaluation uses relative improvement over the ShadowPickle baseline.
-**Post-fix scaled results (2026-08-30, all 5 families, adaptive evasion):**
-- Guided 500 → 554 valid, **428 confirmed bypasses (77.3%)**; unguided 480 → 436 valid, **86 confirmed bypasses (19.7%)**; Fisher p=0.0.
-- Per-scanner evasion (990 valid): PickleScan **51.9%**, ModelScan **62.9%**, Fickling **94.2%**.
-- **H1 Supported**: fuzzing 51.9% vs ShadowPickle baseline 25.0% (relative improvement per proposal wording).
-- **H2 valid negative**: uncorroborated == confirmed (514); the static panel already detects all non-executing candidates, so dynamic validation's value is confirming execution, not filtering false evasions.
-- **H3 Supported**: 514 bypasses × 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10) → **100% retention**.
+**Campaigns** (live DB `data/regenbench_campaign.db`, 2 runs, 1025 generated / 990 valid / 514 bypasses):
 
-Fickling now torch-capable with a narrow torch-plumbing allowlist (0% FP on benign HF corpus). Legacy mutators harden against ~8% candidate corruption (rejected by validity oracle). `platform.popen` removed in Python 3.13 — dead sink. For torch campaigns use `--panel-scanners picklescan modelscan fickling`.
-
-**Campaigns** (13 runs, 2299 candidates in `data/regenbench_campaign.db`):
-
-| Run | Type | Replicate | Candidates | Valid | Confirmed Bypasses |
+| Run | Type | Replicate | Generated | Valid | Confirmed Bypasses |
 | :--- | :--- | :---: | :---: | :---: | :---: |
-| pilot-20260816T030153Z | guided | 1 | 100 | 93 | 0 |
-| guided-r1 | guided | 1 | 100 | 100 | 0 |
-| guided-r2 | guided | 2 | 100 | 100 | 0 |
-| unguided-r1 | unguided | 1 | 100 | 100 | 0 |
-| unguided-r2 | unguided | 2 | 100 | 100 | 0 |
-| pilot-20260817T101219Z | guided | 1 | 100 | 100 | 0 |
-| guided-r3 | guided | 3 | 100 | 100 | 0 |
-| guided-r25 | guided | 1 | 500 | 554 | 428 |
-| unguided-r24 | unguided | 1 | 480 | 436 | 86 |
+| guided-r1 | guided | 1 | 500 | 554 | 428 |
+| unguided-r1 | unguided | 1 | 462 | 436 | 86 |
 
-**RQ1 evasion**: 514/990 scanner evasions across all valid candidates in the
-2026-08-30 scaled run. The campaign measures PickleScan 51.9%, ModelScan 62.9%, Fickling 94.2% over 990 valid candidates;
-H1 is evaluated as relative improvement over the ShadowPickle baseline
-(51.9% vs 25.0%, Supported) per the proposal wording.
+> Note: `generated` is `rounds*candidates_per_round` (500/462); `valid` is ExecutionOracle-confirmed (`campaign_fitness.is_valid=1`). Archived 13-run cumulative (2299 candidates, 8 pre-fix zero-bypass runs) is in `reference/baseline_snapshot/` and `docs/fuzzing-report-guided-r3.md` etc.; current DB holds the post-fix scaled proof only.
 
-**RQ3 benign false positives** over 17 real HuggingFace checkpoints:
+**RQ1 evasion**: 514/990 over all valid candidates; per-scanner PickleScan 51.9%, ModelScan 62.9%, Fickling 94.2% (see evaluation report for bootstrap CIs). H1 is relative improvement over ShadowPickle baseline (51.9% vs 25.0%, Supported).
+
+**RQ3 benign false positives** over 17 real HuggingFace checkpoints (StraceOracle 0% FP; DynaHug supplementary):
 
 | Scanner | FP Detections / 17 | FP Rate |
 | :--- | :---: | :---: |
@@ -508,7 +475,7 @@ H1 is evaluated as relative improvement over the ShadowPickle baseline
 | ModelScan | 0 | 0.0% |
 | ModelTracer | 0 | 0.0% |
 | Fickling | 0 | 0.0% |
-| DynaHug (Calibrated Oracle) | 1/1 | 100% (traces all loads) |
+| DynaHug (Calibrated Oracle, supplementary) | 11 | 64.7% |
 
 > **DynaHug caveat**: the upstream pretrained text-generation OCSVM
 > (8ff8174) collapses in this container environment — every loadable
@@ -519,8 +486,7 @@ H1 is evaluated as relative improvement over the ShadowPickle baseline
 > restores a discriminative decision score but still has a **measured 63.5%
 > FP rate** on real benign checkpoints — its traces are dominated by the
 > loader's Python/torch startup baseline, so the OCSVM boundary sits close to
-> zero. RQ3 reports this honestly rather than filtering the corpus by oracle
-> verdict (ground truth is provenance-based).
+> zero. RQ3 reports this honestly; ground truth is provenance-based (verified HF repo). ExecutionOracle (trigger polling / StraceOracle) is 0% FP and gates bypass confirmation.
 
 **RQ4 ablations**: pre-filter throughput speedup **16.92x** (1.03s vs 17.47s
 over 5 files); guided vs unguided confirmed-bypass rates 428/554 (77.3%) vs 86/436 (19.7%)
@@ -528,10 +494,9 @@ over 5 files); guided vs unguided confirmed-bypass rates 428/554 (77.3%) vs 86/4
 
 **Task 3 (GGUF attack surface — format-complexity demo, not scanner robustness)**:
 `ggufref` (reference-parser oracle) detects 7/7 GGUF attacks (6 malformed-header
-families + Jinja2 SSTI CVE-2024-34359) with 0 FP on 24 real benign GGUFs. The
+families + Jinja2 SSTI CVE-2024-34359) with 0 FP on synthetic `benign_gguf()` (real `data/gguf_benign_corpus/` optional, re-crawl via `scripts/crawl_gguf.py`). The
 pickle-oriented panel is not applicable: modelscan 0.8.8 misses all 7 (0/7,
-no GGUF rules) and fickling flags 24/24 benign as malicious (catastrophic FP).
-GGUF results demonstrate format complexity and the need for a dedicated oracle,
+no GGUF rules) and fickling flags benign as malicious when forced. GGUF results demonstrate format complexity and the need for a dedicated oracle,
 not panel robustness.
 
 **Hypotheses (post-fix, 2026-08-30)**: H1 Supported (fuzzing 51.9% vs
@@ -546,8 +511,7 @@ execution); H3 Supported (514 bypasses × 6 historical versions → 100% retenti
 
 **H3 Shelf-Life Note**: 100% retention reflects *scanner stagnation* (no rules for
 `IPython.utils.process.system` or splice transport added in those versions),
-not adaptive patch evasion. See peer-review plan: GGUF is a dedicated-oracle
-format demo.
+not adaptive patch evasion.
 
 **Repair triage (30% not repaired)**: `PickleSanitizer` only rewrites 5
 direct sinks (`os.system`, `subprocess.Popen`, `builtins.exec/eval`,

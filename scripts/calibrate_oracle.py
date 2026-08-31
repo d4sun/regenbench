@@ -166,6 +166,19 @@ def main() -> int:
     SYSCALLS_NAMES = extract_syscalls(image_full, args.backend)
     print(f"[calibrate-oracle] syscall vocabulary: {len(SYSCALLS_NAMES)} names")
 
+    # P2.2 Option A: differential trace — subtract blank load baseline
+    # If ci/corpus/torch/benign/benign.pt exists, trace it and subtract from candidates
+    blank_counts = None
+    blank_path = "ci/corpus/torch/benign/benign.pt"
+    if os.path.exists(blank_path):
+        print(f"[calibrate-oracle] collecting blank baseline from {blank_path} ...")
+        blank_res = collect_trace(args.backend, image_full, blank_path, args.timeout)
+        if blank_res and blank_res.get("counts"):
+            blank_counts = blank_res["counts"]
+            print(f"[calibrate-oracle] blank baseline: {len(blank_counts)} syscalls, e.g. {list(blank_counts.items())[:3]}")
+        else:
+            print("[calibrate-oracle] blank baseline failed, using raw counts")
+
     files = []
     for dirpath, _dirs, names in os.walk(args.corpus_dir):
         for n in names:
@@ -208,6 +221,17 @@ def main() -> int:
         if res is None:
             failed += 1
             continue
+        # Differential: subtract blank baseline to remove Python/torch startup noise
+        if blank_counts is not None:
+            diff_counts = {}
+            for sc, cnt in res["counts"].items():
+                base = blank_counts.get(sc, 0)
+                diff = cnt - base
+                diff_counts[sc] = max(0, diff)
+            # Also include syscalls only in blank (should be 0 diff)
+            res["counts_raw"] = res["counts"]
+            res["counts"] = diff_counts
+            res["differential"] = True
         res["features"] = build_features(res["counts"])
         res["path"] = p
         stem = os.path.basename(p)

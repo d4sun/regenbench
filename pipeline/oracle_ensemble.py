@@ -215,7 +215,17 @@ class EnsembleOracle(ValidityOracle):
         return SyscallAnomalyDetector._parse_strace_summary(summary_text)
 
     def validate_torch(self, pt_bytes: bytes, trigger_file: str) -> bool:
-        """Validate using ensemble: both DynaHug AND anomaly detector must agree."""
+        """**DEPRECATED** — AND-gate ensemble (DynaHug + anomaly + trigger).
+
+        The ``dynahug_result and anomaly_result and executed`` gate suppresses
+        true positives because the calibrated DynaHug OCSVM has 63.5% FP on the
+        benign corpus (see ``docs/evaluation-report.md`` RQ3). This method is
+        kept for ``--ensemble-oracle`` opt-in cross-validation only.
+        Bypass confirmation in the live pipeline uses ``ValidityOracle`` /
+        ``PlausibilityOracle`` (trigger polling / ``StraceOracle`` 0% FP) alone;
+        DynaHug contributes ``decision_score`` only (see ``pipeline/comparator.py``,
+        ``CLAUDE.md`` Known bugs). Do not import where ``sklearn`` is absent.
+        """
         if os.path.exists(trigger_file):
             try:
                 os.remove(trigger_file)

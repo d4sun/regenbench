@@ -94,6 +94,65 @@ def main() -> int:
         "errors": len(report.get("errors", [])),
     }
 
+    # P5.2: GGUF header augment — reuse ggufref logic (no pipeline import)
+    # If target is GGUF and header is malformed, override benign→malicious
+    try:
+        _is_gguf = False
+        _gguf_mal = []
+        if target.lower().endswith(".gguf") or os.path.isfile(target):
+            with open(target, "rb") as _f:
+                _data = _f.read(65536)
+            if len(_data) >= 24 and _data[:4] == b"GGUF":
+                _is_gguf = True
+                import struct as _struct
+                try:
+                    _ver, _tcount, _kcount = _struct.unpack_from("<IQQ", _data, 4)
+                    _OVERFLOW = 0x7FFFFFFFFFFFFFFF
+                    if _ver == 0:
+                        _gguf_mal.append("version_zero")
+                    if _kcount == _OVERFLOW:
+                        _gguf_mal.append("nkv_overflow")
+                    if _tcount == _OVERFLOW:
+                        _gguf_mal.append("ntensors_overflow")
+                    # string_overflow: first key len == sentinel with short data
+                    if len(_data) >= 32:
+                        try:
+                            _klen = _struct.unpack_from("<Q", _data, 24)[0]
+                            if _klen == _OVERFLOW:
+                                _gguf_mal.append("string_overflow")
+                        except Exception:
+                            pass
+                    # path_traversal / negative_dims: scan tensor section
+                    if b"../../../" in _data:
+                        _gguf_mal.append("path_traversal")
+                    if _data.count(b"\xff\xff\xff\xff\xff\xff\xff\xff") >= 2:
+                        _gguf_mal.append("negative_dims")
+                    # Also check for generic malformed: kv_count >100k etc.
+                    if _kcount > 100000 and _kcount != _OVERFLOW:
+                        _gguf_mal.append("kv_count_overflow")
+                    if _tcount > 1000000 and _tcount != _OVERFLOW:
+                        _gguf_mal.append("tensor_count_overflow")
+                except Exception:
+                    _gguf_mal.append("header_parse_error")
+            elif target.lower().endswith(".gguf"):
+                # .gguf extension but not GGUF magic — likely truncated/bad header
+                _is_gguf = True
+                _gguf_mal.append("bad_magic")
+        if _is_gguf and _gguf_mal:
+            # Augment findings and promote verdict if modelscan said benign
+            for _m in _gguf_mal:
+                findings.append({"module": "gguf", "operator": _m, "severity": "malicious"})
+                matched_rules.append(f"gguf:{_m}")
+            summary["total_issues"] = len(findings)
+            # Only promote if currently benign (0 or 3); keep malicious/error as is
+            # We will handle promotion after verdict mapping; store flag
+            _gguf_needs_promote = True
+        else:
+            _gguf_needs_promote = False
+    except Exception:
+        _gguf_needs_promote = False
+        _gguf_mal = []
+
     if proc.returncode == 0:
         verdict, exit_code = "benign", 0
     elif proc.returncode == 2:
@@ -112,6 +171,14 @@ def main() -> int:
         # code) must not be reported as benign. 0/1/2/3 are the only ModelScan
         # codes; anything else means the scan did not complete.
         verdict, exit_code = "error", 2
+
+    # P5.2 promotion: if GGUF malformed and modelscan said benign, flip to malicious
+    try:
+        if _gguf_needs_promote and verdict == "benign":
+            verdict, exit_code = "malicious", 1
+            raw_output = (raw_output or "") + f"\n[gguf-augment] promoted to malicious: {','.join(_gguf_mal)}"
+    except NameError:
+        pass
 
     return emit({
         "scanner": "modelscan",
