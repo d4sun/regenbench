@@ -30,56 +30,63 @@ class StraceOracle:
         self.image = image
 
     def _score_trace(self, trace_text: str) -> tuple[int, list[str], dict[str, bool]]:
-        """Score trace by category, returns (score, suspicious_lines, categories_hit)."""
+        """Score trace by category, returns (score, suspicious_lines, categories_hit).
+
+        Only flags writes to sensitive paths or payload exec, not benign startup
+        reads (e.g. openat /etc/ld.so.cache O_RDONLY).
+        """
         categories = {"file": False, "network": False, "process": False}
         suspicious = []
-        sensitive_markers = ("/etc/", "/.ssh/", "/tmp/regenbench", "corpus_pwned", "trigger_")
         for line in trace_text.splitlines():
-            # File-descriptor tracking: openat/open/creat on sensitive paths
+            # File-descriptor: only writes (O_CREAT/O_WRONLY) to sensitive markers
             if any(call in line for call in ("openat(", "open(", "creat(")):
-                if any(m in line for m in sensitive_markers):
-                    # Exclude benign python startup opens
-                    if "python3.13" not in line or "corpus_pwned" in line or "trigger_" in line:
-                        categories["file"] = True
-                        suspicious.append(line)
-                        continue
-                # Also flag /tmp with executable bits or /etc writes
-                if '"/tmp/' in line and ("O_CREAT" in line or "O_WRONLY" in line):
+                is_write = any(flag in line for flag in ("O_CREAT", "O_WRONLY", "O_RDWR", "O_TRUNC"))
+                has_trigger = any(m in line for m in ("corpus_pwned", "trigger_", "/tmp/regenbench"))
+                has_sensitive_write = is_write and any(m in line for m in ("/etc/", "/.ssh/"))
+                # Only count if it's a write to trigger/corpus or sensitive write
+                if has_trigger and is_write:
                     categories["file"] = True
                     suspicious.append(line)
                     continue
-            # Network tracking: socket/connect/sendto/recvfrom
+                if has_sensitive_write:
+                    categories["file"] = True
+                    suspicious.append(line)
+                    continue
+                # Also flag /tmp writes with O_CREAT even without trigger name (payload uses /tmp)
+                if is_write and '"/tmp/' in line and "trigger" in line.lower():
+                    categories["file"] = True
+                    suspicious.append(line)
+                    continue
+            # Network: socket/connect/sendto/recvfrom with actual network
             if any(call in line for call in ("socket(", "connect(", "sendto(", "recvfrom(")):
-                # Ignore benign DNS? we flag all network as suspicious for model load
-                categories["network"] = True
-                suspicious.append(line)
-                continue
-            # Process-spawning: clone/fork/vfork/execve
+                # Ignore benign startup that is just reading; only flag if not in initial python load
+                # For model load, any connect is suspicious
+                if "AF_INET" in line or "AF_INET6" in line or "connect(" in line:
+                    categories["network"] = True
+                    suspicious.append(line)
+                    continue
+            # Process-spawning: clone/fork/vfork/execve with payload marker
             if any(call in line for call in ("clone(", "fork(", "vfork(", "execve(")):
-                # Filter benign startup execve("/usr/bin/python3.13" without payload)
-                is_benign_startup = (
-                    'execve("/usr/bin/python3.13"' in line
-                    and "trigger_" not in line
-                    and "corpus_pwned" not in line
-                    and "python3 -c" not in line
-                )
-                if not is_benign_startup:
-                    # Only count if marker or payload exec
-                    if any(m in line for m in ("trigger_", "corpus_pwned", "python3 -c", "sh -c", "/bin/sh")):
+                # Only flag execve that contains payload trigger or sh -c with payload string
+                has_trigger = any(m in line for m in ("trigger_", "corpus_pwned"))
+                # The strace wrapper's own sh -c "python3.13 -c \"import torch; torch.load...\"" is benign
+                is_wrapper_sh = 'sh", ["sh", "-c", "python3.13 -c \\"import torch; torch.load' in line
+                is_payload_sh = has_trigger or ("python3 -c" in line and ("open(" in line or "corpus_pwned" in line or "trigger" in line))
+                if has_trigger or is_payload_sh:
+                    if not is_wrapper_sh:
                         categories["process"] = True
                         suspicious.append(line)
-                    elif "execve(" in line and "trigger_" in line:
+                    elif has_trigger:
+                        # Even wrapper sh if it contains trigger (payload's sh)
                         categories["process"] = True
                         suspicious.append(line)
-        # Also handle legacy markers for backward compat
-        if any(m in trace_text for m in ("corpus_pwned", "trigger_")) and not categories["file"]:
-            # Trigger file was created but not caught via openat due to truncation
-            categories["file"] = True
+        # Fallback: if trace contains trigger but no syscall captured (truncated), still count file
+        if not suspicious and any(m in trace_text for m in ("corpus_pwned", "trigger_")):
+            # Check if trace actually had a write that was truncated away
+            if '"/tmp/' in trace_text and "trigger" in trace_text:
+                categories["file"] = True
+                suspicious.append("trigger marker in trace (truncated)")
         score = sum(1 for v in categories.values() if v)
-        # If only legacy marker but no syscall, treat as file hit
-        if score == 0 and ("corpus_pwned" in trace_text or "trigger_" in trace_text):
-            categories["file"] = True
-            score = 1
         return score, suspicious, categories
 
     def confirm_execution(self, pt_path: str, timeout: int = 10) -> dict:

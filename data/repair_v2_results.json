@@ -1,0 +1,4114 @@
+[
+  {
+    "file": "data/candidates/unguided-r1/round_16/candidate_9.pt",
+    "template": "inject_payload_into_torch",
+    "strategy": "dead_code_injection",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_12/candidate_3.pt",
+    "template": "inject_payload_into_torch",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_17/candidate_16.pt",
+    "template": "inject_payload_into_torch",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_17/candidate_14.pt",
+    "template": "inject_payload_into_torch",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_4/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "attribute_masking",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_19/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "attribute_masking",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_6/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "attribute_masking",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_13/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "attribute_masking",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_1/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "attribute_masking",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_2/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "attribute_masking",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_6/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "dead_code_injection",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_21/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "dead_code_injection",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_7/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "dead_code_injection",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_11/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "dead_code_injection",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_1/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "module_aliasing",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_23/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "module_aliasing",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_3/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "module_aliasing",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_2/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "module_aliasing",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_22/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "module_aliasing",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_6/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "module_aliasing",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_4/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "module_aliasing",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_19/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "module_aliasing",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_20/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "module_aliasing",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_12/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "module_aliasing",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_7/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "module_aliasing",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_6/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "module_aliasing",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_21/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "module_aliasing",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_20/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "module_aliasing",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_3/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_17/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_2/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_13/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_5/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_5/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_2/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_6/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_23/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_5/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_21/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_1/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_5/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_22/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_15/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_18/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_11/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_5/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_9/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_9/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_2/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_4/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_22/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_2/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_10/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_13/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_20/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_16/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_10/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_24/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_13/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_20/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_12/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_1/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_2/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_15/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_2/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_13/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_9/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_5/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_13/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_5/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_22/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_5/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_5/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_2/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "none",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_21/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "opcode_reordering",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_7/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "opcode_reordering",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_23/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "opcode_reordering",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_3/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "opcode_reordering",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_7/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "opcode_reordering",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_6/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "protocol_downgrade",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_15/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "protocol_downgrade",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_8/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "protocol_downgrade",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_24/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "protocol_downgrade",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_9/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_1/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_22/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_5/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_13/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_11/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_10/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_5/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_4/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_5/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_2/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_5/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_13/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_5/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_9/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_3/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_8/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_1/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_6/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_11/candidate_10.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_14.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_23/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_18.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_18/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_24/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_10/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_4/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_20/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_19/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_11/candidate_4.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_17/candidate_7.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_2/candidate_5.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_21/candidate_0.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_7/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_22/candidate_1.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_20/candidate_3.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_14/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_25/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_2/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_2/candidate_19.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_12/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_15/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/guided-r1/round_16/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "stack_global_encoding",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_7/candidate_15.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "string_encoding_variants",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_1/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "string_encoding_variants",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_19/candidate_9.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "string_encoding_variants",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_10/candidate_16.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "string_encoding_variants",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_15/candidate_12.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "string_encoding_variants",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_3/candidate_11.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "string_encoding_variants",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_14/candidate_17.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "string_encoding_variants",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_8/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "string_encoding_variants",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_11/candidate_6.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "string_encoding_variants",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_23/candidate_8.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "string_encoding_variants",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_6/candidate_2.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "string_encoding_variants",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  },
+  {
+    "file": "data/candidates/unguided-r1/round_14/candidate_13.pt",
+    "template": "shadowpickle_pypi_injected",
+    "strategy": "string_encoding_variants",
+    "tag": "sanitized",
+    "loadable": true,
+    "reason": "sanitized"
+  }
+]

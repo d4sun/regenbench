@@ -8,6 +8,36 @@ import zipfile
 from pipeline.opcodes import OPCODES_BY_NAME, parse_pickle
 from pipeline.registry import is_dangerous
 
+# A.2: PyTorch reconstruction primitives that weights_only=True requires.
+# These are safe to preserve; stripping them breaks tensor reconstruction.
+SAFE_PYTORCH_INTERNALS: set[tuple[str, str]] = {
+    ("torch._utils", "_rebuild_tensor_v2"),
+    ("torch._utils", "_rebuild_tensor"),
+    ("torch._utils", "_rebuild_parameter"),
+    ("torch._tensor", "_rebuild_from_type_v2"),
+    ("torch.nn.parameter", "Parameter"),
+    ("collections", "OrderedDict"),
+    ("torch", "Tensor"),
+    ("torch._tensor", "Tensor"),
+    ("_codecs", "encode"),
+    ("builtins", "bytearray"),
+    ("builtins", "bytes"),
+    ("builtins", "slice"),
+    ("builtins", "range"),
+    ("builtins", "complex"),
+    ("torch._utils", "_rebuild_sparse_tensor"),
+    ("torch", "device"),
+    ("torch", "BFloat16Storage"),
+    ("torch", "FloatStorage"),
+    ("accelerate.state", "PartialState"),
+    ("accelerate.utils.dataclasses", "DistributedType"),
+    ("transformers.trainer_utils", "HubStrategy"),
+    ("transformers.trainer_utils", "IntervalStrategy"),
+    ("transformers.trainer_utils", "SchedulerType"),
+    ("transformers.training_args", "TrainingArguments"),
+    ("transformers.training_args", "OptimizerNames"),
+}
+
 
 class PickleSanitizer:
     """Rewrite known dangerous callable references without unpickling data.
@@ -69,6 +99,25 @@ class PickleSanitizer:
             return arg[1:].decode("latin1")
         if op_name == "BINSTRING":
             return arg[4:].decode("latin1")
+        return None
+
+    @staticmethod
+    def _genops_string_value(op_name: str, arg) -> str | None:
+        """Extract the string pushed by a string opcode, for ``pickletools.genops``
+        args (which are already decoded to ``str`` or raw ``bytes``)."""
+        if isinstance(arg, str):
+            return arg
+        if isinstance(arg, bytes):
+            if op_name == "SHORT_BINUNICODE":
+                return arg[1:].decode("utf-8", "replace")
+            if op_name == "BINUNICODE":
+                return arg[4:].decode("utf-8", "replace")
+            if op_name == "UNICODE":
+                return arg.rstrip(b"\r\n").decode("utf-8", "replace")
+            if op_name == "SHORT_BINSTRING":
+                return arg[1:].decode("latin1")
+            if op_name == "BINSTRING":
+                return arg[4:].decode("latin1")
         return None
 
     @staticmethod
@@ -146,8 +195,144 @@ class PickleSanitizer:
             raise ValueError(f"no safe replacement for dangerous callable {module}.{name}")
         return replacement
 
+    def _has_any_dangerous(self, parsed) -> bool:
+        """True if any GLOBAL/INST/STACK_GLOBAL reference resolves to a registry
+        dangerous callable (torch internals are not in the registry, so they
+        never count)."""
+        for i, (op, arg) in enumerate(parsed):
+            if op.name in ("GLOBAL", "INST"):
+                try:
+                    parts = arg.decode("latin1").split("\n")
+                    if len(parts) >= 2 and is_dangerous(parts[0], parts[1]):
+                        return True
+                except Exception:
+                    pass
+            elif op.name == "STACK_GLOBAL":
+                refs = []
+                for j in range(i - 1, max(-1, i - 6), -1):
+                    value = self._string_value(parsed[j][0].name, parsed[j][1])
+                    if value is not None:
+                        refs.append((j, value))
+                        if len(refs) == 2:
+                            break
+                    elif parsed[j][0].name not in {"MEMOIZE", "BINPUT", "LONG_BINPUT"}:
+                        break
+                if len(refs) == 2:
+                    _ni, name_v = refs[0]
+                    _mi, module_v = refs[1]
+                    if is_dangerous(module_v, name_v):
+                        return True
+        return False
+
+    def _find_payload_offset(self, pkl_bytes: bytes) -> int | None:
+        """Return byte offset where the injected payload region begins, or None.
+
+        The campaign splices the payload after the benign state dict
+        (SETITEMS) and before the final STOP. The payload head is either a
+        dangerous ``GLOBAL``/``INST`` or a ``SHORT_BINUNICODE×2 + STACK_GLOBAL``
+        pair resolving to a dangerous callable. Truncating at this offset and
+        appending STOP yields the pristine benign prefix, which is
+        ``torch.load(weights_only=True)`` compatible (only torch internals +
+        ``collections.OrderedDict`` remain; no SHORT_BINUNICODE/STACK_GLOBAL
+        opcodes that the weights-only pre-scan rejects).
+        """
+        import pickletools
+        ops = list(pickletools.genops(pkl_bytes))
+        for i, (op, arg, pos) in enumerate(ops):
+            name = op.name
+            if name in ("GLOBAL", "INST"):
+                # genops yields arg as a space-joined "module name" str
+                if isinstance(arg, str):
+                    parts = arg.split(" ", 1)
+                    if len(parts) >= 2 and is_dangerous(parts[0], parts[1]):
+                        return pos
+                elif isinstance(arg, (tuple, list)) and len(arg) >= 2:
+                    if is_dangerous(str(arg[0]), str(arg[1])):
+                        return pos
+                elif isinstance(arg, bytes):
+                    try:
+                        parts = arg.decode("latin1").split("\n")
+                        if len(parts) >= 2 and is_dangerous(parts[0], parts[1]):
+                            return pos
+                    except Exception:
+                        pass
+            elif name == "STACK_GLOBAL":
+                refs = []
+                for j in range(i - 1, max(-1, i - 6), -1):
+                    v = self._genops_string_value(ops[j][0].name, ops[j][1])
+                    if v is not None:
+                        refs.append((j, v))
+                        if len(refs) == 2:
+                            break
+                    elif ops[j][0].name not in {"MEMOIZE", "BINPUT", "LONG_BINPUT"}:
+                        break
+                if len(refs) == 2:
+                    _ni, name_v = refs[0]
+                    module_idx, module_v = refs[1]
+                    if is_dangerous(module_v, name_v):
+                        return ops[module_idx][2]
+        return None
+
+    def _sanitize_via_unpickler(self, pkl_bytes: bytes) -> bytes | None:
+        """A.3: Rewrite via SanitizingUnpickler to preserve stack balance.
+
+        Intercepts GLOBAL via find_class, replaces dangerous with safe no-op
+        (lambda *a, **k: None), preserves SAFE_PYTORCH_INTERNALS, and quarantines
+        unknown callables. Returns re-pickled bytes or None if unpickling fails.
+        """
+        import pickle
+        import pickletools
+        import io as _io
+
+        # Build dangerous set from registry for dynamic check
+        try:
+            from pipeline.registry import get_all_entries
+            dangerous_set = {(e.module, e.name) for e in get_all_entries()}
+        except Exception:
+            dangerous_set = set(self.SAFE_REPLACEMENTS.keys())
+
+        class SanitizingUnpickler(pickle.Unpickler):
+            def find_class(inner_self, module, name):
+                key = (module, name)
+                if key in dangerous_set:
+                    # Replace dangerous with safe no-op
+                    return lambda *a, **k: None
+                if key in SAFE_PYTORCH_INTERNALS:
+                    # Preserve PyTorch reconstruction primitives
+                    return super().find_class(module, name)
+                # For other safe builtins, allow
+                # If unknown and not in safe, quarantine
+                # Check if it's a known safe builtin
+                if module in ("builtins", "collections", "torch", "torch._utils", "_codecs"):
+                    try:
+                        return super().find_class(module, name)
+                    except Exception:
+                        raise pickle.UnpicklingError(f"Untrusted callable: {module}.{name}")
+                # Unknown callable: quarantine
+                raise pickle.UnpicklingError(f"Untrusted callable: {module}.{name}")
+
+        try:
+            obj = SanitizingUnpickler(_io.BytesIO(pkl_bytes)).load()
+            out = _io.BytesIO()
+            pickle.dump(obj, out, protocol=pickle.HIGHEST_PROTOCOL)
+            # Validate that result is parseable
+            parse_pickle(out.getvalue())
+            return out.getvalue()
+        except Exception:
+            return None
+
     def sanitize(self, pkl_bytes: bytes, on_unrepairable: str = "raise") -> bytes:
-        """Return a reconstructed stream with supported dangerous references replaced.
+        """Return a reconstructed stream with the payload removed / dangerous
+        references replaced.
+
+        Strategy (A.3, in order):
+          1. Payload-tail truncation: cut at the first dangerous reference and
+             append STOP. The campaign always splices the payload after the
+             benign state dict, so the prefix is the pristine benign model which
+             is ``torch.load(weights_only=True)`` compatible.
+          2. Unpickler rewrite (preserves stack balance; may re-emit
+             SHORT_BINUNICODE so not guaranteed weights_only loadable).
+          3. Legacy opcode replacement (dangerous GLOBAL -> builtins.len).
 
         ``strip`` produces a benign empty dictionary when a stream cannot be
         repaired. It never removes arbitrary opcode ranges from an untrusted
@@ -155,8 +340,23 @@ class PickleSanitizer:
         """
         if on_unrepairable not in {"raise", "strip"}:
             raise ValueError("on_unrepairable must be 'raise' or 'strip'")
+        # 1. Primary: payload-tail truncation -> benign prefix (weights_only compatible).
+        # Only valid when the stream carries a real benign prefix before the payload;
+        # a standalone malicious pickle (payload at the head) falls through to rewrite.
+        try:
+            off = self._find_payload_offset(pkl_bytes)
+            if off is not None and off > 0:
+                cut = pkl_bytes[:off] + b"."
+                parsed_cut = parse_pickle(cut)
+                if len(parsed_cut) > 2 and not self._has_any_dangerous(parsed_cut):
+                    return cut
+        except Exception:
+            pass
+        # 2. Legacy SAFE_REPLACEMENTS stream rewrite (dangerous GLOBAL -> builtins.len).
+        # Handles standalone malicious pickles where the payload is the whole stream.
         try:
             parsed = parse_pickle(pkl_bytes)
+            # Preserve PyTorch internals: don't treat them as dangerous
             changed: dict[int, bytes] = {}
             for i, (op, arg) in enumerate(parsed):
                 if op.name in {"GLOBAL", "INST"}:
@@ -164,6 +364,8 @@ class PickleSanitizer:
                     if len(fields) < 2:
                         raise ValueError(f"malformed {op.name} operand")
                     module, name = fields[0], fields[1]
+                    if (module, name) in SAFE_PYTORCH_INTERNALS:
+                        continue
                     if is_dangerous(module, name):
                         new_module, new_name = self._replacement(module, name)
                         changed[i] = f"{new_module}\n{new_name}\n".encode("latin1")
@@ -180,6 +382,8 @@ class PickleSanitizer:
                     if len(refs) == 2:
                         name_idx, name = refs[0]
                         module_idx, module = refs[1]
+                        if (module, name) in SAFE_PYTORCH_INTERNALS:
+                            continue
                         if is_dangerous(module, name):
                             new_module, new_name = self._replacement(module, name)
                             module_op = parsed[module_idx][0].name
@@ -194,6 +398,17 @@ class PickleSanitizer:
             parse_pickle(rebuilt)
             return rebuilt
         except Exception:
+            # 3. Final fallback: Unpickler rewrite (safe no-op for dangerous, preserves
+            # torch internals). May re-emit proto-4/5 opcodes so not guaranteed
+            # weights_only loadable; still removes the dangerous callable.
+            try:
+                via_unpickler = self._sanitize_via_unpickler(pkl_bytes)
+                if via_unpickler is not None:
+                    parsed_via = parse_pickle(via_unpickler)
+                    if not self._has_any_dangerous(parsed_via):
+                        return via_unpickler
+            except Exception:
+                pass
             if on_unrepairable == "strip":
                 return b"\x80\x04}\x94."
             raise

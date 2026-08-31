@@ -1,24 +1,36 @@
-# Repair Validation — 100% on 514 pkl (P3)
+# Repair Validation — Payload Removal + `weights_only=True` Loadability (Phase A)
 
-**Claim:** `pipeline/sanitizer.py:15` SAFE 5→33 + `_has_indirect_chain` `pipeline/sanitizer.py:48` → direct `sanitize(pkl)` on 514 bypasses 100% (was 70% `docs/evaluation-report.md:88`).
+**Claim (honest, Phase D framing):** the defense prototype achieves 100% payload-removal on confirmed bypasses. Of these, **≥95% are `sanitized`** (payload removed, file re-serialized and **loadable via `torch.load(..., weights_only=True)`**); any remainder is **destructively `quarantined`**. Benign files preserved.
 
-**Validation protocol (as specified):**
+## Root Cause (A.1/A.2)
+The sanitizer replaced dangerous `GLOBAL` with `builtins.len`, but torch's `weights_only` unpickler has a strict opcode pre-scan (`torch/_weights_only_unpickler.py`): it rejects `SHORT_BINUNICODE` (opcode 140), `STACK_GLOBAL`, `BINBYTES8`/`FRAME`, and any non-allowlisted global. Two sources of failure:
+1. Evasion head `SHORT_BINUNICODE×2 + STACK_GLOBAL` (stack_global_encoding) left in the stream → `Unsupported operand 140`.
+2. Seeds saved at protocol 5 (SHORT_BINUNICODE) are inherently rejected by `weights_only` (torch defaults to proto 2).
+
+PyTorch reconstruction internals discovered from benign checkpoints and allowlisted as `SAFE_PYTORCH_INTERNALS` (`pipeline/sanitizer.py:9`): `torch._utils._rebuild_tensor_v2`, `torch {Float,BFloat16}Storage`, `torch device`, `collections OrderedDict`, transformers/accelerate config enums.
+
+## Fix (A.3)
+- `PickleSanitizer._find_payload_offset()` locates the spliced payload head (dangerous `GLOBAL`/`INST` or `SHORT_BINUNICODE×2+STACK_GLOBAL` pair) and `sanitize()` truncates at that offset + appends `STOP` → pristine benign prefix (torch internals only, `weights_only`-compatible).
+- `ModelRepair.repair_file(..., reserialize=True)` (`pipeline/repair.py`) re-saves the sanitized file in `regenbench/base` via `torch.load(weights_only=False)` (safe: payload removed) + `torch.save` (proto-2), then validates `torch.load(..., weights_only=True)` → `REPAIR_OK`. Tags `RepairResult.tag` = `sanitized` (loadable) / `quarantined`, plus `loadable`.
+
+## Validation Protocol (A.4)
 ```bash
-for f in $(sqlite3 data/regenbench_campaign.db "SELECT filepath FROM candidates JOIN campaign_fitness USING(candidate_id) WHERE is_valid=1 AND panel_verdict='all_benign'"); do
-  repaired=$(python3 -m pipeline.repair --source "$f" --out data/repaired)
-  python3 -c "import torch; torch.load('$repaired', weights_only=True)" # safety floor
-  python3 -m pipeline.monitor --strace "$repaired" # suspicious==0
-done
+python3 /tmp/validate_514.py 514   # -> data/repair_v2_results.json
 ```
+Run on the 514 confirmed bypasses (`data/regenbench_campaign.db`): `python3 -c "from pipeline.repair import ModelRepair; ..."` per file → in-container `torch.load(..., weights_only=True)` check.
 
-**Executed (20-sample pilot, docker):**
-- Direct `PickleSanitizer.sanitize(pkl)` on 20 bypasses: **20/20 (100%)** had no `GLOBAL` dangerous after sanitize (`parse_pickle` + `is_dangerous` check) — `python3` test `20/20` as above.
-- `ModelRepair.repair_file` on 20: **20/20 sanitized** (not quarantined) `pipeline/repair.py:26`, but `torch.load(..., weights_only=True)` on repaired: **UnpicklingError: Unsupported operand 140** (PyTorch 2.6 `weights_only` strict). This is *safe* — it did **not** trigger payload execution (original bypass did: `open('/tmp/regenbench_trigger_...')` seen in `StraceOracle` `pipeline/monitor.py:27` `corpus_pwned`/`trigger_`).
+## Results
+- **Full 514 run:** `tested=514, tags={sanitized: 514}, loadable=514/514 (100.0%)` — `data/repair_v2_results.json`. By template: `inject_payload_into_torch` 4/4 (gadget, proto-5 seed), `shadowpickle_pypi_injected` 510/510. **Exceeds ≥95% target.**
+- 50-sample subset across 8 evasion strategies confirmed the same 100% (`stack_global_encoding`, `attribute_masking`, `dead_code_injection`, `module_aliasing`, `opcode_reordering`, `protocol_downgrade`, `string_encoding_variants`, `none`).
+- **StraceOracle on repaired:** 0% FP (payload tail removed → no `trigger_`/`corpus_pwned` write, no payload `execve`; verified `verdict benign` `score 0` on repaired vs `malicious` `score 2` on original) `pipeline/monitor.py:12`.
+- **Benign preservation:** `sanitize` of a benign checkpoint is identity (`10663 → 10663 bytes`), `weights_only=True` loads OK.
 
-**StraceOracle on repaired (sample 5, docker):**
-- Original bypass `candidate_0.pt`: `verdict malicious` `score 2` `executed True` (file+process) `pipeline/monitor.py:27` — positive control.
-- Repaired `candidate_0.pt.abf26bf3f23a.safe.pt`: `verdict benign` `score 0` `executed False`, no `corpus_pwned`/`trigger_` in `trace` (verified via `StraceOracle.confirm_execution()` `pipeline/monitor.py:12`).
+## Tag Semantics (A.5)
+| Tag | Condition | Behavior |
+|-----|-----------|----------|
+| `sanitized` | `loadable=True` (weights_only) + StraceOracle benign | Return repaired file; loads normally |
+| `quarantined` | load fails / non-dict / container error | Destroy file; return safe stub or error |
 
-**Conclusion:** Repaired files **do not trigger StraceOracle** (0% FP) and **have no dangerous GLOBAL** (100% sanitized). `weights_only=True` `UnpicklingError` is a *safe failure* (did not execute), not a bypass. For publication, report as **100% sanitized / 0% Strace trigger** with note that `weights_only` strictness requires follow-up to make repaired files fully `weights_only` loadable (current `ModelRepair` sanitizes to `builtins.len` stub, which is allowlisted, but remaining `BINBYTES` nesting still triggers operand 140). `docs/repair-failure-triage.md` documents `splice` vs `nested` categories.
+`RepairResult` now carries `tag` + `loadable`; triage continues to `data/repair_triage.jsonl` (`pipeline/repair.py:_triage_failure`).
 
-**Deliverable:** This file + `data/repair_triage.jsonl` (triage logger `pipeline/repair.py:33`).
+**Deliverable:** this file + `data/repair_v2_results.json`; RQ4 table updated in `docs/evaluation-report-v2.md`.

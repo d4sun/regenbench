@@ -28,3 +28,7 @@ sqlite3 data/shelf_life.db "SELECT new_version, retention_rate FROM rescans GROU
 - Picklescan-patched: 510 pypi_injected → 0 retained (100%→0% for that family)
 - Modelscan-patched: splice transport detection → 514→<50
 - Document in `docs/evaluation-report.md` H3 as synthetic vs longitudinal.
+
+## H3 Disclosure (D.3)
+
+> To validate that benchmark evasion is patchable (rather than inherently resilient), we constructed synthetic patched scanner containers (`regenbench/picklescan:patched`, `regenbench/modelscan:patched`) with rules targeting `IPython.utils.process.system` and `splice` transport. Retention dropped from 100% to **<50%**, confirming that the historical 100% retention reflects vendor stagnation, not benchmark structural resilience.

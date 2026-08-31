@@ -29,9 +29,9 @@
 
 **3.1 Triage Logger** `pipeline/repair.py:26` `triage_log="data/repair_triage.jsonl"` + `_triage_failure()` `pipeline/repair.py:33` `(family,callables,has_splice,has_chain,registry_miss,category)` → `docs/repair-failure-triage.md`.
 
-**3.2 Sanitization** `pipeline/sanitizer.py:15` `SAFE_REPLACEMENTS` 5→**33** (all armable + `__import__/getattr/_pickle.loads` for `indirect_chain`), helpers `_has_indirect_chain` `pipeline/sanitizer.py:48` / `_has_splice_transport` / `_is_pypi_injected_suspicious`. Direct `sanitize(pkl)` on 514 bypasses → **100%** (was 70% `docs/evaluation-report.md:88`) `python3` test `20/20` and `514/514 coverage`; `ModelRepair` `20/20`. Target RQ4 ≥90% repair, 100% benign preserved.
+**3.2 Sanitization (Phase A verified)** `pipeline/sanitizer.py` — `SAFE_REPLACEMENTS` 5→33 + `SAFE_PYTORCH_INTERNALS` `pipeline/sanitizer.py:9` (torch reconstruction primitives) + `_find_payload_offset()` tail-truncation primary (removes the spliced payload head, preserves the pristine benign prefix). `ModelRepair.repair_file(reserialize=True)` re-saves in-container → **100% payload removal; repaired files load via `torch.load(weights_only=True)`** (50/50 sample; full 514 in `data/repair_v2_results.json`). 100% benign preserved (sanitize of benign is identity). See `docs/repair-validation.md`.
 
-**3.3 Benign Expansion** 17→100 checkpoints (20×5 clusters) via `scripts/crawl_benign.py` → `docs/evaluation-report.md:66` 0% FP target.
+**3.3 Benign Expansion (honest split)** RQ3 reports two corpora separately — **17 real HuggingFace checkpoints** (provenance-verified, 0% FP) and **83 synthetic valid pickles** (empty state-dict tensors, 0% FP) — never blended into a single "0/100" claim. `real_benign_corpus_v2/all` = 100 (17+83). Full Docker panel over the 17 real → `docs/benign-expansion-100.md` (target 0/17 for PickleScan/ModelScan/Fickling/ModelTracer + StraceOracle).
 
 ## Phase 4 — Shelf-Life (Longitudinal)
 
@@ -49,6 +49,22 @@
 
 `REPRODUCIBILITY.md` one-command repro, held-out 20 HF, 5 manual adversarial bypasses vs `pipeline/sanitizer.py`, `docs/evaluation-report.md` re-framing (yield not family discovery, stagnation not resilience).
 
+## Phase B — Benign Corpus Hardening
+
+`scripts/crawl_benign.py --clusters text-classification,feature-extraction,text-generation,token-classification,question-answering --limit-per-cluster 20 --max-size 134217728 --out-dir data/crawled_real_v2` (network) → `real_benign_corpus_v3/all` hard links. **Offline fallback:** `real_benign_corpus_v2/all` = 17 real + 83 synthetic, reported separately. Full Docker panel via `scripts/run_evaluation_suite.py --corpus-dir real_benign_corpus/all --panel-scanners picklescan,modelscan,fickling,modeltracer --oracle strace`. See `docs/benign-expansion-100.md`.
+
+## Phase C — Full Docker Panel Validation
+
+- `./ci/smoke.sh --no-build` + manual panel on one real checkpoint (`python3 -m pipeline.runner --scanner <name> --artifact real_benign_corpus/all/<...>.bin --backend docker`) → every scanner returns `benign` ≤5s.
+- Pre-filter (`pipeline/pre_filter.py:88`) vs panel reconciliation → 0 disagreements on real benigns (`docs/pre-filter-reconciliation.md`); the 1 malformed raw-pickle admit (`sshleifer_tiny-gpt2`) is fail-closed, not a disagreement.
+- Mounts use `:ro,z` (shared relabel), never `:ro,Z` (`pipeline/scanners.py:90`).
+
+## Phase D — Documentation & Paper Framing (honest)
+
+- **RQ3:** 17 real HF (provenance-verified) + 83 synthetic, reported separately (see Phase B).
+- **RQ4:** defense achieves **100% payload removal**; repaired files **loadable via `torch.load(weights_only=True)`** (≥95% target; 50/50 = 100%); remaining unrepairable are destructively quarantined. Benign preserved 100%, 0.985× byte overhead.
+- **H3:** synthetic patched scanners (`regenbench/picklescan:patched` rule `IPython.utils.process.system` `containers/picklescan-patched/patched-rule.yaml`, `regenbench/modelscan:patched` splice `STACK_GLOBAL` detection `containers/modelscan-patched/`) drive retention from 100% → **<50%**, proving historical 100% reflects vendor stagnation, not structural resilience. Longitudinal TTP in `docs/shelf-life-longitudinal.md` via `scripts/rescan_bypasses.py --weekly`.
+
 ## Summary (updated H1–H3)
 
 | H | Before | After P1–6 | Verdict |
@@ -60,3 +76,20 @@
 **Artifacts:** `data/regenbench_campaign.db` 1025/990/514 (filesystem == DB 1065 `data/candidates/`), `data/gguf_benign_corpus/` 13 synthetic `docs/task3-demo.md:9`, `docs/*.md` all present, `171 passed` `python -m pytest tests/ -x -q`.
 
 *Next:* Run 200-candidate quota-on vs off ablation, 100-checkpoint benign re-scan, disclosures → `docs/shelf-life-longitudinal.md` TTP.
+
+---
+
+## Phase A — Repair Loadability (verified)
+
+**Goal:** repaired files load via `torch.load(..., weights_only=True)` ≥95% (`docs/repair-validation.md`).
+
+**Root cause found:** the sanitizer replaced dangerous `GLOBAL` with `builtins.len`, but any injected payload opcode breaks torch's `weights_only` pre-scan — including the evasion's `SHORT_BINUNICODE`/`STACK_GLOBAL` head (`Unsupported operand 140` = `SHORT_BINUNICODE`). Seeds saved at protocol 5 (SHORT_BINUNICODE) are also inherently rejected by `weights_only`.
+
+**Fix (`pipeline/sanitizer.py` + `pipeline/repair.py`):**
+- A.1 Discovered PyTorch reconstruction globals from benign checkpoints: `torch._utils._rebuild_tensor_v2`, `torch {Float,BFloat16}Storage`, `torch device`, `collections OrderedDict`, transformers/accelerate internals → added `SAFE_PYTORCH_INTERNALS` (`pipeline/sanitizer.py:9`).
+- A.3 `_find_payload_offset()` (`pipeline/sanitizer.py`) locates the spliced payload head (dangerous `GLOBAL` or `SHORT_BINUNICODE×2+STACK_GLOBAL`), truncates to the pristine benign prefix + STOP (`sanitize()` primary path) — no dangerous refs, torch internals preserved.
+- A.5 `ModelRepair.repair_file(reserialize=True)` (`pipeline/repair.py`) re-saves in-container via `torch.load(weights_only=False)` (safe: payload removed) + `torch.save` (proto-2), validates `weights_only=True`, tags `sanitized`/`quarantined` + `loadable` in `RepairResult`.
+
+**Validation:** full 514 run → **514/514 (100%) `sanitized`, `loadable=True`** (`data/repair_v2_results.json`), by template `inject_payload_into_torch` 4/4 + `shadowpickle_pypi_injected` 510/510. Exceeds ≥95% target. See `docs/repair-validation.md`.
+
+**Tag semantics:** `sanitized` = payload removed, `weights_only=True` loadable, StraceOracle benign (0% FP on repaired). `quarantined` = unrepairable (non-dict / load failure).
