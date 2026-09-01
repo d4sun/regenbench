@@ -31,6 +31,16 @@ _TORCH_ALLOWLIST = {
     ("torch.storage", "_rebuild_tensor_from_storage"),
     ("collections", "OrderedDict"),
     ("argparse", "Namespace"),
+    ("torch", "FloatStorage"),
+    ("torch", "HalfStorage"),
+    ("torch", "DoubleStorage"),
+    ("torch", "BFloat16Storage"),
+    ("torch", "ByteStorage"),
+    ("torch", "CharStorage"),
+    ("torch", "ShortStorage"),
+    ("torch", "IntStorage"),
+    ("torch", "LongStorage"),
+    ("torch", "BoolStorage"),
 }
 
 import re as _re
@@ -39,10 +49,19 @@ _IMPORT_RE = _re.compile(r"`from ([\w.]+) import ([\w.]+)`")
 
 
 def _is_allowlisted(analysis: str) -> bool:
-    m = _IMPORT_RE.search(analysis or "")
-    if not m:
+    """True only when *every* non-stdlib import in the analysis is torch
+    plumbing on the allowlist.
+
+    Fickling reports one combined ``analysis`` string per record, so a record
+    can list legitimate torch imports *and* a genuinely malicious one (e.g.
+    ``IPython.utils.process.system``). The record may only be suppressed when
+    ALL its imports are allowlisted — otherwise the malicious finding is
+    swallowed and a real detection is reported as benign.
+    """
+    imports = _IMPORT_RE.findall(analysis or "")
+    if not imports:
         return False
-    return (m.group(1), m.group(2)) in _TORCH_ALLOWLIST
+    return all((m, n) in _TORCH_ALLOWLIST for m, n in imports)
 
 
 def emit(record: dict) -> int:
