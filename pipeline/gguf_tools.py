@@ -1,9 +1,10 @@
-"""Task 3 -- GGUF format tools: reference parser, minimal builder, and the
-malformed-header / Jinja2-SSTI attack generators.
+"""Task 3 -- GGUF format tools: minimal builder and the malformed-header /
+Jinja2-SSTI attack generators.
 
 Format follows the ggml-org GGUF v3 specification
 (https://github.com/ggml-org/ggml/blob/master/docs/gguf.md), cross-checked
-against the actual vellaveto/gguf-scanner-bypass-poc payload bytes:
+against the attack technique demonstrated by the public
+vellaveto/gguf-scanner-bypass-poc payloads:
 
   header:   magic "GGUF" (u32), version (u32), tensor_count (u64), kv_count (u64)
   kv entry: key   [u64 len][bytes]
@@ -17,8 +18,8 @@ All values are little-endian. ``GgufAttack`` families:
     ``tokenizer.chat_template`` metadata is a Jinja2 SSTI payload that runs
     ``os.popen`` when rendered by an unsandboxed Jinja2 engine (the
     llama-cpp-python < 0.2.72 path).
-  * the six malformed-header families reproduced byte-for-byte from the
-    vellaveto PoC (all MISSED by modelscan 0.8.8): ``nkv_overflow``,
+  * the six malformed-header families that reproduce the vellaveto attack
+    *technique* (all MISSED by modelscan 0.8.8): ``nkv_overflow``,
     ``ntensors_overflow``, ``string_overflow``, ``path_traversal``,
     ``negative_dims``, ``version_zero``.
 """
@@ -144,102 +145,6 @@ def build_gguf(kv: list[tuple[str, Any]], tensor_count: int = 0,
     return b"".join(parts)
 
 
-# --- reference parser -----------------------------------------------------
-
-def parse_gguf(data: bytes, max_kv: int = 100_000, max_tensors: int = 1_000_000) -> dict:
-    """Parse a GGUF stream into a structured dict, raising GGUFError on any
-    truncation, out-of-range length, or size-prefix overflow."""
-    if len(data) < 24:
-        raise GGUFError(f"truncated header ({len(data)} bytes)")
-    if data[:4] != GGUF_MAGIC:
-        raise GGUFError(f"bad magic: {data[:4]!r}")
-    version, tensor_count, kv_count = struct.unpack_from("<IQQ", data, 4)
-    if version not in (2, 3):
-        raise GGUFError(f"unsupported version: {version}")
-    if kv_count > max_kv:
-        raise GGUFError(f"kv_count {kv_count} exceeds limit {max_kv}")
-    if tensor_count > max_tensors:
-        raise GGUFError(f"tensor_count {tensor_count} exceeds limit {max_tensors}")
-
-    pos = 24
-    fields: dict[str, Any] = {}
-    for _ in range(kv_count):
-        key, pos = _read_string(data, pos)
-        vtype, pos = _read_u32(data, pos)
-        value, pos = _read_value(data, pos, vtype)
-        fields[key] = value
-
-    tensors = []
-    for _ in range(tensor_count):
-        name, pos = _read_string(data, pos)
-        n_dims, pos = _read_u32(data, pos)
-        if n_dims > 8:
-            raise GGUFError(f"tensor {name!r}: n_dims {n_dims} out of range")
-        dims = []
-        for _ in range(n_dims):
-            d, pos = _read_u64(data, pos)
-            dims.append(d)
-        gtype, pos = _read_u32(data, pos)
-        offset, pos = _read_u64(data, pos)
-        tensors.append({"name": name, "dims": dims, "ggml_type": gtype, "offset": offset})
-
-    return {
-        "magic": "GGUF", "version": version,
-        "tensor_count": tensor_count, "kv_count": kv_count,
-        "fields": fields, "tensors": tensors,
-        "data_end": pos, "file_size": len(data),
-    }
-
-
-def _read_string(data: bytes, pos: int) -> tuple[str, int]:
-    slen, pos = _read_u64(data, pos)
-    if slen > 2 ** 16:  # spec: keys/tensor names capped at 64KiB/64B
-        raise GGUFError(f"string length {slen} out of range")
-    if pos + slen > len(data):
-        raise GGUFError(f"string length {slen} exceeds remaining bytes")
-    return data[pos:pos + slen].decode("utf-8", "replace"), pos + slen
-
-
-def _read_u32(data: bytes, pos: int) -> tuple[int, int]:
-    if pos + 4 > len(data):
-        raise GGUFError("truncated u32")
-    return struct.unpack_from("<I", data, pos)[0], pos + 4
-
-
-def _read_u64(data: bytes, pos: int) -> tuple[int, int]:
-    if pos + 8 > len(data):
-        raise GGUFError("truncated u64")
-    return struct.unpack_from("<Q", data, pos)[0], pos + 8
-
-
-def _read_value(data: bytes, pos: int, vtype: int) -> tuple[Any, int]:
-    if vtype == STRING:
-        return _read_string(data, pos)
-    if vtype in (UINT8, INT8, BOOL):
-        if pos + 1 > len(data):
-            raise GGUFError("truncated byte value")
-        return data[pos], pos + 1
-    if vtype in (UINT16, INT16):
-        if pos + 2 > len(data):
-            raise GGUFError("truncated u16")
-        return struct.unpack_from("<H", data, pos)[0], pos + 2
-    if vtype in (UINT32, INT32, FLOAT32):
-        return _read_u32(data, pos)
-    if vtype in (UINT64, INT64, FLOAT64):
-        return _read_u64(data, pos)
-    if vtype == ARRAY:
-        elem_type, pos = _read_u32(data, pos)
-        count, pos = _read_u64(data, pos)
-        if count > 100_000:
-            raise GGUFError(f"array length {count} out of range")
-        elems = []
-        for _ in range(count):
-            v, pos = _read_value(data, pos, elem_type)
-            elems.append(v)
-        return elems, pos
-    raise GGUFError(f"unknown value type: {vtype}")
-
-
 # --- benign model template -------------------------------------------------
 
 def benign_gguf(chat_template: str = "") -> bytes:
@@ -295,9 +200,10 @@ def generate_candidate_gguf(attack: str, trigger_path: str | None = None) -> byt
     if attack == "ssti_chat_template":
         return benign_gguf(chat_template=_ssti_payload(trigger_path or "/tmp/trig.txt"))
 
-    # The malformed families are reproduced byte-for-byte from the vellaveto
-    # PoC (fixed-size payloads), so the demo corpus matches the exact files
-    # the PoC reports against modelscan 0.8.8.
+    # The malformed families reproduce the vellaveto attack *technique*
+    # (sentinel counts, overflow length prefixes, version 0, traversal names,
+    # negative dims). They are minimal fixed-size payloads demonstrating the
+    # technique, not byte-identical copies of the PoC files.
     header_magic = GGUF_MAGIC
     if attack == "nkv_overflow":
         return header_magic + struct.pack("<IQQ", 3, 0, _OVERFLOW_SENTINEL)
