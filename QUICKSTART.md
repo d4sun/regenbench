@@ -2,10 +2,11 @@
 
 What to do, in order, from a clean checkout. Every step names its command, the
 artifact it produces, and how to verify it succeeded. The notebooks in
-`../notebooks/` wrap exactly these commands.
+[`notebooks/`](notebooks/README.md) wrap exactly these commands interactively.
+The measured outcomes are in [`RESULTS.md`](RESULTS.md).
 
-Estimated wall time for the full pipeline on a machine with `docker` and the
-built images: **~2 h crawl + ~8–12 h campaigns + ~1.5 h rescans**.
+Estimated wall time on a machine with `docker` and the built images:
+**~1–2 h crawl + ~1.5 h campaigns + ~1 h rescans/eval**.
 
 ## 0. Preconditions
 
@@ -15,6 +16,7 @@ python3 -m pytest tests/ -x -q                 # 171 passed expected
 docker images | grep regenbench                # base, picklescan, modelscan, fickling, dynahug, gguf
 # build if missing:
 for d in base picklescan modelscan fickling modeltracer dynahug gguf; do containers/$d/build.sh; done
+./scripts/verify_host.sh                        # host gate (docker, SELinux :ro,z mount, concurrency)
 ```
 
 ## 1. Crawl 100 real benign models (5 clusters × 20)
@@ -25,11 +27,13 @@ python3 scripts/crawl_benign.py \
   --limit-per-cluster 20 --max-size 134217728 --out-dir data/crawled \
   --scan-cap 20000 --workers 8
 ```
-- Produces `data/crawled/<cluster>/<repo>/pytorch_model.bin` + `data/crawled/seed_manifest.json`.
-- **Resumable**: re-run to continue; already-downloaded files are backfilled into the manifest.
-- **Verify**: `python3 -c "import json; print(json.load(open('data/crawled/seed_manifest.json'))['summary'])"` → `total_models: 100`.
+- Produces `data/crawled/<cluster>/<repo>/pytorch_model.bin` +
+  `data/crawled/seed_manifest.json`. Resumable; re-running skips existing
+  hashes and backfills already-present files.
+- **Verify**: `python3 -c "import json; print(json.load(open('data/crawled/seed_manifest.json'))['summary'])"`
+  → `total_models: 100`, 5 clusters × 20.
 
-Link the flat corpus view (hard links, no copy):
+Link the flat corpus (hard links, no copy):
 
 ```sh
 mkdir -p real_benign_corpus/all
@@ -46,7 +50,8 @@ python3 scripts/organize_corpus.py --corpus real_benign_corpus/all \
   --report real_benign_corpus/oracle-validation.json --out real_benign_corpus
 python3 scripts/check_oracle_disjointness.py --resplit
 ```
-- **Verify**: `real_benign_corpus/oracle-split.json` has disjoint `train`/`eval` (50/50, cluster-stratified).
+- **Verify**: `real_benign_corpus/oracle-split.json` has disjoint cluster-stratified
+  `train`/`eval` halves.
 
 ## 3. Recalibrate the oracle on this corpus
 
@@ -54,15 +59,15 @@ python3 scripts/check_oracle_disjointness.py --resplit
 python3 scripts/calibrate_oracle.py real_benign_corpus/all \
   --split-file real_benign_corpus/oracle-split.json --split-role train \
   --out real_benign_corpus/oracle-calibrated/current \
-  --sample 50 --backend docker --seed 1337
+  --sample 50 --backend docker --seed 1337 --traces-only
 python3 scripts/fit_oracle_sweep.py \
   --traces real_benign_corpus/oracle-calibrated/current/traces.json \
   --export --gamma 0.1 --nu 0.01 \
-  --export-dir real_benign_corpus/oracle-calibrated/current
-python3 scripts/fp_eval_oracle.py --split real_benign_corpus/oracle-split.json \
-  --role eval --out real_benign_corpus/oracle-calibrated/current/fp-eval-eval.json --backend docker
+  --export-dir real_benign_corpus/oracle-calibrated/current --backend docker
 ```
-- **Verify**: `oracle-calibrated/current/calibration-report.json` shows a non-collapsed score distribution.
+- **Verify**: `real_benign_corpus/oracle-calibrated/current/` contains
+  `oneclass_svm_model.pkl`, `vectorizer.pkl`, `scaler.pkl`, `syscalls.txt`.
+  DynaHug stays supplementary; bypass confirmation is execution-gated.
 
 ## 4. Campaigns
 
@@ -70,7 +75,7 @@ python3 scripts/fp_eval_oracle.py --split real_benign_corpus/oracle-split.json \
 # baseline (H1 denominator)
 python3 scripts/run_shadowpickle_baseline.py --candidates-per-family 20 --backend docker
 
-# guided (oracle-aware, adaptive evasion) and unguided (random) — seeded from real corpus
+# guided (oracle-aware, adaptive evasion) and unguided (random) — real-corpus seeded
 python3 scripts/run_fuzzing_campaign.py --mode guided --rounds 25 --candidates-per-round 20 \
   --replicate 1 --db data/regenbench_campaign.db \
   --seed-corpus-dir real_benign_corpus/all --seed-cluster text-generation \
@@ -82,18 +87,20 @@ python3 scripts/run_fuzzing_campaign.py --mode unguided --rounds 24 --candidates
   --attack-families gadget,overwritten,pypi_injected,external,indirect_chain \
   --evasion-mode random --fitness-mode current --backend docker --seed 42
 ```
-- **Verify**: `sqlite3 data/regenbench_campaign.db "SELECT run_id, COUNT(*) FROM candidates GROUP BY run_id;"` shows two fresh runs.
+- **Verify**: `sqlite3 data/regenbench_campaign.db "SELECT run_id, COUNT(*) FROM candidates GROUP BY run_id;"`
+  shows the two fresh runs.
 
 ## 5. Evaluation & reports
 
 ```sh
-python3 scripts/generate_evaluation_report.py            # fast, DB-only -> docs/evaluation-report.md
+python3 scripts/generate_evaluation_report.py          # fast, DB-only -> docs/evaluation-report.md
 python3 scripts/run_evaluation_suite.py --db data/regenbench_campaign.db \
-  --corpus-dir real_benign_corpus/all --fp-sample 100     # slow FP/monitor docker scans
-python3 scripts/triage_bypasses.py                        # -> docs/triage-report.md
-python3 scripts/benchmark_perf.py                         # -> docs/perf-report.md
-python3 scripts/demo_task3.py --backend docker           # -> docs/demo-report.md
+  --corpus-dir real_benign_corpus/all --fp-sample 100   # slow FP/monitor docker scans
+python3 scripts/triage_bypasses.py                      # -> docs/triage-report.md
+python3 scripts/benchmark_perf.py                       # -> docs/perf-report.md
+python3 scripts/demo_task3.py --backend docker          # -> docs/demo-report.md
 ```
+- Headline numbers are consolidated in [`RESULTS.md`](RESULTS.md).
 
 ## 6. Shelf-life rescans (H3)
 
@@ -102,13 +109,15 @@ python3 -c "from pipeline.shelf_life import register_bypasses_from_campaign_db; 
 for ver in 1.0.4 1.0.3; do python3 scripts/shelf_life_rescan.py --db data/regenbench_campaign.db --image picklescan=regenbench/picklescan:$ver --scanners picklescan --backend docker; done
 for ver in 0.8.7 0.8.6; do python3 scripts/shelf_life_rescan.py --db data/regenbench_campaign.db --image modelscan=regenbench/modelscan:$ver --scanners modelscan --backend docker; done
 for ver in 0.1.11 0.1.10; do python3 scripts/shelf_life_rescan.py --db data/regenbench_campaign.db --image fickling=regenbench/fickling:$ver --scanners fickling --backend docker; done
+sqlite3 data/shelf_life.db "SELECT new_version, total, retained, printf('%.1f%%', retention_rate*100) FROM (SELECT new_version, COUNT(*) total, SUM(evasion_retained) retained, AVG(evasion_retained) retention_rate FROM rescans GROUP BY new_version);"
 ```
 
 ## 7. Snapshot
 
 ```sh
 python3 scripts/save_results.py --db data/regenbench_campaign.db --corpus-dir real_benign_corpus/all
+# -> results/<timestamp>/ (results.json, results.md, reports, DB copy, bypasses)
 ```
 
-See `../README.md#Full Experiment` for the identical sequence with more
-context, and `../notebooks/` for an interactive version.
+See [`README.md`](README.md) for the overview, [`IMPLEMENTATION.md`](IMPLEMENTATION.md)
+for how it works, and [`RESULTS.md`](RESULTS.md) for the latest measured numbers.
