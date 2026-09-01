@@ -45,7 +45,7 @@ patched* versus which remain exploitable at scale" (see §3, weakness 1).
 | GGUF execution oracle | **strace-based** (`execve` syscall observation), decoupled from static detection |
 | FP over 100 benign | PickleScan 0%, ModelScan 0%, DynaHug 94% (supplementary), Fickling N/A |
 | Monitor | detection 100%, false-alarm 0% |
-| Pre-filter | 1.69× throughput |
+| Pre-filter | ~1.3–1.9× throughput (host/timing-dependent, see `docs/perf-report.md`) |
 
 ---
 
@@ -107,8 +107,8 @@ patched* versus which remain exploitable at scale" (see §3, weakness 1).
 ## 3.6 GGUF Q&A (rehearsed answers)
 
 **Q1 — "Why is the GGUF yield (10.7%) so much lower than pickle (34%)?"**
-> The GGUF surface is narrower (7 families vs the pickle pipeline's 5 families
-> + 11 evasion strategies). More importantly, `ggufref` is a **reference
+> The GGUF surface is narrower (10 attack families vs the pickle pipeline's 5
+> families + 11 evasion strategies). More importantly, `ggufref` is a **reference
 > oracle designed for correctness**, not a production scanner with heuristic
 > shortcuts. The 3 bypasses are significant because they prove that even a
 > correct reference implementation can miss obfuscated SSTI when relying on
@@ -163,7 +163,7 @@ yields — GGUF's lower yield is surface breadth, not pipeline weakness.
 | 5 | Architecture | 5-stage pipeline; containers; deterministic campaigns; **format-agnostic** (SCANNERS ext routing, unified DB `format` column) |
 | 6 | RQs (reframed) | RQ1 scale known families + per-scanner evasion; RQ2 execution-confirmation vs anomaly scoring; RQ3 bypass survival across patches |
 | 7 | H1 | Guided 47.1% vs unguided 18.5% vs baseline 25% — **honest**: driven by `pypi_injected` dominance (a scanner-bias finding) |
-| 8 | Scanner breakdown | PickleScan 34%, ModelScan 51.5%, **Fickling N/A (torch format gap)**; GGUF: ggufref 7/7, modelscan 0/7 |
+| 8 | Scanner breakdown | PickleScan 34%, ModelScan 51.5%, **Fickling N/A (torch format gap)**; GGUF: ggufref 7/10 (baseline SSTI + 6 malformed), modelscan 0/10, **3 obfuscated-SSTI confirmed bypasses** |
 | 9 | H2 | DynaHug 94% FP → statistical oracles fail on benign loader noise; ExecutionOracle 0% FP → deterministic trigger polling is the viable path |
 | 8.5 | **Methodological correction (GGUF)** | Initial GGUF: 0 bypasses because execution confirmation (trigger poll) was coupled to ggufref's `triggered` detection. Fix: **strace-based GGUF execution oracle** (decouple confirmation from static detection, mirroring the pickle-side StraceOracle). Result: 3 obfuscated-SSTI confirmed bypasses. Lesson: **benchmarks must not couple their validity oracle with their detection oracle** |
 | 10 | H3 | 99.3–100% retention × 6 versions → scanners not patching `pypi_injected` effectively |
@@ -177,7 +177,7 @@ yields — GGUF's lower yield is surface breadth, not pipeline weakness.
 
 **Q:** *"Why is GGUF second-class?"*
 
-**A:** *"GGUF is not second-class; it is the second format surface our unified pipeline ingests. The scanner panel is format-capable by extension routing, the validation oracle is format-dispatched, and the DB schema is format-agnostic (`candidates.format`, `attack_primitives`). We scoped the pilot to the pickle surface where the panel is richest (973 candidates), and validated the GGUF surface (32 candidates) in the same database and report. Scaling both surfaces under the same feedback loop is scoped follow-on work."*
+**A:** *"GGUF is not second-class; it is the second format surface our unified pipeline ingests. The scanner panel is format-capable by extension routing, the validation oracle is format-dispatched, and the DB schema is format-agnostic (`candidates.format`, `attack_primitives`). We scoped the pilot to the pickle surface where the panel is richest (973 candidates), and validated the GGUF surface (35 candidates, 3 confirmed bypasses) in the same database and report. Scaling both surfaces under the same feedback loop is scoped follow-on work."*
 
 ---
 

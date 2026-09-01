@@ -14,22 +14,24 @@ rescans). No pipeline logic lives here; the logic stays in `scripts/` and
 | 01 | `01_crawl_corpus.ipynb` | `crawl_benign.py` + corpus link | `data/crawled/seed_manifest.json`, `real_benign_corpus/all/` |
 | 02 | `02_organize_oracle.ipynb` | `validate_oracle.py`, `organize_corpus.py`, `check_oracle_disjointness.py` | oracle-validation.json, pos/neg views, oracle-split.json |
 | 03 | `03_calibrate_oracle.ipynb` | `calibrate_oracle.py`, `fit_oracle_sweep.py`, `fp_eval_oracle.py` | `oracle-calibrated/<ver>/` |
-| 04 | `04_campaigns.ipynb` | `run_shadowpickle_baseline.py`, `run_fuzzing_campaign.py` | shadowpickle + campaign DBs, fuzzing reports |
+| 04 | `04_campaign_full.ipynb` | `run_shadowpickle_baseline.py`, `run_fuzzing_campaign.py` | **larger** scaled run: baseline + guided 25r + unguided 24r → shadowpickle + campaign DBs, fuzzing reports |
+| 04b | `04b_campaign_demo.ipynb` | `run_shadowpickle_baseline.py`, `run_fuzzing_campaign.py` | **small pilot** for the demo: baseline + guided 5r + unguided 5r → shadowpickle + campaign DBs |
 | 05 | `05_evaluation.ipynb` | `generate_evaluation_report.py`, `run_evaluation_suite.py` | `RESULTS.md` (curated), `docs/evaluation-report.md` (regenerable) |
 | 06 | `06_triage_shelf_life.ipynb` | `triage_bypasses.py`, `shelf_life_rescan.py` | `docs/triage-report.md`, `data/shelf_life.db` |
-| 07 | `07_demo_defense.ipynb` | `demo_task3.py`, `crawl_gguf.py`, `run_task3_demo.py`, `benchmark_perf.py` | demo/perf reports, demo-artifacts |
+| 07 | `07_demo_defense.ipynb` | `demo_task3.py`, `crawl_gguf.py`, `run_task3_demo.py`, `benchmark_perf.py` | demo/perf reports, demo-artifacts (**small** ModelDefense demo) |
+| 07b | `07b_defense_eval.ipynb` | `run_evaluation_suite.py --defense` | `docs/evaluation-report.md` RQ4 (**full** repair + monitor metrics) |
 | 08 | `08_save_results.ipynb` | `save_results.py` + DB queries | `results/<timestamp>/` |
 
 The cells default to **small/pilot sizes** (5 rounds × 20 candidates, sample
 50) so a notebook run is fast; the exact reproduction command for the scaled
-run lives in `README.md` and `QUICKSTART.md`.
+run lives in `04_campaign_full.ipynb`, `README.md` and `QUICKSTART.md`.
 
 ## Setup & execution
 
 ```sh
 python3 -m pip install --user nbformat jupyter-client ipykernel   # or: pip install -r notebooks/requirements.txt
 # headless execute one notebook:
-jupyter nbconvert --to notebook --execute --inplace notebooks/04_campaigns.ipynb
+jupyter nbconvert --to notebook --execute --inplace notebooks/04_campaign_full.ipynb
 # or open the notebooks in Jupyter Lab:
 jupyter lab notebooks/
 ```

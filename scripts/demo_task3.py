@@ -295,27 +295,49 @@ def main(argv: list[str] | None = None) -> int:
     lines.append("")
     lines.append("## 6. Baseline comparison")
     lines.append("")
-    # Live numbers from campaign DB (fallback to last scaled run if DB missing)
+    # Live numbers from campaign DB (format-native confirmed-bypass definition,
+    # matching RESULTS.md / docs/evaluation-report.md; GGUF bypasses count attack
+    # candidates only — benign real/synth GGUFs are not bypasses).
     try:
         import sqlite3 as _sql
         _con = _sql.connect("data/regenbench_campaign.db")
-        _valid = _con.execute("SELECT COUNT(*) FROM campaign_fitness WHERE is_valid=1").fetchone()[0]
-        _byp = _con.execute("""SELECT COUNT(*) FROM campaign_fitness f WHERE f.is_valid=1
-            AND EXISTS (SELECT 1 FROM panel_results p WHERE p.candidate_id=f.candidate_id AND p.verdict='benign')
-            AND NOT EXISTS (SELECT 1 FROM panel_results p WHERE p.candidate_id=f.candidate_id AND p.verdict IN ('malicious','error'))""").fetchone()[0]
+
+        def _q(sql: str) -> int:
+            return _con.execute(sql).fetchone()[0] or 0
+
+        pt_valid = _q("""SELECT COUNT(*) FROM campaign_fitness f
+            JOIN candidates c ON c.candidate_id = f.candidate_id
+            WHERE f.is_valid = 1 AND COALESCE(c.format,'pt')='pt'""")
+        pt_byp = _q("""SELECT COUNT(*) FROM campaign_fitness f
+            JOIN candidates c ON c.candidate_id = f.candidate_id
+            WHERE f.is_valid = 1 AND COALESCE(c.format,'pt')='pt'
+              AND c.panel_verdict = 'all_benign'""")
+        gguf_valid = _q("""SELECT COUNT(*) FROM campaign_fitness f
+            JOIN candidates c ON c.candidate_id = f.candidate_id
+            WHERE f.is_valid = 1 AND c.format='gguf'""")
+        gguf_byp = _q("""SELECT COUNT(*) FROM campaign_fitness f
+            JOIN candidates c ON c.candidate_id = f.candidate_id
+            WHERE f.is_valid = 1 AND c.format='gguf'
+              AND c.panel_verdict = 'all_benign'
+              AND c.attack_primitives IS NOT NULL AND c.attack_primitives != '[]'""")
         _con.close()
-        _rate = _byp / max(1, _valid) * 100 if _valid else 0
-        baseline_txt = f"10/40 valid candidates bypassed (25.0%). Fuzzing campaigns: {_byp}/{_valid} ({_rate:.1f}%)."
+        pt_rate = pt_byp / max(1, pt_valid) * 100
+        gguf_rate = gguf_byp / max(1, gguf_valid) * 100
+        baseline_txt = (f"10/40 valid candidates bypassed (25.0%). Fuzzing campaigns: "
+                        f"pt {pt_byp}/{pt_valid} ({pt_rate:.1f}%) + "
+                        f"gguf {gguf_byp}/{gguf_valid} ({gguf_rate:.1f}%).")
     except Exception:
-        baseline_txt = "10/40 valid candidates bypassed (25.0%). Fuzzing campaigns: 514/990 (51.9%)."
+        baseline_txt = ("10/40 valid candidates bypassed (25.0%). Fuzzing campaigns: "
+                        "pt 297/874 (34.0%) + gguf 3/28 (10.7%).")
     lines.append("ShadowPickle baseline (reproduced by `scripts/run_shadowpickle_baseline.py`): " + baseline_txt)
     lines.append("")
     n_bypass = sum(1 for v in report["confirmed_bypasses"].values() if v)
     lines.append(f"In this demo subset, {n_bypass}/{len(report['confirmed_bypasses'])} generated "
                  "candidates evaded the full panel while still executing "
                  "(ExecutionOracle-confirmed). See `docs/evaluation-report.md` for the scaled "
-                 "campaign numbers and `docs/related-works-comparison.md` for how these compare "
-                 "to ShadowPickle / PickleFuzzer / DynaHug.")
+                 "campaign numbers and "
+                 "`reference/baseline_snapshot/results-20260818-141227/comparison-methodology.md` "
+                 "for how these compare to ShadowPickle / PickleFuzzer / DynaHug.")
     lines.append("")
     lines.append("## Note on safety")
     lines.append("")

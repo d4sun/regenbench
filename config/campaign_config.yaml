@@ -1,6 +1,6 @@
 # ReGenBench experiment configuration.
 #
-# Staged experiment tiers (see docs/experiment-plan.md):
+# Staged experiment tiers (see IMPLEMENTATION.md §5):
 #   pilot — validate the harness end-to-end before scaling.
 #   main  — publication-strength sizes for RQ1-RQ4.
 

@@ -163,7 +163,7 @@ Migrations are idempotent (`PRAGMA table_info` + `ALTER TABLE` in
 | `pipeline/sanitizer.py` | static sink rewriting (5 direct sinks) |
 | `pipeline/repair.py` | repair decision + quarantine policy |
 | `pipeline/differential.py` | RQ1 cross-parser disagreement generation |
-| `pipeline/gguf_tools.py` | GGUF v3 builder + 7 attack families (SSTI + 6 malformed-header) | `build_gguf`, `benign_gguf`, `generate_candidate_gguf` |
+| `pipeline/gguf_tools.py` | GGUF v3 builder + 10 attack families (SSTI + 6 malformed-header + 3 obfuscated-SSTI) | `build_gguf`, `benign_gguf`, `generate_candidate_gguf` |
 
 ## 6. Key invariants
 

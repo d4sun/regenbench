@@ -99,7 +99,7 @@ This report compares campaign execution performance and latency costs with vs. w
 - **Total Candidates**: 10 (5 benign PyTorch checkpoints, 5 malicious fuzzed checkpoints)
 - **Scanners Run**: `picklescan`, `dynahug` (Dynamic behavioral oracle)
 - **Parallel Workers**: 4
-- **Container Backend**: Podman
+- **Container Backend**: Docker
 
 ## Comparative Performance Metrics
 | Metric | With Pre-Filter | Without Pre-Filter | Difference / Improvement |
@@ -109,7 +109,7 @@ This report compares campaign execution performance and latency costs with vs. w
 | **DynaHug Runs** | {admitted_cnt} executed / {skipped_cnt} skipped | 10 executed / 0 skipped | **{skipped_cnt / 10 * 100:.1f}% reduction** |
 
 ## Key Findings
-1. **Pre-Filter Necessity**: Running the dynamic DynaHug behavioral oracle inside a Podman container requires mounting, process execution, stracing syscalls, and SVM inference. By statically filtering out benign candidates (which contain no registered dangerous callables), we avoid executing containers for **{skipped_cnt / 10 * 100:.1f}%** of the files.
+1. **Pre-Filter Necessity**: Running the dynamic DynaHug behavioral oracle inside a Docker container requires mounting, process execution, stracing syscalls, and SVM inference. By statically filtering out benign candidates (which contain no registered dangerous callables), we avoid executing containers for **{skipped_cnt / 10 * 100:.1f}%** of the files.
 2. **Speedup**: The campaign execution speedup with the pre-filter enabled is **{speedup:.2f}x**, saving massive CPU time and context switching.
 """
         with open(report_path, "w") as f:

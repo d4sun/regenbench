@@ -26,8 +26,8 @@ REPORTS = [
     "docs/evaluation-report.md",
     "docs/perf-report.md",
     "docs/triage-report.md",
-    "docs/comparison-methodology.md",
     "docs/task3-demo.md",
+    "reference/baseline_snapshot/results-20260818-141227/comparison-methodology.md",
 ]
 
 # Images whose build determines scanner behavior; their IDs are recorded so

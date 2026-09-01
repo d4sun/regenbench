@@ -56,10 +56,11 @@ coverage → feed the results back into the sampler for the next round.
 - **Scores with coverage-guided fuzzing**: per-round family quotas, novelty +
   coverage feedback, 5 fitness modes (guided ablation vs uniform-random).
 - **Scans a GGUF attack surface** (format-complexity demo, not a
-  scanner-robustness claim): 7 GGUF attack families (Jinja2 SSTI
-  `chat_template` + 6 malformed-header) via an isolated `ggufref` reference
-  oracle; modelscan misses all 7, and the oracle has 0% FP on 24 real
-  TinyLlama/llama.cpp GGUFs. See [`RESULTS.md`](RESULTS.md#gguf-attack-surface-format-complexity-demo).
+  scanner-robustness claim): 10 GGUF attack families (Jinja2 SSTI
+  `chat_template` + 6 malformed-header + 3 obfuscated-SSTI) via an isolated
+  `ggufref` reference oracle; modelscan misses all 10 (no GGUF rules), and the
+  oracle has 0% FP on 24 real TinyLlama/llama.cpp GGUFs. See
+  [`RESULTS.md`](RESULTS.md#gguf-attack-surface-format-complexity-demo).
 - **Measures the three hypotheses**: H1 fuzzing-vs-baseline evasion, H2
   dual-oracle precision, H3 shelf-life retention across historical scanner
   versions.
@@ -115,7 +116,7 @@ python3 scripts/generate_evaluation_report.py   # -> docs/evaluation-report.md (
 | `pipeline/` | Core Python: generator, runner, scanners, oracle, fitness, feedback, db, defense, shelf-life |
 | `scripts/` | Crawl, campaign, evaluation, calibration, triage, demo, report scripts |
 | `containers/` | One buildable image per scanner/oracle (`regenbench/<name>`) |
-| `tests/` | Host-only correctness suite (`python3 -m pytest tests/ -x -q`, 171 passed) |
+| `tests/` | Host-only correctness suite (`python3 -m pytest tests/ -x -q`, 193 passed) |
 | `notebooks/` | Interactive thin wrappers around every script |
 | `data/crawled/` | Crawled real checkpoints + `seed_manifest.json` |
 | `real_benign_corpus/` | Flat corpus view + oracle calibration |

@@ -12,11 +12,14 @@ python3 scripts/generate_evaluation_report.py
 python3 scripts/demo_task3.py --backend docker
 python3 scripts/benchmark_perf.py
 python3 scripts/triage_bypasses.py
+python3 scripts/crawl_gguf.py                       # -> data/gguf_benign_corpus/ (24 real GGUFs)
+python3 scripts/run_task3_demo.py --backend docker  # -> docs/task3-demo.md (GGUF matrix + FP)
+python3 scripts/insert_gguf_into_campaign.py        # bulk-insert GGUF surface as format='gguf' candidates
 tar czf regenbench-results-$(date +%Y%m%d).tar.gz data/regenbench_campaign.db data/candidates docs/*.md data/gguf_benign_corpus
 ```
 
 ## Artifact Verification
-- `python -m pytest tests/ -x -q` → 171 passed
+- `python -m pytest tests/ -x -q` → 193 passed, 3 skipped
 - `python3 -c "import json; print(json.load(open('data/crawled/seed_manifest.json'))['summary'])"` → `total_models: 100`, 5 clusters × 20
 - `ls real_benign_corpus/all/ | wc -l` → 100
 - `sqlite3 data/regenbench_campaign.db "SELECT COUNT(*) FROM candidates; SELECT COUNT(*) FROM campaign_fitness WHERE is_valid=1;"` → fresh run totals (no pre-existing runs)
@@ -33,4 +36,4 @@ tar czf regenbench-results-$(date +%Y%m%d).tar.gz data/regenbench_campaign.db da
 - Adversarial 5 manual bypasses vs `pipeline/sanitizer.py` → if ≥3 succeed, harden.
 
 ## Framing
-- RQ1 yield optimization not family discovery, H3 stagnation not resilience — see `docs/evaluation-report.md`, `docs/comparison-methodology.md`.
+- RQ1 yield optimization not family discovery, H3 stagnation not resilience — see `docs/evaluation-report.md`, `reference/baseline_snapshot/results-20260818-141227/comparison-methodology.md`.

@@ -42,9 +42,9 @@ format-native panel per format (`pt` → PickleScan+ModelScan; `gguf` →
 ggufref+modelscan):
 
 | Format | Format-native panel | Candidates | Valid | Confirmed bypasses | Yield |
-|---|---|---:|---:|---:|---:|
+|---|---:|---:|---:|---:|---:|
 | `pt` | PickleScan + ModelScan | 973 | 874 | 297 | 34.0% |
-| `gguf` | ggufref + modelscan | 32 | 32 | 0 | 0.0% |
+| `gguf` | ggufref + modelscan | 35 | 28 | 3 | 10.7% |
 
 ## Per-family bypasses (valid candidates)
 
@@ -128,7 +128,7 @@ Ground truth is provenance-based (verified public HF repos). The ExecutionOracle
 ## Monitor & throughput
 
 - **LoadTimeMonitor**: detection rate 100.0% (297 bypasses), false-alarm rate 0.0% (5 benign).
-- **Pre-filter throughput** (`scripts/benchmark_perf.py`): 1.69× speedup (11.2s vs 18.9s over 10 files).
+- **Pre-filter throughput** (`scripts/benchmark_perf.py` → `docs/perf-report.md`): ~1.3–1.9× speedup (host/timing-dependent).
 
 ## GGUF attack surface (format-complexity demo)
 

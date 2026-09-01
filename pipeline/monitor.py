@@ -12,7 +12,7 @@ from pathlib import Path
 class StraceOracle:
     """Deterministic syscall oracle: confirms payload execution via strace.
 
-    Unlike DynaHug (OCSVM, 63.5% FP on benign HF corpus), this oracle checks
+    Unlike DynaHug (OCSVM, ~94% FP on benign HF corpus), this oracle checks
     for the *specific* trigger side-effect that the ValidityOracle would see
     (payload writes /tmp/corpus_pwned or opens the trigger file).  It strace-s
     the load and reports ``executed=True`` only when a relevant syscall is

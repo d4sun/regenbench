@@ -7,7 +7,8 @@ For malformed/unparseable bytes this function is **fail-closed** (returns
 True) so the artifact still reaches the sandboxed oracle — see open question
 in ``CLAUDE.md``: the fail-open downgrade in the runner (synthetic benign)
 can blunt confirmation for obfuscated candidates that hide imports in
-nested payloads; treat as Phase-2 design note (see ``docs/related-works-comparison.md``).
+nested payloads; treat as Phase-2 design note (see
+``reference/baseline_snapshot/results-20260818-141227/comparison-methodology.md``).
 """
 
 from __future__ import annotations

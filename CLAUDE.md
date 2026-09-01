@@ -34,7 +34,7 @@ Campaign loop lives in `scripts/run_fuzzing_campaign.py`; per-candidate verdicts
 - Oracle model dir default is now `real_benign_corpus/oracle-calibrated/current` (fresh
   recalibration on the 100-model corpus; committed v1–v5 kept as fallback).
 - Interactive guides: `notebooks/` (thin subprocess wrappers around every script),
-  `docs/QUICKSTART.md`, `docs/README.md` (doc index).
+  `QUICKSTART.md`, and the doc index in `README.md` (Docs table).
 
 ## Hypothesis status (current, post-reset fresh run)
 
@@ -90,7 +90,7 @@ Containers: `containers/<name>/` build skinned `regenbench/<name>` images; all s
 - `EnsembleOracle.validate_torch` (`pipeline/oracle_ensemble.py`) is **deprecated**: the old AND-gate (`dynahug and anomaly and executed`) suppresses true positives. Bypass confirmation is trigger-execution only; DynaHug is a supplementary `decision_score` signal. The module imports sklearn at top; do not import where sklearn is absent.
 - `pre_filter` downgrades non-admitted artifacts to a benign oracle verdict (runner.py) — intended fail-open for malformed bytes, but it can blunt confirmation for obfuscated candidates; treat as an open question (plan Phase 2 note).
 - Baseline environment: no `podman` (only `docker`), Python 3.14.7, no `sklearn`/`torch` on host. Container campaigns must run on the lab machine; unit tests here avoid those module paths.
-- DynaHug calibrated oracle historically shows a 63.5% FP rate on benign corpus; that is why validity/plausibility (not DynaHug) gates confirmation.
+- DynaHug calibrated oracle shows a ~94% FP rate on the 100-model benign corpus (63.5% on the earlier 17-model subset); that is why validity/plausibility (not DynaHug) gates confirmation.
 - `PickleMutator.mutate` can produce structurally invalid pickles via random mutations; campaigns should add validation/retry or reduce mutation probabilities (current defaults: op_swap=0.05, arg_fuzz=0.05, callable_sub=0.0).
 - **Fixed (2026-08-29)**: `IndirectChain` (strategy + template) now resolves dotted modules via `__import__(mod, None, None, [name])` (`leaf_import_chain` in `evasion.py`) — pypi/external sinks no longer die with `AttributeError: module 'IPython' has no attribute 'system'`. Strategy selection caps sets at `{0,1}` (`select_strategies` + guided adaptive) and per-family defaults exclude `nested_loads_wrap`/`payload_obfuscation`/`indirect_chain` stacks that reintroduce denylisted globals. `pypi_injected` is now included in all experiment configs (ShadowPickle baseline, oracle-dominant validation, parallel ablation).
 - **Fixed (2026-08-29, live-run blockers)**: `run_scan` no longer passes podman-only `--timeout` to docker (host is docker-only); `bypass_records` has an idempotent `dynahug_verdict` migration; `platform.popen` (removed in py3.3) is `NON_ARMABLE`; combo exploration scales with uncovered-family share so `pypi_injected` is never starved.

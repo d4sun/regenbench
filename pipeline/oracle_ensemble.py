@@ -218,7 +218,7 @@ class EnsembleOracle(ValidityOracle):
         """**DEPRECATED** — AND-gate ensemble (DynaHug + anomaly + trigger).
 
         The ``dynahug_result and anomaly_result and executed`` gate suppresses
-        true positives because the calibrated DynaHug OCSVM has 63.5% FP on the
+        true positives because the calibrated DynaHug OCSVM has ~94% FP on the
         benign corpus (see ``docs/evaluation-report.md`` RQ3). This method is
         kept for ``--ensemble-oracle`` opt-in cross-validation only.
         Bypass confirmation in the live pipeline uses ``ValidityOracle`` /
