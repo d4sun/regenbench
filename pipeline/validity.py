@@ -33,6 +33,69 @@ def _trigger_exists(path: str, wait: float = 5.0) -> bool:
     return False
 
 
+def _debug_enabled() -> bool:
+    """True when REGENBENCH_VALIDITY_DEBUG is set to a truthy value.
+
+    Campaign runs print a compact one-line failure summary by default; full
+    container stdout/stderr (which can be large tracebacks from mutated
+    candidates) is only printed when this is enabled.
+    """
+    return os.environ.get("REGENBENCH_VALIDITY_DEBUG", "").lower() in (
+        "1", "true", "yes", "on")
+
+
+def _summary_line(stderr: str) -> str:
+    """Pick one readable line from container stderr for the non-debug
+    one-line failure summary: skip Python traceback framing (``Traceback``,
+    ``File "..."``, indented frames) and prefer the exception/message line."""
+    lines = (stderr or "").splitlines()
+    for ln in lines:
+        s = ln.strip()
+        if (not s or s.startswith(("Traceback", 'File "', "File '"))
+                or ln[:1] in (" ", "\t")):
+            continue
+        return s[:160]
+    for ln in reversed(lines):
+        if ln.strip():
+            return ln.strip()[:160]
+    return ""
+
+
+def _log_validation_failure(proc, action: str) -> None:
+    """Report a failed sandbox container run.
+
+    Debug mode prints the full container stdout/stderr (useful when triaging a
+    specific candidate); otherwise a single line with the exit code and one
+    stderr line keeps campaign logs readable.
+    """
+    if _debug_enabled():
+        print(f"[validity-debug] {action} failed with code {proc.returncode}")
+        print(f"[validity-debug] {action} stdout: {proc.stdout}")
+        print(f"[validity-debug] {action} stderr: {proc.stderr}")
+        return
+    print(f"[validity] {action} failed (exit {proc.returncode}): {_summary_line(proc.stderr)}")
+
+
+def _log_run_exception(exc: Exception) -> None:
+    if _debug_enabled():
+        print(f"[validity-debug] Container run exception: {exc}")
+    else:
+        print(f"[validity] container run exception: {exc}")
+
+
+def _run_validation_cmd(cmd, retry_cmd, timeout):
+    """Run a validity sandbox container, retrying once on transient
+    docker/OCI startup failures (exit 125/126/127) and once on the SELinux
+    relabel rejection (the existing ``label=disable`` retry). Rare infra
+    failures should not silently drop a candidate as invalid."""
+    proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    if proc.returncode in (125, 126, 127):
+        proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    if proc.returncode != 0 and "relabeling" in (proc.stderr or "").lower():
+        proc = subprocess.run(retry_cmd, capture_output=True, text=True, timeout=timeout)
+    return proc
+
+
 class ValidityOracle:
     """Validates candidates to ensure they load successfully and trigger execution."""
 
@@ -80,23 +143,19 @@ assert obj is not None
                 "-v", f"{host_dir}:/tmp:z",
                 self.image, "python3.13", "-c", container_script,
             ]
+            retry_cmd = [
+                self.backend, "run", "--rm",
+                "--security-opt", "label=disable",
+                "-v", f"{host_dir}:/tmp",
+                self.image, "python3.13", "-c", container_script,
+            ]
             try:
-                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=self.timeout)
-                if proc.returncode != 0 and "relabeling" in (proc.stderr or "").lower():
-                    retry = [
-                        self.backend, "run", "--rm",
-                        "--security-opt", "label=disable",
-                        "-v", f"{host_dir}:/tmp",
-                        self.image, "python3.13", "-c", container_script,
-                    ]
-                    proc = subprocess.run(retry, capture_output=True, text=True, timeout=self.timeout)
+                proc = _run_validation_cmd(cmd, retry_cmd, self.timeout)
                 success_load = (proc.returncode == 0)
                 if not success_load:
-                    print(f"[validity-debug] Container failed with code {proc.returncode}")
-                    print(f"[validity-debug] Container stdout: {proc.stdout}")
-                    print(f"[validity-debug] Container stderr: {proc.stderr}")
+                    _log_validation_failure(proc, "pickle validity")
             except (OSError, subprocess.TimeoutExpired) as e:
-                print(f"[validity-debug] Container run exception: {e}")
+                _log_run_exception(e)
                 success_load = False
         else:
             print(f"[validity-debug] container runtime unavailable: {self.backend}")
@@ -157,29 +216,20 @@ assert isinstance(obj, dict)
                 "-v", f"{temp_dir}:/tmp:z",
                 self.image, "python3.13", "-c", container_script
             ]
+            retry_cmd = [
+                self.backend, "run", "--rm",
+                "--security-opt", "label=disable",
+                "-v", f"{temp_dir}:/tmp",
+                self.image, "python3.13", "-c", container_script
+            ]
 
             try:
-                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=self.timeout)
-                if proc.returncode != 0 and "relabeling" in (proc.stderr or "").lower():
-                    # Some podman/SELinux setups refuse to relabel system /tmp
-                    # with :Z ("SELinux relabeling of /tmp is not allowed").
-                    # Retry the same mount without the relabel flag (the
-                    # trigger path is baked into the pickle as an absolute
-                    # /tmp/... path, so the mount target must stay /tmp).
-                    retry = [
-                        self.backend, "run", "--rm",
-                        "--security-opt", "label=disable",
-                        "-v", f"{temp_dir}:/tmp",
-                        self.image, "python3.13", "-c", container_script
-                    ]
-                    proc = subprocess.run(retry, capture_output=True, text=True, timeout=self.timeout)
+                proc = _run_validation_cmd(cmd, retry_cmd, self.timeout)
                 success_load = (proc.returncode == 0)
                 if not success_load:
-                    print(f"[validity-debug] Container failed with code {proc.returncode}")
-                    print(f"[validity-debug] Container stdout: {proc.stdout}")
-                    print(f"[validity-debug] Container stderr: {proc.stderr}")
+                    _log_validation_failure(proc, "torch validity")
             except (OSError, subprocess.TimeoutExpired) as e:
-                print(f"[validity-debug] Container run exception: {e}")
+                _log_run_exception(e)
                 success_load = False
             finally:
                 try:

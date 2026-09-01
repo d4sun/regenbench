@@ -84,6 +84,10 @@ def parse_args() -> argparse.Namespace:
                     help="per-scan container timeout (seconds)")
     ap.add_argument("--validity-timeout", type=int, default=20,
                     help="per-validity-check container timeout (seconds)")
+    ap.add_argument("--validity-debug", action="store_true",
+                    help="print full validity-container stdout/stderr on "
+                         "invalid candidates (default: one-line summary; "
+                         "equivalent to REGENBENCH_VALIDITY_DEBUG=1)")
     ap.add_argument("--panel-scanners", nargs="+", default=None,
                     help="override panel scanner list. Default full panel "
                          "(picklescan fickling modelscan modeltracer); for real torch "
@@ -244,6 +248,9 @@ def run_campaign(args: argparse.Namespace) -> int:
     print("=" * 60)
     print(f"STARTING {args.mode.upper()} FUZZING CAMPAIGN (replicate {args.replicate})")
     print("=" * 60)
+
+    if getattr(args, "validity_debug", False):
+        os.environ["REGENBENCH_VALIDITY_DEBUG"] = "1"
 
     if args.demo_subset:
         args.rounds = 1

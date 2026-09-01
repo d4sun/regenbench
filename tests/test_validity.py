@@ -149,6 +149,66 @@ class TestValidatePickleBranches(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         self.assertFalse(ok)
 
+    def test_infra_exit_125_retries_once_then_succeeds(self, _, __):
+        calls = []
+
+        def fake_run(cmd, **_kw):
+            calls.append(list(cmd))
+            return _FakeProc(returncode=125 if len(calls) == 1 else 0)
+
+        with mock.patch("pipeline.validity.subprocess.run", side_effect=fake_run):
+            ok = self.oracle.validate_pickle(b"\x80\x02N.", self.trigger)
+
+        self.assertEqual(len(calls), 2, "transient infra failure retries once")
+        self.assertTrue(ok)
+
+    def test_infra_exit_125_double_failure_returns_false(self, _, __):
+        calls = []
+
+        def fake_run(cmd, **_kw):
+            calls.append(list(cmd))
+            return _FakeProc(returncode=125, stderr="docker: Error response from daemon")
+
+        with mock.patch("pipeline.validity.subprocess.run", side_effect=fake_run):
+            ok = self.oracle.validate_pickle(b"\x80\x02N.", self.trigger)
+
+        self.assertEqual(len(calls), 2, "retries once, then gives up")
+        self.assertFalse(ok)
+
+    def test_failure_summary_single_line_by_default(self, _, __):
+        import contextlib
+        import io
+        buf = io.StringIO()
+        env = {k: v for k, v in os.environ.items()
+               if k != "REGENBENCH_VALIDITY_DEBUG"}
+        stderr = ("Traceback (most recent call last):\n"
+                  '  File "<string>", line 1, in <module>\n'
+                  "TypeError: execv expected 2 arguments, got 1\n")
+        with mock.patch.dict(os.environ, env, clear=True):
+            with mock.patch("pipeline.validity.subprocess.run",
+                            return_value=_FakeProc(returncode=1, stderr=stderr)):
+                with contextlib.redirect_stdout(buf):
+                    self.oracle.validate_pickle(b"\x80\x02N.", self.trigger)
+        out = buf.getvalue()
+        self.assertIn("[validity] pickle validity failed (exit 1):", out)
+        self.assertIn("TypeError: execv expected 2 arguments, got 1", out)
+        self.assertNotIn("[validity-debug]", out)
+        self.assertNotIn('File "<string>"', out)
+
+    def test_failure_full_traceback_when_debug_env(self, _, __):
+        import contextlib
+        import io
+        buf = io.StringIO()
+        stderr = "Traceback (most recent call last):\nTypeError: boom\n"
+        with mock.patch.dict(os.environ, {"REGENBENCH_VALIDITY_DEBUG": "1"}, clear=True):
+            with mock.patch("pipeline.validity.subprocess.run",
+                            return_value=_FakeProc(returncode=1, stderr=stderr)):
+                with contextlib.redirect_stdout(buf):
+                    self.oracle.validate_pickle(b"\x80\x02N.", self.trigger)
+        out = buf.getvalue()
+        self.assertIn("[validity-debug] pickle validity failed with code 1", out)
+        self.assertIn("Traceback (most recent call last):", out)
+
     def test_success_command_shape(self, _, __):
         captured = {}
 

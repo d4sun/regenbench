@@ -45,12 +45,19 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--config", default="config/campaign_config.yaml", help="YAML configuration file path")
     ap.add_argument("--db", default="data/regenbench_campaign.db", help="output SQLite database path")
     ap.add_argument("--quick", action="store_true", help="run a quick campaign validation instead of the full run")
+    ap.add_argument("--validity-debug", action="store_true",
+                    help="print full validity-container stdout/stderr on "
+                         "invalid candidates (default: one-line summary; "
+                         "equivalent to REGENBENCH_VALIDITY_DEBUG=1)")
     ap.add_argument("--resume", default=None, metavar="RUN_ID",
                     help="resume a previously interrupted campaign run_id (skips completed rounds)")
     ap.add_argument("--attack-families", default=",".join(FAMILIES),
                     help="comma-separated seed attack families to sample across "
                          f"(default: {','.join(FAMILIES)})")
     args = ap.parse_args(argv)
+
+    if getattr(args, "validity_debug", False):
+        os.environ["REGENBENCH_VALIDITY_DEBUG"] = "1"
 
     print("====================================================")
     print("STARTING PILOT FUZZING CAMPAIGN (T6.2)")
