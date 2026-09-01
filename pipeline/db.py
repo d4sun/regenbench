@@ -183,6 +183,22 @@ def init_db(db_path: str) -> None:
         fit_cols2 = {row[1] for row in cursor.execute("PRAGMA table_info(campaign_fitness)").fetchall()}
         if "consensus_tier" not in fit_cols2:
             cursor.execute("ALTER TABLE campaign_fitness ADD COLUMN consensus_tier TEXT")
+
+        # Migration: unified cross-format schema (pickle + GGUF). `format`
+        # distinguishes the artifact surface ('pt' | 'gguf'); `attack_primitives`
+        # is a JSON list of unified primitives (Python imports for pickle, e.g.
+        # ['IPython.utils.process.system'], or GGUF family tags, e.g.
+        # ['ssti_chat_template', 'nkv_overflow']); `format_specific` holds
+        # per-format detail (opcode list / header fields).
+        cand_cols3 = {row[1] for row in cursor.execute("PRAGMA table_info(candidates)").fetchall()}
+        for col_name, col_type, default in [
+            ("format", "TEXT", "'pt'"),
+            ("attack_primitives", "TEXT", "NULL"),
+            ("format_specific", "TEXT", "NULL"),
+        ]:
+            if col_name not in cand_cols3:
+                cursor.execute(
+                    f"ALTER TABLE candidates ADD COLUMN {col_name} {col_type} DEFAULT {default}")
     # _session() commits and closes on exit.
 
 

@@ -19,17 +19,38 @@ z = 8.92. Queries-to-first-bypass: guided [4], unguided [3] (both modes find
 bypasses quickly because the `pypi_injected` + `splice` vector is highly
 effective).
 
-## Per-scanner evasion (874 valid candidates)
+## Per-scanner evasion (874 valid pickle candidates)
+
+Confirmed bypasses are measured against the **format-native pickle panel**:
+PickleScan + ModelScan. Fickling is excluded from the torch (`.pt`) panel — it
+is a raw-pickle AST analyzer that cannot parse torch-zip checkpoints natively
+(`fickling --trace` on a `.pt` → `No pickle files detected`), i.e. a
+format-coverage gap, not an evasion. It still detects malicious raw `.pkl`.
 
 | Scanner | Evaded | Evasion Rate | 95% Bootstrap CI |
 | :--- | :---: | :---: | :--- |
 | PickleScan | 297 | 34.0% | [30.9%, 37.1%] |
 | ModelScan | 450 | 51.5% | [48.2%, 54.8%] |
-| Fickling | 874 | 100.0% | [100.0%, 100.0%] |
+| Fickling | N/A (torch format gap) | — | — |
+
+## Cross-Format Summary (unified DB)
+
+One database (`data/regenbench_campaign.db`), two surfaces — pickle candidates
+(`format='pt'`) and GGUF (`format='gguf'`, inserted by
+`scripts/insert_gguf_into_campaign.py`). Confirmed bypasses use the
+format-native panel per format (`pt` → PickleScan+ModelScan; `gguf` →
+ggufref+modelscan):
+
+| Format | Format-native panel | Candidates | Valid | Confirmed bypasses | Yield |
+|---|---|---:|---:|---:|---:|
+| `pt` | PickleScan + ModelScan | 973 | 874 | 297 | 34.0% |
+| `gguf` | ggufref + modelscan | 32 | 32 | 0 | 0.0% |
 
 ## Per-family bypasses (valid candidates)
 
-All confirmed bypasses come from the `pypi_injected` family (via `splice`):
+293/297 confirmed bypasses are `pypi_injected` (via `splice`); the remaining 4
+are `gadget` (`inject_payload_into_torch`). This concentration is a
+scanner-bias finding, not a generator failure — see `PRESENTATION.md` §3.
 
 | Run | Family | Valid | Bypasses |
 | :--- | :--- | :---: | :---: |
@@ -75,18 +96,22 @@ not convergence-limited); unguided's are noisy and low.
 | :--- | :--- | :--- |
 | **H1** | **Supported** | Fuzzing 34.0% vs ShadowPickle baseline 25.0% confirmed-bypass rate (relative improvement 36%; non-overlapping bootstrap CIs on PickleScan) |
 | **H2** | **Valid negative** | Uncorroborated == confirmed (297 == 297): the static panel already detects all non-executing candidates, so the dual-oracle adds no precision — dynamic validation confirms execution, not filters false evasions |
-| **H3** | **Supported** | 99.3–100% retention of 297 bypasses × 6 historical scanner versions (2 pypi_injected/splice bypasses caught by old picklescan/modelscan rules — stagnation, not patch evasion) |
+| **H3** | **Supported** | 99.3–99.7% retention of 297 bypasses across the format-native historical versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6; 2 pypi_injected/splice bypasses caught by old rules — stagnation, not patch evasion) |
 
 ## Shelf-life retention (H3, `data/shelf_life.db`)
 
 | Scanner Version | Total | Retained | Retention |
 | :--- | :---: | :---: | :---: |
-| fickling 0.1.11 | 300 | 300 | 100.0% |
-| fickling 0.1.10 | 300 | 300 | 100.0% |
+| fickling 0.1.11 | N/A (torch format gap) | — | — |
+| fickling 0.1.10 | N/A (torch format gap) | — | — |
 | modelscan 0.8.7 | 300 | 299 | 99.7% |
 | modelscan 0.8.6 | 300 | 299 | 99.7% |
 | picklescan 1.0.4 | 300 | 298 | 99.3% |
 | picklescan 1.0.3 | 300 | 298 | 99.3% |
+
+Retention is reported for the format-native pickle panel (picklescan +
+modelscan). Fickling's historical 300/300 rows are omitted: it cannot parse
+torch-zip, so its rescans are vacuous (a format gap, not patch resilience).
 
 ## Benign false positives (100 real checkpoints)
 
@@ -94,7 +119,7 @@ not convergence-limited); unguided's are noisy and low.
 | :--- | :---: | :---: |
 | PickleScan | 0 | 0.0% |
 | ModelScan | 0 | 0.0% |
-| Fickling | 7 | 7.0% |
+| Fickling | N/A (torch format gap) | — |
 | DynaHug (calibrated, supplementary) | 94 | 94.0% |
 
 Ground truth is provenance-based (verified public HF repos). The ExecutionOracle

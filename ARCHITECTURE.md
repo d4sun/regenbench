@@ -127,7 +127,7 @@ verdict never counts as evasion.
 
 | Table | Purpose | Key columns |
 |-------|---------|-------------|
-| `candidates` | one row per generated candidate | `candidate_id`, `filepath`, `round_num`, `seed_model`, `mutation_template` (family), `callables_used`, `run_id`, `panel_verdict` |
+| `candidates` | one row per generated candidate (both formats) | `candidate_id`, `filepath`, `round_num`, `seed_model`, `mutation_template` (family), `callables_used`, `run_id`, `panel_verdict`, `format` (`pt`/`gguf`), `attack_primitives` (JSON), `format_specific` (JSON) |
 | `campaign_fitness` | per-candidate scoring | `fitness_score`, `is_valid`, `transport`, `strategies`, `consensus_tier` |
 | `panel_results` | per-scanner verdict | `(candidate_id, scanner)`, `verdict`, `exit_code`, `findings`, `duration` |
 | `oracle_results` | dynahug decision score | `verdict`, `decision_score`, `pre_filtered`, `duration` |

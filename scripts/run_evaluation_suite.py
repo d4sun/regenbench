@@ -446,7 +446,8 @@ def query_bypass_queries(db_path: str) -> dict[str, dict[str, float | int | list
     try:
         runs = cursor.execute(
             "SELECT run_id, campaign_type, replicate_num, total_candidates "
-            "FROM campaign_runs ORDER BY campaign_type, replicate_num"
+            "FROM campaign_runs WHERE campaign_type != 'gguf-demo' "
+            "ORDER BY campaign_type, replicate_num"
         ).fetchall()
         for run in runs:
             run_id = run["run_id"]
@@ -679,8 +680,12 @@ def query_campaign_stats(db_path: str) -> dict:
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     try:
-        total = cursor.execute("SELECT COUNT(*) FROM candidates").fetchone()[0] or 0
-        valid = cursor.execute("SELECT COUNT(*) FROM campaign_fitness WHERE is_valid = 1").fetchone()[0] or 0
+        total = cursor.execute(
+            "SELECT COUNT(*) FROM candidates WHERE COALESCE(format,'pt')='pt'").fetchone()[0] or 0
+        valid = cursor.execute(
+            """SELECT COUNT(*) FROM campaign_fitness f
+               JOIN candidates c ON c.candidate_id = f.candidate_id
+               WHERE f.is_valid = 1 AND COALESCE(c.format,'pt')='pt'""").fetchone()[0] or 0
 
         # Per-scanner evasion tallies over the static torch-capable panel.
         # Each scanner's "admitted" denominator is restricted to valid
@@ -692,14 +697,17 @@ def query_campaign_stats(db_path: str) -> dict:
             scanner_scanned[scanner] = cursor.execute(
                 """SELECT COUNT(*) FROM panel_results p
                    JOIN campaign_fitness f ON f.candidate_id = p.candidate_id
-                   WHERE p.scanner = ? AND f.is_valid = 1""",
+                   JOIN candidates c ON c.candidate_id = p.candidate_id
+                   WHERE p.scanner = ? AND f.is_valid = 1
+                     AND COALESCE(c.format,'pt')='pt'""",
                 (scanner,),
             ).fetchone()[0] or 0
             scanner_evaded[scanner] = cursor.execute(
                 """SELECT COUNT(*) FROM panel_results p
                    JOIN campaign_fitness f ON f.candidate_id = p.candidate_id
+                   JOIN candidates c ON c.candidate_id = p.candidate_id
                    WHERE p.scanner = ? AND p.verdict = 'benign'
-                     AND f.is_valid = 1""",
+                     AND f.is_valid = 1 AND COALESCE(c.format,'pt')='pt'""",
                 (scanner,),
             ).fetchone()[0] or 0
         pk_scanned = scanner_scanned["picklescan"]
@@ -711,8 +719,9 @@ def query_campaign_stats(db_path: str) -> dict:
         dh_detected = cursor.execute(
             """SELECT COUNT(*) FROM oracle_results o
                JOIN campaign_fitness f ON f.candidate_id = o.candidate_id
+               JOIN candidates c ON c.candidate_id = o.candidate_id
                WHERE o.verdict = 'malicious' AND o.pre_filtered = 0
-                 AND f.is_valid = 1"""
+                 AND f.is_valid = 1 AND COALESCE(c.format,'pt')='pt'"""
         ).fetchone()[0] or 0
 
         # Confirmed bypass (strict, matches pipeline.comparator.check_bypass):
@@ -722,6 +731,8 @@ def query_campaign_stats(db_path: str) -> dict:
             """
             SELECT COUNT(*)
             FROM campaign_fitness f
+            JOIN candidates c ON c.candidate_id = f.candidate_id
+              AND COALESCE(c.format,'pt')='pt'
             WHERE f.is_valid = 1
               AND EXISTS (
                   SELECT 1 FROM panel_results p
@@ -741,6 +752,8 @@ def query_campaign_stats(db_path: str) -> dict:
             """
             SELECT COUNT(DISTINCT f.candidate_id)
             FROM campaign_fitness f
+            JOIN candidates c ON c.candidate_id = f.candidate_id
+              AND COALESCE(c.format,'pt')='pt'
             WHERE f.is_valid = 1
               AND EXISTS (
                   SELECT 1 FROM panel_results p
@@ -792,14 +805,17 @@ def query_scanner_stats(db_path: str) -> dict:
             scanned = cursor.execute(
                 """SELECT COUNT(*) FROM panel_results p
                    JOIN campaign_fitness f ON f.candidate_id = p.candidate_id
-                   WHERE p.scanner = ? AND f.is_valid = 1""",
+                   JOIN candidates c ON c.candidate_id = p.candidate_id
+                   WHERE p.scanner = ? AND f.is_valid = 1
+                     AND COALESCE(c.format,'pt')='pt'""",
                 (scanner,),
             ).fetchone()[0] or 0
             evaded = cursor.execute(
                 """SELECT COUNT(*) FROM panel_results p
                    JOIN campaign_fitness f ON f.candidate_id = p.candidate_id
+                   JOIN candidates c ON c.candidate_id = p.candidate_id
                    WHERE p.scanner = ? AND p.verdict = 'benign'
-                     AND f.is_valid = 1""",
+                     AND f.is_valid = 1 AND COALESCE(c.format,'pt')='pt'""",
                 (scanner,),
             ).fetchone()[0] or 0
             result[scanner] = {
@@ -834,6 +850,8 @@ def query_genuine_panel_evasion(db_path: str) -> dict:
             """
             SELECT COUNT(DISTINCT f.candidate_id)
             FROM campaign_fitness f
+            JOIN candidates c ON c.candidate_id = f.candidate_id
+              AND COALESCE(c.format,'pt')='pt'
             WHERE f.is_valid = 1
               AND EXISTS (
                   SELECT 1 FROM panel_results p
@@ -857,6 +875,8 @@ def query_genuine_panel_evasion(db_path: str) -> dict:
             """
             SELECT COUNT(DISTINCT f.candidate_id)
             FROM campaign_fitness f
+            JOIN candidates c ON c.candidate_id = f.candidate_id
+              AND COALESCE(c.format,'pt')='pt'
             WHERE f.is_valid = 1
               AND EXISTS (
                   SELECT 1 FROM panel_results p
@@ -874,6 +894,8 @@ def query_genuine_panel_evasion(db_path: str) -> dict:
             """
             SELECT COUNT(DISTINCT f.candidate_id)
             FROM campaign_fitness f
+            JOIN candidates c ON c.candidate_id = f.candidate_id
+              AND COALESCE(c.format,'pt')='pt'
             WHERE f.is_valid = 1
               AND EXISTS (
                   SELECT 1 FROM panel_results p
@@ -901,6 +923,8 @@ def query_genuine_panel_evasion(db_path: str) -> dict:
             """
             SELECT COUNT(DISTINCT f.candidate_id)
             FROM campaign_fitness f
+            JOIN candidates c ON c.candidate_id = f.candidate_id
+              AND COALESCE(c.format,'pt')='pt'
             WHERE f.is_valid = 1
               AND EXISTS (
                   SELECT 1 FROM panel_results p
@@ -952,7 +976,8 @@ def query_run_evasion(db_path: str) -> list[dict]:
     try:
         for run in conn.execute(
             "SELECT run_id, campaign_type, replicate_num, total_candidates "
-            "FROM campaign_runs ORDER BY campaign_type, replicate_num"
+            "FROM campaign_runs WHERE campaign_type != 'gguf-demo' "
+            "ORDER BY campaign_type, replicate_num"
         ).fetchall():
             valid = conn.execute(
                 """SELECT COUNT(*) FROM campaign_fitness f

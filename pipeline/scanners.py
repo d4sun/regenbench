@@ -20,7 +20,12 @@ from typing import Optional
 SCANNERS: dict[str, dict] = {
     "picklescan": {"image": "regenbench/picklescan", "kind": "panel", "exts": {".pkl", ".pt", ".pth", ".bin", ".onnx", ".h5", ".hdf5", ".joblib", ".model"}},
     "modelscan": {"image": "regenbench/modelscan", "kind": "panel", "exts": {".pkl", ".pt", ".pth", ".bin", ".onnx", ".h5", ".hdf5", ".joblib", ".model", ".gguf"}},
-    "fickling": {"image": "regenbench/fickling", "kind": "panel", "exts": {".pkl", ".pt", ".pth", ".bin"}},
+    # Fickling is a raw-pickle AST analyzer. It cannot parse torch-zip
+    # checkpoints natively (`fickling --trace` on a .pt -> "No pickle files
+    # detected"), so it is a format-coverage-gap scanner for torch artifacts,
+    # mirroring modeltracer's exclusion from torch FP. It is routed only to
+    # raw pickle (.pkl) inputs. See containers/fickling/wrapper.py.
+    "fickling": {"image": "regenbench/fickling", "kind": "panel", "exts": {".pkl"}},
     "modeltracer": {"image": "regenbench/modeltracer", "kind": "panel", "exts": {".pkl", ".pt", ".pth", ".bin"}},
     "dynahug": {"image": "regenbench/dynahug", "kind": "oracle", "exts": {".pt", ".pth", ".bin"}, "mount_only_pt": True},
     "ggufref": {"image": "regenbench/gguf", "kind": "oracle", "exts": {".gguf"}, "mount_only_gguf": True},

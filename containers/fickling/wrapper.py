@@ -177,40 +177,34 @@ def main() -> int:
     if os.path.exists(REPORT_FILE):
         os.remove(REPORT_FILE)
 
-    # Torch checkpoints (.pt/.pth) are ZIP archives whose pickle payload is
-    # archive/data.pkl. Fickling only reads raw pickle streams, so extract
-    # the embedded member and scan that (mirrors PickleScan's native torch
-    # handling). Non-zip inputs pass through untouched.
-    scan_target = target
-    temp_extract = None
+    # Torch checkpoints (.pt/.pth) are ZIP archives. Fickling is a raw-pickle
+    # AST analyzer and cannot parse torch-zip natively (`fickling --trace` on a
+    # .pt -> "No pickle files detected"). Surface this as an explicit
+    # format-coverage gap (like the GGUF pre-filter above) instead of
+    # force-extracting the embedded member, which would be scanning beyond the
+    # scanner's native capability. The pipeline excludes torch artifacts from
+    # Fickling via SCANNERS exts (see pipeline/scanners.py).
     try:
         with open(target, "rb") as _f:
             _magic = _f.read(4)
         if _magic.startswith(b"PK\x03\x04"):
-            import zipfile
-            import tempfile
-            with zipfile.ZipFile(target) as _z:
-                members = [n for n in _z.namelist() if n.endswith("data.pkl")]
-            if not members:
-                return emit({
-                    "scanner": "fickling",
-                    "version": VERSION,
-                    "commit": COMMIT,
-                    "target": target,
-                    "verdict": "error",
-                    "exit_code": 2,
-                    "findings": [],
-                    "matched_rules": [],
-                    "summary": {"scanned": 0, "dangerous": 0, "suspicious": 0},
-                    "raw_output": "torch archive without data.pkl member",
-                })
-            fd, temp_extract = tempfile.mkstemp(suffix=".pkl")
-            with os.fdopen(fd, "wb") as _out, zipfile.ZipFile(target) as _z:
-                _out.write(_z.read(members[0]))
-            scan_target = temp_extract
-    except (zipfile.BadZipFile, OSError):
-        pass  # fall through: fickling will report its own parse error
+            return emit({
+                "scanner": "fickling",
+                "version": VERSION,
+                "commit": COMMIT,
+                "target": target,
+                "verdict": "error",
+                "exit_code": 2,
+                "findings": [{"rule": "unsupported-format:torch-zip"}],
+                "matched_rules": ["unsupported-format:torch-zip"],
+                "summary": {"scanned": 0, "dangerous": 0, "suspicious": 0},
+                "raw_output": "unsupported format: torch-zip archive for raw-pickle "
+                              "scanner (magic PK)",
+            })
+    except OSError:
+        pass
 
+    scan_target = target
     cmd = [
         "fickling",
         "--check-safety",
@@ -236,12 +230,6 @@ def main() -> int:
 
     raw_output = (proc.stdout or "") + (proc.stderr or "")
     records = parse_report()
-
-    if temp_extract:
-        try:
-            os.remove(temp_extract)
-        except OSError:
-            pass
 
     findings = []
     dangerous = 0

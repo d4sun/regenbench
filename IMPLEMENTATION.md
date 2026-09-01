@@ -194,6 +194,17 @@ not routed to `.gguf` (format gap). See `RESULTS.md` and the regenerable
 `docs/demo-report.md#5` / `docs/task3-demo.md`. Known-answers:
 `reference/known_answers/gguf_malformed/` covers all 7 families.
 
+### 8.5 Unified database & report (cross-format)
+
+The campaign DB schema is format-agnostic: `candidates.format` (`pt`/`gguf`),
+`attack_primitives` (JSON), and `format_specific` (JSON) are added by the
+idempotent migration in `pipeline/db.py:init_db`. `scripts/insert_gguf_into_campaign.py`
+bulk-inserts the GGUF demo surface (7 attacks + synthetic benign + 24 real
+GGUFs) as `format='gguf'` candidates, so `generate_evaluation_report.py`
+emits a cross-format summary (`GROUP BY format`) with format-native panels.
+Follow-on (not yet implemented): format-aware generator dispatch, unified
+validation dispatcher, and attack-primitive coverage/fitness.
+
 ## 9. Corpus & oracle pipeline (reproduce)
 
 ```sh

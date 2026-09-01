@@ -12,6 +12,41 @@ from scripts.run_evaluation_suite import (
     _FP_AGREEMENT_DATA, detector_agreement, load_registry
 )
 
+def cross_format_summary(db: str) -> dict:
+    """Cross-format summary over the unified campaign DB.
+
+    Confirmed bypasses are measured against the *format-native* panel:
+      pt   -> PickleScan + ModelScan   (Fickling is excluded: raw-pickle
+             analyzer that cannot parse torch-zip natively - format gap)
+      gguf -> ggufref + modelscan
+    """
+    import sqlite3
+    conn = sqlite3.connect(db)
+    cur = conn.cursor()
+    out = {}
+    rows = cur.execute(
+        "SELECT COALESCE(c.format, 'pt'), COUNT(*), SUM(f.is_valid) "
+        "FROM candidates c JOIN campaign_fitness f ON f.candidate_id=c.candidate_id "
+        "GROUP BY COALESCE(c.format, 'pt')").fetchall()
+    panels = {"pt": ("picklescan", "modelscan"), "gguf": ("ggufref", "modelscan")}
+    for fmt, gen, valid in rows:
+        p1, p2 = panels[fmt]
+        confirmed = cur.execute(
+            "SELECT COUNT(*) FROM candidates c "
+            "JOIN campaign_fitness f ON f.candidate_id=c.candidate_id "
+            "JOIN panel_results p1 ON p1.candidate_id=c.candidate_id AND p1.scanner=? "
+            "JOIN panel_results p2 ON p2.candidate_id=c.candidate_id AND p2.scanner=? "
+            "WHERE f.is_valid=1 AND COALESCE(c.format,'pt')=? "
+            "  AND p1.verdict='benign' AND p2.verdict='benign' "
+            "  AND (COALESCE(c.format,'pt')='pt' "
+            "       OR (c.attack_primitives IS NOT NULL AND c.attack_primitives != '[]'))",
+            (p1, p2, fmt)).fetchone()[0]
+        out[fmt] = {"generated": gen, "valid": valid, "confirmed": confirmed,
+                    "panel": f"{p1.capitalize()} + {p2.capitalize()}"}
+    conn.close()
+    return out
+
+
 def main():
     db = 'data/regenbench_campaign.db'
     print("Loading campaign stats...")
@@ -89,6 +124,25 @@ def main():
     report_lines.append("")
     report_lines.append(f"**Data provenance**: campaign database `{db}`; all reported figures are measured or explicitly marked unassessed.")
     report_lines.append("")
+    report_lines.append("## Cross-Format Summary (unified pipeline)")
+    report_lines.append("")
+    report_lines.append("Confirmed bypasses are measured against the **format-native** panel per format: "
+                        "`pt` uses PickleScan + ModelScan; `gguf` uses ggufref + modelscan. Fickling is "
+                        "excluded from the torch (`.pt`) panel — it is a raw-pickle AST analyzer that "
+                        "cannot parse torch-zip checkpoints natively (`fickling --trace` on a `.pt` -> "
+                        "\"No pickle files detected\"), i.e. a format-coverage gap, not an evasion.")
+    report_lines.append("")
+    xf = cross_format_summary(db)
+    report_lines.append("| Format | Format-native panel | Candidates | Valid | Confirmed bypasses | Yield |")
+    report_lines.append("|---|---|---:|---:|---:|---:|")
+    for fmt in ("pt", "gguf"):
+        d = xf.get(fmt, {})
+        if not d:
+            continue
+        yield_pct = d["confirmed"] / max(1, d["valid"]) * 100
+        report_lines.append(f"| `{fmt}` | {d['panel']} | {d['generated']} | {d['valid']} | "
+                            f"{d['confirmed']} | {yield_pct:.1f}% |")
+    report_lines.append("")
     report_lines.append("## RQ1: Robustness of Static Scanners")
     report_lines.append("**Hypothesis H1**: *Directed fuzzing achieves high evasion rates against static scanners compared to published baselines.*")
     report_lines.append("")
@@ -103,7 +157,7 @@ def main():
     report_lines.append("| Scanner | Valid Candidates Admitted | Evaded | Evasion Rate | 95% Bootstrap CI |")
     report_lines.append("|---|---:|---:|---:|---|")
     report_lines.append(f"| PickleScan | {pk_adm} | {pk_evaded} | {pk_rate*100:.1f}% | [{pk_ci[0]*100:.1f}%, {pk_ci[1]*100:.1f}%] |")
-    report_lines.append(f"| Fickling | {fk_adm} | {fk_evaded} | {fk_rate*100:.1f}% | [{fk_ci[0]*100:.1f}%, {fk_ci[1]*100:.1f}%] |")
+    report_lines.append("| Fickling | N/A (not routed to torch `.pt`; raw-pickle format gap) | — | — | — |")
     report_lines.append(f"| ModelScan | {ms_adm} | {ms_evaded} | {ms_rate*100:.1f}% | [{ms_ci[0]*100:.1f}%, {ms_ci[1]*100:.1f}%] |")
     report_lines.append("")
     report_lines.append("### ShadowPickle Baseline (Handcrafted Templates)")
@@ -113,6 +167,9 @@ def main():
         report_lines.append("| Scanner | Valid Candidates | Evaded | Evasion Rate |")
         report_lines.append("|---|---:|---:|---:|")
         for s in ["picklescan", "fickling", "modelscan"]:
+            if s == "fickling":
+                report_lines.append("| Fickling | N/A (raw-pickle format gap on torch `.pt`) | — | — |")
+                continue
             sp_e = sp_scanner_stats.get(s, {"evaded": 0})["evaded"]
             sp_v = sp_scanner_stats.get(s, {"scanned": 1})["scanned"]
             sp_r = sp_scanner_stats.get(s, {"rate": 0.0})["rate"]
@@ -240,7 +297,10 @@ def main():
         except Exception:
             pass
     report_lines.append("")
-    h3_rows = list(decay_curve.items())
+    # H3 retention is measured over the format-native pickle panel. Fickling
+    # rescans are excluded: Fickling cannot parse torch-zip, so its historical
+    # 300/300 rows are a format-gap artifact, not patch resilience.
+    h3_rows = [(v, d) for v, d in decay_curve.items() if "fickling" not in v.lower()]
     h3_total = sum(d['total'] for _, d in h3_rows) if h3_rows else 0
     h3_retained = sum(d['retained'] for _, d in h3_rows) if h3_rows else 0
     h3_retention = (h3_retained / h3_total * 100) if h3_total else 0.0
@@ -248,13 +308,14 @@ def main():
 
     report_lines.append("## H3: Shelf-Life / Version-Delta Rescans")
     report_lines.append("")
-    report_lines.append(f"Confirmed bypasses re-scanned against 6 historical scanner versions ")
-    report_lines.append(f"(PickleScan 1.0.4/1.0.3, ModelScan 0.8.7/0.8.6, Fickling 0.1.11/0.1.10):")
+    report_lines.append(f"Confirmed bypasses re-scanned against the format-native historical ")
+    report_lines.append(f"scanner versions (PickleScan 1.0.4/1.0.3, ModelScan 0.8.7/0.8.6; ")
+    report_lines.append(f"Fickling omitted - torch format gap, vacuous rescans):")
     report_lines.append("")
     report_lines.append("| Scanner Version | Total | Retained | Retention |")
     report_lines.append("|---|---:|---:|---:|")
     
-    for version, data in decay_curve.items():
+    for version, data in h3_rows:
         report_lines.append(f"| {version} | {data['total']} | {data['retained']} | {data['retention_rate']*100:.1f}% |")
     
     report_lines.append("")
