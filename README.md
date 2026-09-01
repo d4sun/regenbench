@@ -73,6 +73,7 @@ coverage → feed the results back into the sampler for the next round.
 | [`IMPLEMENTATION.md`](IMPLEMENTATION.md) | How each module works: generator, runner, scanners, oracle, fitness, feedback, defense, shelf-life, campaign design. |
 | [`RESULTS.md`](RESULTS.md) | The fresh-run campaign results (guided vs unguided, per-scanner evasion, H1–H3, FP rates). |
 | [`QUICKSTART.md`](QUICKSTART.md) | Step-by-step "what to do" with exact commands and verification. |
+| [`docs/full-implementation-guide.md`](docs/full-implementation-guide.md) | The complete step-by-step runbook: every command, artifact, and verification, plus per-step chart generation. |
 | [`notebooks/`](notebooks/README.md) | The same steps as interactive notebooks (thin wrappers around the scripts). |
 
 ## Quick start (full detail in `QUICKSTART.md`)
@@ -116,15 +117,17 @@ python3 scripts/generate_evaluation_report.py   # -> docs/evaluation-report.md (
 | `pipeline/` | Core Python: generator, runner, scanners, oracle, fitness, feedback, db, defense, shelf-life |
 | `scripts/` | Crawl, campaign, evaluation, calibration, triage, demo, report scripts |
 | `containers/` | One buildable image per scanner/oracle (`regenbench/<name>`) |
-| `tests/` | Host-only correctness suite (`python3 -m pytest tests/ -x -q`, 193 passed) |
+| `tests/` | Host-only correctness suite (`python3 -m pytest tests/ -x -q`, 201 passed) |
 | `notebooks/` | Interactive thin wrappers around every script |
 | `data/crawled/` | Crawled real checkpoints + `seed_manifest.json` |
 | `real_benign_corpus/` | Flat corpus view + oracle calibration |
+| `charts/` | Per-step PNG charts from `scripts/generate_charts.py` (gitignored, regenerable) |
 | `results/` | `save_results.py` snapshots (`results/<timestamp>/`) |
 
 ## Notes
 
 - The host needs no `torch`/`sklearn`; all scanner/oracle dependencies live in
-  the containers. Python 3.10+ with `PyYAML` and `huggingface_hub` suffices.
+  the containers. Python 3.10+ with `PyYAML` and `huggingface_hub` suffices
+  (`matplotlib` additionally, for `scripts/generate_charts.py`).
 - The campaign DB (`data/regenbench_campaign.db`) is the source of truth for
   `RESULTS.md` and the generated `docs/evaluation-report.md`.

@@ -45,3 +45,6 @@ data/*.checkpoint.json
 demo-artifacts/
 real_benign_corpus_v2/
 results/
+
+# Per-step charts (regenerable via scripts/generate_charts.py)
+charts/

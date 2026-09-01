@@ -11,8 +11,8 @@ Estimated wall time on a machine with `docker` and the built images:
 ## 0. Preconditions
 
 ```sh
-python3 -m pip install --user PyYAML huggingface_hub
-python3 -m pytest tests/ -x -q                 # 193 passed, 3 skipped expected
+python3 -m pip install --user PyYAML huggingface_hub matplotlib
+python3 -m pytest tests/ -x -q                 # 197 passed, 3 skipped expected
 docker images | grep regenbench                # base, picklescan, modelscan, fickling, dynahug, gguf
 # build if missing:
 for d in base picklescan modelscan fickling modeltracer dynahug gguf; do containers/$d/build.sh; done
@@ -104,6 +104,9 @@ python3 scripts/crawl_gguf.py                           # -> data/gguf_benign_co
 python3 scripts/run_task3_demo.py --backend docker      # -> docs/task3-demo.md (GGUF matrix + FP)
 python3 scripts/demo_task3.py --backend docker          # -> docs/demo-report.md (incl. GGUF section)
 python3 scripts/insert_gguf_into_campaign.py            # insert GGUF surface as format='gguf' in the DB
+
+# Per-step charts (charts/<NN>_<step>/*.png; skips missing data)
+python3 scripts/generate_charts.py
 ```
 - Headline numbers (including GGUF: ggufref 7/10 vs modelscan 0/10, 3
   obfuscated-SSTI confirmed bypasses, FP 0/24)
@@ -127,4 +130,7 @@ python3 scripts/save_results.py --db data/regenbench_campaign.db --corpus-dir re
 ```
 
 See [`README.md`](README.md) for the overview, [`IMPLEMENTATION.md`](IMPLEMENTATION.md)
-for how it works, and [`RESULTS.md`](RESULTS.md) for the latest measured numbers.
+for how it works, [`RESULTS.md`](RESULTS.md) for the latest measured numbers, and
+[`docs/full-implementation-guide.md`](docs/full-implementation-guide.md) for the
+complete step-by-step runbook (including ablations, GGUF, defense, disclosure,
+and per-step charts).
