@@ -1,5 +1,9 @@
 nbformat==5.10.4
 jupyter-client>=8.6
 ipykernel>=6.29
+# host pipeline deps (needed by every script wrapped in the notebooks)
+PyYAML>=6.0
+huggingface_hub>=0.23
+pytest>=8.0
 # optional, to *execute* the notebooks headlessly:
 #   jupyter nbconvert --to notebook --execute --inplace notebooks/*.ipynb
