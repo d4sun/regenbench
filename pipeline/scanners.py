@@ -88,18 +88,21 @@ def run_scan(backend: str, image_full: str, src: str,
     `oracle_model_dir` (or $REGENBENCH_ORACLE_MODEL_DIR) mounts a recalibrated
     DynaHug model dir and sets DYNAHUG_MODEL_DIR inside the container.
     `gguf_ref` is the single place that knows how the GGUF reference oracle is
-    launched: host `/tmp` is mounted so the loader can observe the SSTI trigger
-    side-effect (replaced by a container-scoped tmpfs when isolation is enabled
-    -- see pipeline/scanners.py), and SELinux label handling is applied so the
-    artifact mount is readable by the oracle image."""
+    launched: the SSTI check renders an untrusted Jinja2 template, so the
+    container is isolated with a network-disabled namespace (`--network none`)
+    and a container-scoped `/tmp` tmpfs. The loader detects the SSTI trigger by
+    polling *inside* the container (no host filesystem access needed). On
+    SELinux-enforcing hosts the artifact mount may additionally require
+    ``--security-opt label=disable`` (this host has no SELinux and does not
+    need it)."""
     cmd = [
         backend, "run", "--rm",
         "-v", f"{os.path.abspath(src)}:/artifact:ro,z",
     ]
     if gguf_ref:
         cmd += [
-            "--security-opt", "label=disable",
-            "-v", "/tmp:/tmp",
+            "--network", "none",
+            "--tmpfs", "/tmp",
         ]
     # Container-side timeout via conmon is a podman feature; docker run has no
     # --timeout flag and rejects it ("unknown flag"). The host-side subprocess

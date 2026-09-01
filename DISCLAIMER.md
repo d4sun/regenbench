@@ -24,6 +24,14 @@ validity oracle deliberately execute payloads inside containers to observe
 their behavior — never run them on an unisolated host or against artifacts you
 do not trust.
 
+**`ggufref` SSTI check**: the GGUF reference oracle renders the
+`tokenizer.chat_template` (CVE-2024-34359) through Jinja2 inside an isolated,
+**network-disabled** container (`--network none`) with a container-scoped
+`/tmp` tmpfs and **no host filesystem access**; the loader observes the
+execution trigger by polling inside the container. Do not point `ggufref` at
+untrusted files outside this sandbox configuration, and never run the
+SSTI render path on an unisolated host.
+
 ## Purpose limitation
 
 - This project is intended **solely for defensive security research** — for

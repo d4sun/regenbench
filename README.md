@@ -11,7 +11,11 @@ whole pipeline is reproducible on any host with `docker`.
 > generates, and downloads real malicious and malformed ML artifacts
 > (code-executing Pickle/PyTorch checkpoints, real malicious HuggingFace models,
 > GGUF malformed-header attacks). Only run artifacts inside the provided
-> containers. See [`DISCLAIMER.md`](DISCLAIMER.md) before use.
+> containers. The `ggufref` SSTI check renders untrusted Jinja2 inside an
+> isolated, network-disabled container (`--network none`) with a container-scoped
+> `/tmp` tmpfs and no host filesystem access; do not point it at untrusted
+> files outside this sandbox configuration. See [`DISCLAIMER.md`](DISCLAIMER.md)
+> before use.
 >
 > **License**: [MIT](LICENSE).
 
