@@ -101,7 +101,10 @@ def _tensor_section(data: bytes) -> list[tuple[str, list[int]]] | None:
     if len(data) < 24 or data[:4] != b"GGUF":
         return None
     version, tensor_count, kv_count = struct.unpack_from("<IQQ", data, 4)
-    if version not in (2, 3) or kv_count >= _OVERFLOW_SENTINEL or tensor_count >= _OVERFLOW_SENTINEL:
+    # Cap kv_count so a crafted large-but-sub-sentinel count cannot force a
+    # long CPU walk (mirrors the host-side cap the old parse_gguf applied).
+    if (version not in (2, 3) or kv_count >= _OVERFLOW_SENTINEL
+            or tensor_count >= _OVERFLOW_SENTINEL or kv_count > 100_000):
         return None
     pos = 24
     for _ in range(kv_count):
@@ -187,44 +190,40 @@ def _walk_value(data: bytes, pos: int, vtype: int) -> int | None:
     return None if size is None or pos + size > len(data) else pos + size
 
 
-def load_with_reference(data: bytes):
-    """Parse with the ggml-org reference reader. Returns (ok, error)."""
+def parse_with_reference(data: bytes):
+    """Parse with the ggml-org reference reader in a single pass.
+
+    Returns (load_ok, reference_error, chat_template): the reference reader is
+    invoked once and the ``tokenizer.chat_template`` string is extracted from
+    the same reader object (previously parsed twice). ``chat_template`` is
+    None when absent or when parsing failed.
+    """
     from gguf import GGUFReader
     path = _materialize(data)
-    try:
-        GGUFReader(path)
-        return True, None
-    except Exception as e:  # noqa: BLE001  -- any reader failure is the signal
-        return False, f"{type(e).__name__}: {str(e)[:300]}"
-    finally:
-        _cleanup(path)
-
-
-def extract_chat_template(data: bytes) -> str | None:
-    """Locate the tokenizer.chat_template string value via the reference
-    reader's metadata (mirrors llama-cpp-python's self.metadata lookup)."""
-    from gguf import GGUFReader
-    path = _materialize(data)
+    reader = None
     try:
         reader = GGUFReader(path)
-    except Exception:  # noqa: BLE001
-        return None
-    finally:
-        _cleanup(path)
-    field = reader.fields.get("tokenizer.chat_template")
-    if field is None:
-        return None
-    try:
-        # STRING values are exposed as numpy uint8 arrays by the reference
-        # reader (parts[data[0]]); decode them like llama-cpp-python does.
-        val = field.contents()
-        if isinstance(val, bytes):
-            return val.decode("utf-8", errors="ignore")
-        if hasattr(val, "tobytes"):
-            return val.tobytes().decode("utf-8", errors="ignore")
-        return str(val)
-    except Exception:  # noqa: BLE001
-        return None
+        ok, ref_err = True, None
+    except Exception as e:  # noqa: BLE001  -- any reader failure is the signal
+        ok, ref_err = False, f"{type(e).__name__}: {str(e)[:300]}"
+    template = None
+    if reader is not None:
+        field = reader.fields.get("tokenizer.chat_template")
+        if field is not None:
+            try:
+                # STRING values are exposed as numpy uint8 arrays by the
+                # reference reader; decode them like llama-cpp-python does.
+                val = field.contents()
+                if isinstance(val, bytes):
+                    template = val.decode("utf-8", errors="ignore")
+                elif hasattr(val, "tobytes"):
+                    template = val.tobytes().decode("utf-8", errors="ignore")
+                else:
+                    template = str(val)
+            except Exception:  # noqa: BLE001
+                template = None
+    _cleanup(path)
+    return ok, ref_err, template
 
 
 def _materialize(data: bytes) -> str:
@@ -285,8 +284,7 @@ def main() -> int:
 
     header = parse_header(data)
     malformed = classify_malformed(data, header)
-    ok, ref_err = load_with_reference(data)
-    template = extract_chat_template(data)
+    ok, ref_err, template = parse_with_reference(data)
 
     suspicious = [s for s in SSTI_SIGNALS if template and s in template]
 
