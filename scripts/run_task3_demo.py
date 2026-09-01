@@ -227,6 +227,15 @@ def main(argv: list[str] | None = None) -> int:
                          f"{f / max(1, n) * 100:.0f}% |")
         lines.append("")
 
+        g_f, _g_b, g_n = fp.get("ggufref", (0, 0, 0))
+        m_f, _m_b, m_n = fp.get("modelscan", (0, 0, 0))
+        if g_n:
+            fp_txt = (f"keeping FP=0 on the {g_n} real benign GGUFs in this run "
+                      f"(ggufref {g_f}/{g_n}, modelscan {m_f}/{m_n})")
+        else:
+            fp_txt = ("real-corpus FP rate not currently measured (no benign GGUF "
+                      "corpus present; run scripts/crawl_gguf.py to reproduce)")
+
         lines.extend([
             "## Narrative",
             "",
@@ -234,7 +243,7 @@ def main(argv: list[str] | None = None) -> int:
             "oracle either error out or emit no verdict on `.gguf` inputs; the "
             "pickle/checkpoint-oriented panel has no GGUF surface. Fickling is "
             "worse than useless here: it reads GGUF bytes as a pickle stream, "
-            "finds \"invalid opcodes\", and labels every file -- including all 12 "
+            f"finds \"invalid opcodes\", and labels every file -- including all {g_n} "
             "real benign models -- LIKELY_UNSAFE (7/7 detection at 100% false "
             "positives). A model-safety pipeline restricted to pickle/torch "
             "scanners thus has zero *reliable* visibility into the most common "
@@ -259,8 +268,7 @@ def main(argv: list[str] | None = None) -> int:
             "**4. Oracle design.** ggufref is signature-driven for the six "
             "malformed-header families and render-driven for the SSTI family; it "
             "does not flag a file merely because the reference reader rejects it "
-            "(the reader has bugs on some legitimate vocab GGUFs), keeping FP=0 on "
-            "the 12-file real benign corpus.",
+            "(the reader has bugs on some legitimate vocab GGUFs), " + fp_txt + ".",
         ])
 
         docs_dir = "docs"
