@@ -137,27 +137,21 @@ def build_gguf_corpus(out_dir: str) -> tuple[list[tuple[str, str]], str]:
 def scan_gguf(backend: str, images: dict[str, str], targets: list[str]) -> list[dict]:
     """Run the ggufref oracle + modelscan over GGUF targets.
 
-    Mirrors pipeline.scanners.run_scan's timeout handling: docker has no
-    `--timeout` flag (podman-only), so only pass it for podman.
+    Both scanners go through the shared ``pipeline.scanners.run_scan`` entry
+    point (the single place that knows the GGUF reference-oracle isolation
+    flags and the podman-only ``--timeout`` handling), so this path cannot
+    diverge from the Runner or from ``scripts/run_task3_demo.py``.
     """
-    import subprocess
+    from pipeline.scanners import run_scan
     rows = []
     for path in targets:
         for scanner in ("ggufref", "modelscan"):
-            cmd = [backend, "run", "--rm"]
-            if backend == "podman":
-                cmd += ["--timeout", "90"]
-            cmd += ["-v", f"{os.path.abspath(path)}:/artifact:ro,z", "-v", "/tmp:/tmp",
-                    images[scanner], "/artifact"]
-            if scanner == "ggufref":
-                cmd.insert(2, "--security-opt")
-                cmd.insert(3, "label=disable")
-            try:
-                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-                out = json.loads((proc.stdout or "").strip().splitlines()[-1])
-                verdict = out.get("verdict") or "error"
-            except Exception:
+            out, err = run_scan(backend, images[scanner], path, timeout=120,
+                                gguf_ref=(scanner == "ggufref"))
+            if err or out is None:
                 verdict = "error"
+            else:
+                verdict = out.get("verdict") or "error"
             rows.append({"artifact": os.path.basename(path), "scanner": scanner, "verdict": verdict})
     return rows
 

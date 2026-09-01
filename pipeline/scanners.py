@@ -81,15 +81,26 @@ def full_image(image: str, tag: str) -> str:
 
 def run_scan(backend: str, image_full: str, src: str,
              timeout: int = 300,
-             oracle_model_dir: str | None = None) -> tuple[Optional[dict], Optional[str]]:
+             oracle_model_dir: str | None = None,
+             gguf_ref: bool = False) -> tuple[Optional[dict], Optional[str]]:
     """Run `image_full` on the host file/dir `src`; return (parsed_json, error).
     `image_full` is the fully-qualified container id (image[:tag]).
     `oracle_model_dir` (or $REGENBENCH_ORACLE_MODEL_DIR) mounts a recalibrated
-    DynaHug model dir and sets DYNAHUG_MODEL_DIR inside the container."""
+    DynaHug model dir and sets DYNAHUG_MODEL_DIR inside the container.
+    `gguf_ref` is the single place that knows how the GGUF reference oracle is
+    launched: host `/tmp` is mounted so the loader can observe the SSTI trigger
+    side-effect (replaced by a container-scoped tmpfs when isolation is enabled
+    -- see pipeline/scanners.py), and SELinux label handling is applied so the
+    artifact mount is readable by the oracle image."""
     cmd = [
         backend, "run", "--rm",
         "-v", f"{os.path.abspath(src)}:/artifact:ro,z",
     ]
+    if gguf_ref:
+        cmd += [
+            "--security-opt", "label=disable",
+            "-v", "/tmp:/tmp",
+        ]
     # Container-side timeout via conmon is a podman feature; docker run has no
     # --timeout flag and rejects it ("unknown flag"). The host-side subprocess
     # timeout below bounds the docker path instead.

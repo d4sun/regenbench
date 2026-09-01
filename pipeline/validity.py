@@ -201,6 +201,10 @@ assert isinstance(obj, dict)
         """Confirm that a GGUF artifact parses with the reference reader
         (ggml-org/gguf) inside the Task-3 sandbox.
 
+        Thin wrapper over :func:`pipeline.scanners.run_scan` (the single path
+        that knows the GGUF reference-oracle isolation flags); interprets the
+        loader's ``summary.load_ok``.
+
         Ground truth for the demo corpus: malformed-header attacks are rejected
         by the reference reader (their whole point), so ``False`` is the
         expected result for those families; the SSTI chat-template payload is
@@ -208,6 +212,7 @@ assert isinstance(obj, dict)
         must return ``True``.
         """
         import shutil
+        from pipeline.scanners import run_scan
         has_container_tool = shutil.which(self.backend) is not None
         if not has_container_tool:
             print("[validity-debug] validate_gguf requires the gguf container")
@@ -217,27 +222,14 @@ assert isinstance(obj, dict)
             f.write(gguf_bytes)
             host_path = f.name
 
-        cmd = [
-            self.backend, "run", "--rm",
-            "--security-opt", "label=disable",
-            "-v", f"{os.path.dirname(host_path)}:/art:ro",
-            "-v", f"{tempfile.gettempdir()}:/tmp",
-            "localhost/regenbench/gguf:latest",
-            f"/art/{os.path.basename(host_path)}",
-        ]
         try:
-            proc = subprocess.run(cmd, capture_output=True, text=True,
-                                  timeout=self.timeout)
-        except subprocess.TimeoutExpired:
-            print("[validity-debug] gguf oracle timed out")
-            ok = False
-        else:
-            try:
-                detail = json.loads((proc.stdout or "").strip().splitlines()[-1])
-                ok = bool((detail.get("summary") or {}).get("load_ok"))
-            except (json.JSONDecodeError, IndexError):
-                print("[validity-debug] gguf oracle emitted no JSON verdict")
-                ok = False
+            out, err = run_scan(
+                self.backend, "localhost/regenbench/gguf:latest", host_path,
+                timeout=self.timeout, gguf_ref=True)
+            if err or out is None:
+                print("[validity-debug] gguf oracle error:", (err or "")[:200])
+                return False
+            ok = bool((out.get("summary") or {}).get("load_ok"))
         finally:
             try:
                 os.remove(host_path)

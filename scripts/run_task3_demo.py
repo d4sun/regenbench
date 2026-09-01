@@ -23,18 +23,23 @@ Usage:
 from __future__ import annotations
 
 import argparse
-import json
 import os
 import shutil
-import subprocess
 import sys
 import tempfile
+from collections import Counter
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from pipeline.scanners import SCANNERS, build_images, run_scan
 
 PANEL = ["modelscan", "picklescan", "fickling", "modeltracer", "dynahug", "ggufref"]
+
+# Scanners the pipeline actually routes to `.gguf` (SCANNERS exts). Only these
+# are measured for detection/FP rates; the rest are a documented format-coverage
+# gap (they emit no meaningful GGUF verdict) and appear in the matrix only.
+GGUF_CAPABLE = sorted(
+    name for name, spec in SCANNERS.items() if ".gguf" in spec.get("exts", set()))
 
 
 def build_attack_corpus(out_dir: str) -> list[tuple[str, str]]:
@@ -83,35 +88,25 @@ def collect_benign(corpus_dir: str) -> list[str]:
 
 
 def scan_all(backend: str, images: dict[str, str], targets: list[str]) -> list[dict]:
+    """Scan every target with every panel scanner via the shared run_scan path.
+
+    This is the same entry point the Runner and ``demo_task3.py`` use, so
+    verdicts cannot diverge between the two demos. ``run_scan`` owns the
+    podman-only ``--timeout`` handling and the GGUF reference-oracle isolation
+    flags.
+    """
     rows = []
     for path in targets:
         for scanner in PANEL:
-            if scanner == "ggufref":
-                cmd = [backend, "run", "--rm", "--timeout", "90",
-                       "--security-opt", "label=disable",
-                       "-v", f"{os.path.abspath(path)}:/artifact:ro,z",
-                       "-v", "/tmp:/tmp",
-                       images[scanner], "/artifact"]
+            out, err = run_scan(backend, images[scanner], path, timeout=120,
+                                gguf_ref=(scanner == "ggufref"))
+            if err or out is None:
+                verdict, findings = "error", [err or "no-output"]
             else:
-                cmd = [backend, "run", "--rm", "--timeout", "90",
-                       "-v", f"{os.path.abspath(path)}:/artifact:ro,z",
-                       images[scanner], "/artifact"]
-            try:
-                proc = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
-            except subprocess.TimeoutExpired:
-                rows.append({"artifact": os.path.basename(path), "scanner": scanner,
-                             "verdict": "error", "findings": ["timeout"]})
-                continue
-            try:
-                out = json.loads((proc.stdout or "").strip().splitlines()[-1])
-                verdict = out.get("verdict")
+                verdict = out.get("verdict") or "error"
                 findings = out.get("findings") or []
-            except (json.JSONDecodeError, IndexError):
-                verdict, findings = "error", ["no-json-verdict"]
-                if proc.returncode != 0:
-                    verdict = "error"
             rows.append({"artifact": os.path.basename(path), "scanner": scanner,
-                         "verdict": verdict or "error", "findings": findings})
+                         "verdict": verdict, "findings": findings})
             print(f"  {os.path.basename(path):46s} {scanner:12s} {verdict}")
     return rows
 
@@ -151,6 +146,12 @@ def main(argv: list[str] | None = None) -> int:
         lines.append("")
         lines.append("verdict legend: `MAL` malicious, `BEN` benign, `ERR` error / no verdict.")
         lines.append("")
+        lines.append("> Format-coverage note: `picklescan`, `fickling`, `modeltracer` and "
+                     "`dynahug` are **not routed to `.gguf`** in the pipeline "
+                     "(`SCANNERS` exts); their cells are informational and their "
+                     "`ERR`/verdicts reflect the format gap, not a measured rate. "
+                     "Only `ggufref` and `modelscan` are measured (see Detection rates).")
+        lines.append("")
         lines.append(header)
         lines.append(sep)
         for art in families:
@@ -178,34 +179,52 @@ def main(argv: list[str] | None = None) -> int:
         # --- aggregate detection rates --------------------------------------
         lines.append("## Detection rates")
         lines.append("")
+        lines.append("verdict buckets: `malicious` / `benign` / `error`. An `error` "
+                     "is an infra failure, never a miss; the run aborts if any "
+                     "attack scan errored rather than reporting a misleading rate.")
+        lines.append("")
         rates = {}
-        for scanner in PANEL:
-            attacked = [r for r in rows if r["scanner"] == scanner and r["artifact"] != "benign-synth.gguf"]
-            attacked = [r for r in attacked if r["artifact"] in {
-                m[1].split("/")[-1] for m in manifest if m[0] != "benign-synth"}]
-            detected = sum(1 for r in attacked if r["verdict"] == "malicious")
-            rates[scanner] = (detected, len(attacked))
-        lines.append("| scanner | malicious detected | attack count | rate |")
-        lines.append("| :--- | :---: | :---: | :---: |")
-        for scanner in PANEL:
-            d, n = rates[scanner]
-            lines.append(f"| **{scanner}** | {d} | {n} | {d / max(1, n) * 100:.0f}% |")
+        attack_names = {m[1].split("/")[-1] for m in manifest if m[0] != "benign-synth"}
+        for scanner in (sc for sc in GGUF_CAPABLE if sc in PANEL):
+            attacked = [r for r in rows
+                        if r["scanner"] == scanner and r["artifact"] in attack_names]
+            buckets = Counter(r["verdict"] for r in attacked)
+            errs = buckets.get("error", 0)
+            if errs:
+                raise SystemExit(
+                    f"[demo] {scanner}: {errs}/{len(attacked)} attack scans errored "
+                    f"(error != miss). Aborting detection-rate computation.")
+            rates[scanner] = (buckets.get("malicious", 0),
+                              buckets.get("benign", 0), len(attacked))
+        lines.append("| scanner | malicious | benign | error | attack count | rate |")
+        lines.append("| :--- | :---: | :---: | :---: | :---: | :---: |")
+        for scanner in (sc for sc in GGUF_CAPABLE if sc in PANEL):
+            m_det, b_det, n = rates[scanner]
+            lines.append(f"| **{scanner}** | {m_det} | {b_det} | 0 | {n} | "
+                         f"{m_det / max(1, n) * 100:.0f}% |")
         lines.append("")
 
         fp = {}
-        for scanner in PANEL:
+        for scanner in (sc for sc in GGUF_CAPABLE if sc in PANEL):
             benign_arts = [r for r in rows if r["scanner"] == scanner
                            and r["artifact"].startswith(("benign-", "stories", "ggml-vocab", "tinyllamas"))]
             benign_arts = [r for r in benign_arts if not r["artifact"].startswith("benign-synth")]
-            flagged = sum(1 for r in benign_arts if r["verdict"] == "malicious")
-            fp[scanner] = (flagged, len(benign_arts))
-        lines.append("## False positives on real benign GGUFs")
+            buckets = Counter(r["verdict"] for r in benign_arts)
+            errs = buckets.get("error", 0)
+            if errs:
+                raise SystemExit(
+                    f"[demo] {scanner}: {errs}/{len(benign_arts)} benign scans errored. "
+                    "Aborting FP computation.")
+            fp[scanner] = (buckets.get("malicious", 0),
+                           buckets.get("benign", 0), len(benign_arts))
+        lines.append("## False positives on benign GGUFs")
         lines.append("")
-        lines.append("| scanner | benign flagged | benign scanned | FP rate |")
-        lines.append("| :--- | :---: | :---: | :---: |")
-        for scanner in PANEL:
-            f, n = fp[scanner]
-            lines.append(f"| **{scanner}** | {f} | {n} | {f / max(1, n) * 100:.0f}% |")
+        lines.append("| scanner | benign flagged | benign | error | benign scanned | FP rate |")
+        lines.append("| :--- | :---: | :---: | :---: | :---: | :---: |")
+        for scanner in (sc for sc in GGUF_CAPABLE if sc in PANEL):
+            f, b, n = fp[scanner]
+            lines.append(f"| **{scanner}** | {f} | {b} | 0 | {n} | "
+                         f"{f / max(1, n) * 100:.0f}% |")
         lines.append("")
 
         lines.extend([
@@ -251,7 +270,7 @@ def main(argv: list[str] | None = None) -> int:
 
         print(f"\n[written] docs/task3-demo.md")
         print(f"[matrix] detection rates: " + ", ".join(
-            f"{s}={d}/{n}" for s, (d, n) in rates.items()))
+            f"{s}={m}/{n}" for s, (m, _b, n) in rates.items()))
         return 0
     finally:
         shutil.rmtree(workdir, ignore_errors=True)

@@ -144,7 +144,8 @@ class Runner:
         t0 = time.time()
         out, err = run_scan(
             self.config.backend, self.images[scanner], src, self.config.timeout,
-            oracle_model_dir=self.config.oracle_model_dir)
+            oracle_model_dir=self.config.oracle_model_dir,
+            gguf_ref=(scanner == "ggufref"))
         dur = time.time() - t0
         if err or out is None:
             res = ScanResult(scanner, src, None, None, error=err or "no output", duration=dur)

@@ -70,10 +70,12 @@ class TestConfigPlumbing(unittest.TestCase):
 
         captured = []
 
-        def fake_run_scan(backend, image_full, src, timeout, oracle_model_dir=None):
+        def fake_run_scan(backend, image_full, src, timeout, oracle_model_dir=None,
+                      gguf_ref=False):
             captured.append({"backend": backend, "image": image_full,
                              "src": src, "timeout": timeout,
-                             "oracle_model_dir": oracle_model_dir})
+                             "oracle_model_dir": oracle_model_dir,
+                             "gguf_ref": gguf_ref})
             return {"verdict": "benign", "exit_code": 0,
                     "decision_score": 0.0, "findings": []}, None
 
