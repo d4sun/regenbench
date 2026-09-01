@@ -89,7 +89,7 @@ def run_parallel_ablation(
     seed_corpus_dir: str = "real_benign_corpus/all",
     seed_cluster: str = "text-generation",
     attack_families: str = "gadget,overwritten,external,indirect_chain,pypi_injected",
-    oracle_model_dir: str = "real_benign_corpus/oracle-calibrated/v5-recalibrated",
+    oracle_model_dir: str = "real_benign_corpus/oracle-calibrated/current",
     evasion_mode: str = "adaptive",
     ensemble_oracle: bool = False,
     unguided: bool = True,
@@ -191,7 +191,7 @@ def main():
     ap.add_argument("--seed-corpus-dir", default="real_benign_corpus/all")
     ap.add_argument("--seed-cluster", default="text-generation")
     ap.add_argument("--attack-families", default="gadget,overwritten,external,indirect_chain,pypi_injected")
-    ap.add_argument("--oracle-model-dir", default="real_benign_corpus/oracle-calibrated/v5-recalibrated")
+    ap.add_argument("--oracle-model-dir", default="real_benign_corpus/oracle-calibrated/current")
     ap.add_argument("--evasion-mode", default="adaptive", choices=["adaptive", "random", "off"])
     ap.add_argument("--ensemble-oracle", action="store_true")
     ap.add_argument("--no-unguided", action="store_true")

@@ -15,7 +15,7 @@ from pipeline.oracle_ensemble import SyscallAnomalyDetector
 
 def main() -> int:
     # Use traces from the latest oracle calibration
-    traces_path = Path("real_benign_corpus/oracle-calibrated/v5-recalibrated/traces.json")
+    traces_path = Path("real_benign_corpus/oracle-calibrated/current/traces.json")
     if not traces_path.exists():
         print(f"[train-anomaly] Error: traces not found at {traces_path}")
         return 1
@@ -39,7 +39,7 @@ def main() -> int:
     print(f"  train_scores: {json.dumps(report['train_scores'], indent=2)}")
 
     # Save model
-    out_dir = "real_benign_corpus/oracle-calibrated/v5-recalibrated/anomaly"
+    out_dir = "real_benign_corpus/oracle-calibrated/current/anomaly"
     detector.save(out_dir)
     print(f"[train-anomaly] Model saved to {out_dir}")
 

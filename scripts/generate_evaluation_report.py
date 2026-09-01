@@ -240,9 +240,15 @@ def main():
         except Exception:
             pass
     report_lines.append("")
+    h3_rows = list(decay_curve.items())
+    h3_total = sum(d['total'] for _, d in h3_rows) if h3_rows else 0
+    h3_retained = sum(d['retained'] for _, d in h3_rows) if h3_rows else 0
+    h3_retention = (h3_retained / h3_total * 100) if h3_total else 0.0
+    h3_min = min(d['retention_rate'] * 100 for _, d in h3_rows) if h3_rows else 0.0
+
     report_lines.append("## H3: Shelf-Life / Version-Delta Rescans")
     report_lines.append("")
-    report_lines.append(f"514 confirmed bypasses re-scanned against 6 historical scanner versions ")
+    report_lines.append(f"Confirmed bypasses re-scanned against 6 historical scanner versions ")
     report_lines.append(f"(PickleScan 1.0.4/1.0.3, ModelScan 0.8.7/0.8.6, Fickling 0.1.11/0.1.10):")
     report_lines.append("")
     report_lines.append("| Scanner Version | Total | Retained | Retention |")
@@ -252,7 +258,8 @@ def main():
         report_lines.append(f"| {version} | {data['total']} | {data['retained']} | {data['retention_rate']*100:.1f}% |")
     
     report_lines.append("")
-    report_lines.append("**H3 Verdict: Supported** — 100% retention across all 6 historical versions. ")
+    report_lines.append(f"**H3 Verdict: Supported** — overall retention {h3_retention:.1f}% "
+                        f"(min {h3_min:.1f}% per scanner version). ")
     report_lines.append("This reflects persistent vendor blind spots (no rules for `IPython.utils.process.system` ")
     report_lines.append("or splice transport added in these versions), not adaptive patch evasion.")
     report_lines.append("")
@@ -264,7 +271,7 @@ def main():
     report_lines.append("|---|---|---|")
     report_lines.append(f"| **H1** (Fuzzing > ShadowPickle baseline) | **Supported** | {bypass_rate:.1f}% vs {sp_bypass_rate:.1f}% (relative improvement) |")
     report_lines.append(f"| **H2** (Dual-oracle adds precision) | **Valid negative** | Uncorroborated == Confirmed ({stats['uncorroborated_bypasses']}) |")
-    report_lines.append(f"| **H3** (Shelf-life retention) | **Supported** | 100% retention x 6 historical versions |")
+    report_lines.append(f"| **H3** (Shelf-life retention) | **Supported** | {h3_retention:.1f}% retention across 6 historical versions |")
     report_lines.append("")
     report_lines.append(f"Report generated from `{db}` at {datetime.utcnow().isoformat()}Z")
     
@@ -274,7 +281,7 @@ def main():
     print(f"Report written to {report_path}")
     print(f"H1: Supported ({bypass_rate:.1f}% vs {sp_bypass_rate:.1f}%)")
     print(f"H2: Valid negative ({stats['uncorroborated_bypasses']} == {stats['confirmed_bypasses']})")
-    print(f"H3: Supported (100% retention)")
+    print(f"H3: Supported ({h3_retention:.1f}% retention)")
 
 if __name__ == '__main__':
     main()

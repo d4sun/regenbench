@@ -16,4 +16,4 @@ python3 scripts/rescan_bypasses.py --db data/regenbench_campaign.db --weekly --b
 - Build: `containers/picklescan-patched/build.sh` → `regenbench/picklescan:patched`
 
 ## Deliverable
-- Retention curves + TTP in this file, `docs/synthetic-patch-evaluation.md`.
+- Retention curves + TTP in this file; measured retention reported in `docs/evaluation-report.md` (H3).

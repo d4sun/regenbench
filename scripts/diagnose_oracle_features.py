@@ -21,7 +21,7 @@ Usage:
     python3 scripts/diagnose_oracle_features.py \
         --train-traces real_benign_corpus/oracle-calibrated/text-generation-v2/traces.json \
         --eval-traces real_benign_corpus/oracle-traces/eval-half/traces.json \
-        [--fp-eval real_benign_corpus/oracle-calibrated/v2-disjoint/fp-eval-eval.json]
+        [--fp-eval real_benign_corpus/oracle-calibrated/current/fp-eval-eval.json]
 """
 
 from __future__ import annotations

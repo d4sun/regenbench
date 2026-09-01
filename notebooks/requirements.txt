@@ -1,0 +1,5 @@
+nbformat==5.10.4
+jupyter-client>=8.6
+ipykernel>=6.29
+# optional, to *execute* the notebooks headlessly:
+#   jupyter nbconvert --to notebook --execute --inplace notebooks/*.ipynb

@@ -50,6 +50,9 @@ run_campaign() {
             --seed $seed \
             --evasion-mode adaptive \
             --fitness-mode current \
+            --seed-corpus-dir real_benign_corpus/all \
+            --seed-cluster text-generation \
+            --attack-families gadget,overwritten,external,indirect_chain,pypi_injected \
             2>&1 | tee "logs/${run_id}.log"
     else
         PYTHONPATH=. python scripts/run_fuzzing_campaign.py \
@@ -63,6 +66,9 @@ run_campaign() {
             --seed $seed \
             --evasion-mode adaptive \
             --fitness-mode $fitness_mode \
+            --seed-corpus-dir real_benign_corpus/all \
+            --seed-cluster text-generation \
+            --attack-families gadget,overwritten,external,indirect_chain,pypi_injected \
             2>&1 | tee "logs/${run_id}.log"
     fi
     

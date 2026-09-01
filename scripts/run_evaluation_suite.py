@@ -205,7 +205,7 @@ def run_benign_fp_check(scanners: list[str], corpus_dir: str | None = None,
     config = Config(backend="docker", tag=":latest", max_workers=4, timeout=60,
                     oracle=True, pre_filter=False,
                     oracle_model_dir=os.environ.get("REGENBENCH_ORACLE_MODEL_DIR") or
-                                   os.path.abspath("real_benign_corpus/oracle-calibrated/v2-disjoint"))
+                                   os.path.abspath("real_benign_corpus/oracle-calibrated/current"))
     runner = Runner(config, scanners=scanners)
     results = runner.run(artifacts)
 
@@ -1127,7 +1127,10 @@ def main(argv: list[str] | None = None) -> int:
         defense_metrics.update(monitor_metrics)
     print(f"Monitor metrics: {monitor_metrics}")
 
-    scanners = ["picklescan", "fickling", "modelscan", "modeltracer", "dynahug"]
+    # ModelTracer is excluded from the FP check: it is strace-based and cannot
+    # analyze torch-zip artifacts (it hangs waiting on torch.load), so it is
+    # not part of the RQ1/RQ3 torch panel (see CLAUDE.md / panel_scanners).
+    scanners = ["picklescan", "fickling", "modelscan", "dynahug"]
     fp_sample = 20 if args.quick else args.fp_sample
 
     # 1. False positive rate (T7.5) over the real benign corpus
@@ -1359,7 +1362,7 @@ def main(argv: list[str] | None = None) -> int:
         f"| **PickleScan** | {fp_counts.get('picklescan', 0)} | {fp_counts.get('picklescan_malicious', 0)} | {fp_rates['picklescan'] * 100:.1f}% |",
         f"| **Fickling** | {fp_counts.get('fickling', 0)} | {fp_counts.get('fickling_malicious', 0)} | {fp_rates['fickling'] * 100:.1f}% |",
         f"| **ModelScan** | {fp_counts.get('modelscan', 0)} | {fp_counts.get('modelscan_malicious', 0)} | {fp_rates['modelscan'] * 100:.1f}% |",
-        f"| **ModelTracer** | {fp_counts.get('modeltracer', 0)} | {fp_counts.get('modeltracer_malicious', 0)} | {fp_rates['modeltracer'] * 100:.1f}% |",
+        f"| **ModelTracer** | not run on torch artifacts | — | — |",
         f"| **DynaHug (Supplementary)** | {fp_counts.get('dynahug', 0)} | {fp_counts.get('dynahug_malicious', 0)} | {fp_rates['dynahug'] * 100:.1f}% |",
         "",
         "**Ground truth note**: every checkpoint is benign by construction "
@@ -1375,8 +1378,8 @@ def main(argv: list[str] | None = None) -> int:
         "every input lands outside the learned support region (see "
         "docs/oracle-calibration-deviation.md). This suite therefore runs the "
         "environment-calibrated oracle (scripts/calibrate_oracle.py, fit on "
-        "this environment's strace profiles), which restores a discriminative "
-        "decision score and a low false-positive rate on the benign corpus.",
+        "this environment's strace profiles), which produces a non-collapsed "
+        "but still high-FP boundary on benign traces (see the FP table above).",
         "",
         "**Note**: DynaHug operates as a supplementary **decision_score** signal "
         "only; bypass confirmation is gated by the ExecutionOracle (trigger polling), "
@@ -1410,12 +1413,12 @@ def main(argv: list[str] | None = None) -> int:
         report_lines.extend([
             "| Metric | Result |",
             "| :--- | :---: |",
-            f"| Repair success rate | {defense_metrics['repair_success_rate']} |",
-            f"| Repair false-negative rate | {defense_metrics['repair_false_negative_rate']} |",
-            f"| Repair correctness on benign inputs | {defense_metrics['repair_correctness_rate']} |",
-            f"| Repair byte overhead | {defense_metrics['repair_overhead']} |",
-            f"| Monitor detection rate | {defense_metrics['monitor_detection_rate']} |",
-            f"| Monitor false-alarm rate | {defense_metrics['monitor_false_alarm_rate']} |",
+            f"| Repair success rate | {defense_metrics.get('repair_success_rate', 'n/a')} |",
+            f"| Repair false-negative rate | {defense_metrics.get('repair_false_negative_rate', 'n/a')} |",
+            f"| Repair correctness on benign inputs | {defense_metrics.get('repair_correctness_rate', 'n/a')} |",
+            f"| Repair byte overhead | {defense_metrics.get('repair_overhead', 'n/a')} |",
+            f"| Monitor detection rate | {defense_metrics.get('monitor_detection_rate', 'n/a')} |",
+            f"| Monitor false-alarm rate | {defense_metrics.get('monitor_false_alarm_rate', 'n/a')} |",
             "",
         ])
     report_lines.extend([
@@ -1649,7 +1652,7 @@ def main(argv: list[str] | None = None) -> int:
         # H3 Shelf-Life Caveat
         report_lines.extend([
             "",
-            "**Note on Shelf-Life Evaluation**: The 100% retention observed across the 6 historical scanner versions "
+            "**Note on Shelf-Life Evaluation**: The near-total retention observed across the 6 historical scanner versions "
             "(PickleScan 1.0.3/1.0.4, ModelScan 0.8.6/0.8.7, Fickling 0.1.10/0.1.11) reflects persistent vendor blind spots "
             "rather than adaptive patch evasion. Changelog audits confirmed that no vendor rules targeting "
             "`IPython.utils.process.system` or splice transport were introduced across these minor version bumps.",

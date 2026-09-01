@@ -11,8 +11,8 @@ Published baseline numbers transcribed from the source papers, used for
 | [`oracle-sanity.json`](oracle-sanity.json) | Pretrained-oracle working-checkpoint record (T1.3) |
 | [`sanity-verdict-log.json`](sanity-verdict-log.json) | 6-model panel+oracle smoke verdict log (T1.4) |
 
-Human-readable tables: [`../docs/reference-scanner-metrics.md`](../docs/reference-scanner-metrics.md)
-and [`../docs/reference-dynahug-metrics.md`](../docs/reference-dynahug-metrics.md).
+Human-readable tables live in the evaluation report (`../docs/evaluation-report.md#related-work`)
+and `../docs/related-works-comparison.md`.
 
 ## T1.4 sanity smoke test
 

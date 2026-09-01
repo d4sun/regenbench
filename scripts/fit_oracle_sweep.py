@@ -22,7 +22,7 @@ Usage:
         --gamma-grid 0.01 0.1 1.0 --nu-grid 0.005 0.01 0.05
     python3 scripts/fit_oracle_sweep.py --traces ... \
         --export --gamma 0.1 --nu 0.01 \
-        --export-dir real_benign_corpus/oracle-calibrated/v2-disjoint
+        --export-dir real_benign_corpus/oracle-calibrated/current
 """
 
 from __future__ import annotations
@@ -97,9 +97,9 @@ print(json.dumps({
 """
 
 
-def run_in_container(payload: dict) -> dict:
+def run_in_container(payload: dict, backend: str = "podman") -> dict:
     proc = subprocess.run(
-        ["podman", "run", "--rm", "-i", "--entrypoint", "python3.13",
+        [backend, "run", "--rm", "-i", "--entrypoint", "python3.13",
          IMAGE, "-c", INNER],
         input=json.dumps(payload), capture_output=True, text=True, timeout=300)
     if proc.returncode != 0:
@@ -129,6 +129,9 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--traces", required=True)
     ap.add_argument("--image", default=IMAGE)
+    ap.add_argument("--backend", choices=["podman", "docker"], default="podman",
+                    help="container runtime for the in-image fit (docker on "
+                         "hosts without podman)")
     ap.add_argument("--holdout", type=float, default=0.2)
     ap.add_argument("--seed", type=int, default=1337)
     ap.add_argument("--gamma-grid", type=float, nargs="+", default=[0.01, 0.05, 0.1, 0.5, 1.0])
@@ -136,11 +139,12 @@ def main() -> int:
     ap.add_argument("--export", action="store_true")
     ap.add_argument("--gamma", type=float, default=None)
     ap.add_argument("--nu", type=float, default=None)
-    ap.add_argument("--export-dir", default="real_benign_corpus/oracle-calibrated/v2-disjoint")
+    ap.add_argument("--export-dir", default="real_benign_corpus/oracle-calibrated/current")
     ap.add_argument("--out", default=None, help="write sweep results JSON here")
     args = ap.parse_args()
 
     IMAGE = args.image
+    backend = args.backend
 
     traces = json.loads(Path(args.traces).read_text())
     # Deterministic split mirroring calibrate_oracle.py (seeded shuffle).
@@ -165,7 +169,7 @@ def main() -> int:
     for gamma, nu in combos:
         payload = {"train": train_feats, "eval": hold_feats,
                    "gamma": gamma, "nu": nu, "export": None}
-        r = run_in_container(payload)
+        r = run_in_container(payload, backend)
         row = {
             "gamma": gamma, "nu": nu,
             "n_support": r["n_support"], "rho": round(r["rho"], 4),
@@ -210,7 +214,7 @@ def main() -> int:
         export_abs.mkdir(parents=True, exist_ok=True)
         payload = {"train": train_feats, "eval": [], "gamma": gamma, "nu": nu,
                    "export": "/out"}
-        cmd = ["podman", "run", "--rm", "-i",
+        cmd = [backend, "run", "--rm", "-i",
                "-v", f"{export_abs}:/out:z",
                "--entrypoint", "python3.13", IMAGE, "-c", INNER]
         proc = subprocess.run(cmd, input=json.dumps(payload),

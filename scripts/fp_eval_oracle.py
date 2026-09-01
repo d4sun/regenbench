@@ -8,7 +8,7 @@ decision-score distribution.
 
 Usage:
     python3 scripts/fp_eval_oracle.py \
-        --model-dir real_benign_corpus/oracle-calibrated/v2-disjoint \
+        --model-dir real_benign_corpus/oracle-calibrated/current \
         [--split-file real_benign_corpus/oracle-split.json] [--role eval]
 """
 

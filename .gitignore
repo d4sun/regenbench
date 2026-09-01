@@ -30,6 +30,11 @@ real_benign_corpus/oracle_negative/
 data/regenbench_campaign.db
 data/campaign_results.db
 
+# Crawl progress log (regenerable)
+data/crawl_progress.log
+# Experiment run logs (regenerable)
+data/*.log
+
 # Persisted campaign candidates (large, regenerable artifacts)
 data/candidates/
 data/bypasses/

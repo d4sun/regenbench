@@ -175,7 +175,7 @@ class EnsembleOracle(ValidityOracle):
 
         self.dynahug_model_dir = dynahug_model_dir or os.environ.get(
             "REGENBENCH_ORACLE_MODEL_DIR",
-            os.path.abspath("real_benign_corpus/oracle-calibrated/v5-recalibrated"),
+            os.path.abspath("real_benign_corpus/oracle-calibrated/current"),
         )
 
         self.anomaly_detector = None

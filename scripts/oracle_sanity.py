@@ -23,7 +23,7 @@ Exit codes: 0 ok | 1 runtime failure | 2 COLLAPSE DETECTED.
 Usage:
     python3 scripts/oracle_sanity.py --batch 8 \
         [--split-file real_benign_corpus/oracle-split.json --role eval] \
-        [--model-dir real_benign_corpus/oracle-calibrated/v2-disjoint]
+        [--model-dir real_benign_corpus/oracle-calibrated/current]
 """
 
 from __future__ import annotations

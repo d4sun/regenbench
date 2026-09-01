@@ -52,7 +52,7 @@ def run_benchmark():
     try:
         # Run 1: WITH Pre-Filter (Standard)
         print("\n[Run 1] Running WITH Static Pre-Filter...")
-        config_pf = Config(backend="podman", tag=":latest", max_workers=4, timeout=60, oracle=True, pre_filter=True)
+        config_pf = Config(backend="docker", tag=":latest", max_workers=4, timeout=60, oracle=True, pre_filter=True)
         runner_pf = Runner(config_pf, scanners=["dynahug", "picklescan"])
         
         t0 = time.time()
@@ -66,7 +66,7 @@ def run_benchmark():
         
         # Run 2: WITHOUT Pre-Filter (Forced Container Runs)
         print("\n[Run 2] Running WITHOUT Static Pre-Filter (Forcing all container runs)...")
-        config_no_pf = Config(backend="podman", tag=":latest", max_workers=4, timeout=60, oracle=True, pre_filter=False)
+        config_no_pf = Config(backend="docker", tag=":latest", max_workers=4, timeout=60, oracle=True, pre_filter=False)
         runner_no_pf = Runner(config_no_pf, scanners=["dynahug", "picklescan"])
         
         t0 = time.time()

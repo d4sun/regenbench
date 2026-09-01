@@ -1,98 +1,1416 @@
 {
   "schema_version": "1.0",
   "dataset_name": "ReGenBench Seed Corpus",
-  "generated_at": "2026-08-30T01:48:02Z",
+  "generated_at": "2026-08-31T11:23:42Z",
   "summary": {
-    "total_models": 6,
+    "total_models": 100,
     "clusters": {
-      "text-generation": 0,
-      "text-classification": 1,
-      "feature-extraction": 5
+      "feature-extraction": 20,
+      "question-answering": 20,
+      "text-classification": 20,
+      "text-generation": 20,
+      "token-classification": 20
     }
   },
   "models": [
     {
-      "repo_id": "ssary/XLM-RoBERTa-German-sentiment",
-      "likes": 11,
-      "downloads": 254,
-      "size": 4600,
-      "sha256": "9205dca5d9f3cfb1fa8b069ac865767021c3ed8b4be14aa21ceb947ee2112ef1",
-      "local_path": "crawled/text-classification/ssary_XLM-RoBERTa-German-sentiment/pytorch_model.bin",
+      "repo_id": "BAAI/bge-small-en",
+      "likes": 94,
+      "downloads": 771532,
+      "size": 133508397,
+      "sha256": "662afbeea6d658f743f3fc11b0e710a0a092837b220eaa7ca0bde604df562153",
+      "local_path": "crawled/feature-extraction/BAAI_bge-small-en/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/BAAI/bge-small-en/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:44:38Z"
+      }
+    },
+    {
+      "repo_id": "BAAI/bge-small-en-v1.5",
+      "likes": 540,
+      "downloads": 67926190,
+      "size": 133508397,
+      "sha256": "84868a67d847f7f37d1df745b73a4c20b5bc0a797c87a23b265f8a0131728b88",
+      "local_path": "crawled/feature-extraction/BAAI_bge-small-en-v1.5/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/BAAI/bge-small-en-v1.5/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:36:51Z"
+      }
+    },
+    {
+      "repo_id": "BAAI/bge-small-zh-v1.5",
+      "likes": 139,
+      "downloads": 4736520,
+      "size": 95842633,
+      "sha256": "7c5fe667bbed05dc10e246e229b701ad266fe4d95ab946e9e5aa402056611b88",
+      "local_path": "crawled/feature-extraction/BAAI_bge-small-zh-v1.5/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/BAAI/bge-small-zh-v1.5/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:42:25Z"
+      }
+    },
+    {
+      "repo_id": "Supabase/gte-small",
+      "likes": 102,
+      "downloads": 24057,
+      "size": 66751231,
+      "sha256": "344099675ecefb2dc886e6dcc1fba7ccc0c66dbf455e8aa289035ee8d688f125",
+      "local_path": "crawled/feature-extraction/Supabase_gte-small/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Supabase/gte-small/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:43:46Z"
+      }
+    },
+    {
+      "repo_id": "TaylorAI/bge-micro-v2",
+      "likes": 65,
+      "downloads": 973288,
+      "size": 34797782,
+      "sha256": "f154c669357b11c1af1843c444d97f9bd3de06b2e95f277970baaa0f1a9e3437",
+      "local_path": "crawled/feature-extraction/TaylorAI_bge-micro-v2/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/TaylorAI/bge-micro-v2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:49:23Z"
+      }
+    },
+    {
+      "repo_id": "TaylorAI/gte-tiny",
+      "likes": 139,
+      "downloads": 15443,
+      "size": 45479273,
+      "sha256": "4b4288c1825166bed706aeba0442bc949bf1e1a8294e61dd4531e6a2dcadd471",
+      "local_path": "crawled/feature-extraction/TaylorAI_gte-tiny/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/TaylorAI/gte-tiny/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:42:23Z"
+      }
+    },
+    {
+      "repo_id": "avsolatorio/GIST-small-Embedding-v0",
+      "likes": 33,
+      "downloads": 96538,
+      "size": 133504422,
+      "sha256": "b3fd40257aa407bb4e907d7cbd0ed617b825bef549bc2c0c00b5131618ab44e9",
+      "local_path": "crawled/feature-extraction/avsolatorio_GIST-small-Embedding-v0/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/avsolatorio/GIST-small-Embedding-v0/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:57:43Z"
+      }
+    },
+    {
+      "repo_id": "cointegrated/rubert-tiny",
+      "likes": 47,
+      "downloads": 59476,
+      "size": 47679974,
+      "sha256": "7b46f70960011906bf9be3c46ad7490bada3845ddb5c2d7a8830c9517ee66071",
+      "local_path": "crawled/feature-extraction/cointegrated_rubert-tiny/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cointegrated/rubert-tiny/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:51:46Z"
+      }
+    },
+    {
+      "repo_id": "cointegrated/rubert-tiny2",
+      "likes": 175,
+      "downloads": 355943,
+      "size": 117546024,
+      "sha256": "137fa2b1d944dae19c74456dfe8fac2f780d9acf34e037f5d1e37acba1157768",
+      "local_path": "crawled/feature-extraction/cointegrated_rubert-tiny2/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cointegrated/rubert-tiny2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:39:26Z"
+      }
+    },
+    {
+      "repo_id": "facebook/encodec_24khz",
+      "likes": 56,
+      "downloads": 330313,
+      "size": 93172669,
+      "sha256": "723be8b6cb82e6c4ca60e315e71d1be1c1355fc027dadae352628341d5f0e1f1",
+      "local_path": "crawled/feature-extraction/facebook_encodec_24khz/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/facebook/encodec_24khz/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:50:22Z"
+      }
+    },
+    {
+      "repo_id": "facebook/encodec_48khz",
+      "likes": 35,
+      "downloads": 9142,
+      "size": 76338125,
+      "sha256": "0a6bd2506e38ec181c7aa65ef8314d7165fe8fac131c213bb1ad9b6ab4505232",
+      "local_path": "crawled/feature-extraction/facebook_encodec_48khz/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/facebook/encodec_48khz/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:55:37Z"
+      }
+    },
+    {
+      "repo_id": "ibm-granite/granite-embedding-small-english-r2",
+      "likes": 78,
+      "downloads": 5753162,
+      "size": 95334202,
+      "sha256": "189cd50b38b2b3ee6c8d03b76a7dfd4574f27d023294c75c105a725b8ad484b6",
+      "local_path": "crawled/feature-extraction/ibm-granite_granite-embedding-small-english-r2/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ibm-granite/granite-embedding-small-english-r2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:46:20Z"
+      }
+    },
+    {
+      "repo_id": "jinaai/jina-embeddings-v2-small-en",
+      "likes": 142,
+      "downloads": 873505,
+      "size": 65394301,
+      "sha256": "54c94f036922a64af7912b14358b79051d269dc43a049189362f291ba33491b9",
+      "local_path": "crawled/feature-extraction/jinaai_jina-embeddings-v2-small-en/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/jinaai/jina-embeddings-v2-small-en/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:40:24Z"
+      }
+    },
+    {
+      "repo_id": "jinaai/jina-reranker-v1-turbo-en",
+      "likes": 67,
+      "downloads": 11963,
+      "size": 76153978,
+      "sha256": "865db4f93a28237be5d32299e35e6c442ea3435a3c845866c6b43ffb3b7ed35e",
+      "local_path": "crawled/feature-extraction/jinaai_jina-reranker-v1-turbo-en/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/jinaai/jina-reranker-v1-turbo-en/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:47:18Z"
+      }
+    },
+    {
+      "repo_id": "nreimers/MiniLM-L6-H384-uncased",
+      "likes": 49,
+      "downloads": 8666,
+      "size": 90898263,
+      "sha256": "ab5048f3effe06bccb318ee923df90cba4e918b309a0ac6b00c654ede0768b87",
+      "local_path": "crawled/feature-extraction/nreimers_MiniLM-L6-H384-uncased/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/nreimers/MiniLM-L6-H384-uncased/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:51:36Z"
+      }
+    },
+    {
+      "repo_id": "ntu-spml/distilhubert",
+      "likes": 39,
+      "downloads": 60904,
+      "size": 93985618,
+      "sha256": "6d7fb982c1365c60aae4e1a7af329ec0bbe50aec47ffafa9647e17e375009de6",
+      "local_path": "crawled/feature-extraction/ntu-spml_distilhubert/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ntu-spml/distilhubert/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:52:46Z"
+      }
+    },
+    {
+      "repo_id": "sentence-transformers/all-MiniLM-L12-v2",
+      "likes": 326,
+      "downloads": 3822336,
+      "size": 133506609,
+      "sha256": "54609dea3ff88f3167f049eeadbfe780b1173a3117bfac862134ebcd8ce33661",
+      "local_path": "crawled/feature-extraction/sentence-transformers_all-MiniLM-L12-v2/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/sentence-transformers/all-MiniLM-L12-v2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:38:14Z"
+      }
+    },
+    {
+      "repo_id": "sentence-transformers/all-MiniLM-L6-v2",
+      "likes": 5322,
+      "downloads": 253520473,
+      "size": 90888945,
+      "sha256": "c3a85f238711653950f6a79ece63eb0ea93d76f6a6284be04019c53733baf256",
+      "local_path": "crawled/feature-extraction/sentence-transformers_all-MiniLM-L6-v2/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:35:54Z"
+      }
+    },
+    {
+      "repo_id": "sentence-transformers/multi-qa-MiniLM-L6-cos-v1",
+      "likes": 138,
+      "downloads": 842153,
+      "size": 90888945,
+      "sha256": "df507ec1743de52aa0a1b401183c5fd8ca18e846689421ea6c94cae014d9b26b",
+      "local_path": "crawled/feature-extraction/sentence-transformers_multi-qa-MiniLM-L6-cos-v1/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/sentence-transformers/multi-qa-MiniLM-L6-cos-v1/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:42:56Z"
+      }
+    },
+    {
+      "repo_id": "sentence-transformers/paraphrase-MiniLM-L6-v2",
+      "likes": 150,
+      "downloads": 2542125,
+      "size": 90895153,
+      "sha256": "5d716de760acbdc09e79a11e718c5606e0812b6aeb76c6664cba876d174e3ecd",
+      "local_path": "crawled/feature-extraction/sentence-transformers_paraphrase-MiniLM-L6-v2/pytorch_model.bin",
+      "cluster": "feature-extraction",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/sentence-transformers/paraphrase-MiniLM-L6-v2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:40:47Z"
+      }
+    },
+    {
+      "repo_id": "Intel/distilbert-base-uncased-distilled-squad-int8-static-inc",
+      "likes": 5,
+      "downloads": 557,
+      "size": 74663805,
+      "sha256": "0dd1bdad6b742200d4d48d76e6c95102804c415b8a1be70208e9c2401da22b2f",
+      "local_path": "crawled/question-answering/Intel_distilbert-base-uncased-distilled-squad-int8-static-inc/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Intel/distilbert-base-uncased-distilled-squad-int8-static-inc/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:16:18Z"
+      }
+    },
+    {
+      "repo_id": "LLukas22/all-MiniLM-L12-v2-qa-all",
+      "likes": 2,
+      "downloads": 12,
+      "size": 132921069,
+      "sha256": "b197e777a7b0593d9b7b203e2189a956fcd7f6aac206261b19aed28580533ab6",
+      "local_path": "crawled/question-answering/LLukas22_all-MiniLM-L12-v2-qa-all/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/LLukas22/all-MiniLM-L12-v2-qa-all/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:22:23Z"
+      }
+    },
+    {
+      "repo_id": "LinhDuong/bloom-7b1-alpaca",
+      "likes": 5,
+      "downloads": 8,
+      "size": 15751077,
+      "sha256": "8e6239cab0062b00b4623fad03d359f440e2500b49fab5eab21e4a79321fb1c5",
+      "local_path": "crawled/question-answering/LinhDuong_bloom-7b1-alpaca/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/LinhDuong/bloom-7b1-alpaca/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:15:43Z"
+      }
+    },
+    {
+      "repo_id": "Wikidepia/indobert-lite-squad",
+      "likes": 6,
+      "downloads": 41,
+      "size": 44393497,
+      "sha256": "2052493fa4334cfdb87fd93057c5a1e4b4630db5a6965d18a96d31da2e41e93c",
+      "local_path": "crawled/question-answering/Wikidepia_indobert-lite-squad/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Wikidepia/indobert-lite-squad/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:15:06Z"
+      }
+    },
+    {
+      "repo_id": "abhilash1910/albert-squad-v2",
+      "likes": 2,
+      "downloads": 22,
+      "size": 66559895,
+      "sha256": "51de7aeb00026575971e715cc68adb49d6f26f3256a01fff7b8292de78fcf8e8",
+      "local_path": "crawled/question-answering/abhilash1910_albert-squad-v2/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/abhilash1910/albert-squad-v2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:19:15Z"
+      }
+    },
+    {
+      "repo_id": "ag14850/Mosquito",
+      "likes": 18,
+      "downloads": 0,
+      "size": 29142807,
+      "sha256": "41797d7eecc1cb83700313bf9d494305f656b20d50860dca485391d10cd246e4",
+      "local_path": "crawled/question-answering/ag14850_Mosquito/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ag14850/Mosquito/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:12:36Z"
+      }
+    },
+    {
+      "repo_id": "aware-ai/mobilebert-squadv2",
+      "likes": 2,
+      "downloads": 21,
+      "size": 98625685,
+      "sha256": "f5661c0cfd9127e956b7de26f1b9c5a43fddda531d6da99a95093831324b30b8",
+      "local_path": "crawled/question-answering/aware-ai_mobilebert-squadv2/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/aware-ai/mobilebert-squadv2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:19:33Z"
+      }
+    },
+    {
+      "repo_id": "csarron/mobilebert-uncased-squad-v2",
+      "likes": 8,
+      "downloads": 23083,
+      "size": 98612899,
+      "sha256": "226fbd74da60509880994c22d927f06f4e620f674fdf436211ad6902f01de7fb",
+      "local_path": "crawled/question-answering/csarron_mobilebert-uncased-squad-v2/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/csarron/mobilebert-uncased-squad-v2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:14:13Z"
+      }
+    },
+    {
+      "repo_id": "dccuchile/albert-base-spanish-finetuned-qa-mlqa",
+      "likes": 3,
+      "downloads": 17,
+      "size": 44904343,
+      "sha256": "d0df64ef1a58c9f5900a53ff722f7ad79e49079d2b4e1b77b0f9b3f0a45b3800",
+      "local_path": "crawled/question-answering/dccuchile_albert-base-spanish-finetuned-qa-mlqa/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/dccuchile/albert-base-spanish-finetuned-qa-mlqa/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:17:28Z"
+      }
+    },
+    {
+      "repo_id": "deepset/minilm-uncased-squad2",
+      "likes": 48,
+      "downloads": 21269,
+      "size": 133490920,
+      "sha256": "d8582ee8eec697f946018684604ddfe8d0e4b4e9bba1d8aa4e63462ee87a4f93",
+      "local_path": "crawled/question-answering/deepset_minilm-uncased-squad2/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/deepset/minilm-uncased-squad2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:12:15Z"
+      }
+    },
+    {
+      "repo_id": "fzmnm/TinyLili-zh-64M",
+      "likes": 2,
+      "downloads": 13,
+      "size": 127240802,
+      "sha256": "03e1f360c8755184f4b05df53054c0a669dec9e18d9699981a71453d4b32f7cd",
+      "local_path": "crawled/question-answering/fzmnm_TinyLili-zh-64M/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/fzmnm/TinyLili-zh-64M/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:23:42Z"
+      }
+    },
+    {
+      "repo_id": "monologg/koelectra-small-v2-distilled-korquad-384",
+      "likes": 7,
+      "downloads": 135935,
+      "size": 54844630,
+      "sha256": "043efda1484f681ce4496f0b12d52ad8c28f598e97178446bbdb2c1e15acfcb9",
+      "local_path": "crawled/question-answering/monologg_koelectra-small-v2-distilled-korquad-384/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/monologg/koelectra-small-v2-distilled-korquad-384/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:14:53Z"
+      }
+    },
+    {
+      "repo_id": "mrm8488/bert-tiny-5-finetuned-squadv2",
+      "likes": 5,
+      "downloads": 1067,
+      "size": 25523319,
+      "sha256": "3a6a6bb44d809319167dd91ef83bf728e642cd77ecb4ff63682d75edffa5956d",
+      "local_path": "crawled/question-answering/mrm8488_bert-tiny-5-finetuned-squadv2/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mrm8488/bert-tiny-5-finetuned-squadv2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:15:25Z"
+      }
+    },
+    {
+      "repo_id": "mrm8488/bert-tiny-finetuned-squadv2",
+      "likes": 3,
+      "downloads": 1069,
+      "size": 17553971,
+      "sha256": "1b0e28d9e21beb1df101fd56b6290f4fe7ad70a5daf101251d594efe3bd80752",
+      "local_path": "crawled/question-answering/mrm8488_bert-tiny-finetuned-squadv2/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mrm8488/bert-tiny-finetuned-squadv2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:17:06Z"
+      }
+    },
+    {
+      "repo_id": "mrm8488/mobilebert-uncased-finetuned-squadv2",
+      "likes": 2,
+      "downloads": 63,
+      "size": 98614149,
+      "sha256": "85425166b11f319c7b0f969fd1f6b26e39684311dec07cb4f90f9b67e139c25c",
+      "local_path": "crawled/question-answering/mrm8488_mobilebert-uncased-finetuned-squadv2/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mrm8488/mobilebert-uncased-finetuned-squadv2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:20:57Z"
+      }
+    },
+    {
+      "repo_id": "squirro/albert-base-v2-squad_v2",
+      "likes": 3,
+      "downloads": 20,
+      "size": 44390231,
+      "sha256": "9047ad8b56c90c6a13ed5f747e19434145f503fbea005768815b1af9fa24eef5",
+      "local_path": "crawled/question-answering/squirro_albert-base-v2-squad_v2/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/squirro/albert-base-v2-squad_v2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:18:02Z"
+      }
+    },
+    {
+      "repo_id": "srcocotero/tiny-bert-qa",
+      "likes": 2,
+      "downloads": 31,
+      "size": 17495149,
+      "sha256": "010ada5add71d2b6d28842357a50246580a7660ae81b6df62d68620df7ebd316",
+      "local_path": "crawled/question-answering/srcocotero_tiny-bert-qa/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/srcocotero/tiny-bert-qa/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:21:15Z"
+      }
+    },
+    {
+      "repo_id": "twmkn9/albert-base-v2-squad2",
+      "likes": 4,
+      "downloads": 2197,
+      "size": 46747084,
+      "sha256": "2332fa62f43189b718a62ba16a7c8c5dffa3139ee34e57f29191c489cc6fd8f1",
+      "local_path": "crawled/question-answering/twmkn9_albert-base-v2-squad2/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/twmkn9/albert-base-v2-squad2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:16:51Z"
+      }
+    },
+    {
+      "repo_id": "wptoux/albert-chinese-large-qa",
+      "likes": 12,
+      "downloads": 15,
+      "size": 62018265,
+      "sha256": "7ce291dd15f30272c28b1452326e50b1a921ddd763191693a9f2f4506adf163d",
+      "local_path": "crawled/question-answering/wptoux_albert-chinese-large-qa/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/wptoux/albert-chinese-large-qa/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:13:20Z"
+      }
+    },
+    {
+      "repo_id": "ydshieh/tiny-random-gptj-for-question-answering",
+      "likes": 3,
+      "downloads": 12,
+      "size": 1708450,
+      "sha256": "d53a3a8b91044fa1b5d46ab72a56898ce4f4605dcf203d013b60799cf26210a8",
+      "local_path": "crawled/question-answering/ydshieh_tiny-random-gptj-for-question-answering/pytorch_model.bin",
+      "cluster": "question-answering",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ydshieh/tiny-random-gptj-for-question-answering/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:17:35Z"
+      }
+    },
+    {
+      "repo_id": "cointegrated/rubert-tiny-sentiment-balanced",
+      "likes": 18,
+      "downloads": 25224,
+      "size": 47166007,
+      "sha256": "a934e2a785ab24e55cf1dd532f51daff7b91a18867683ab80475d89ee67ca867",
+      "local_path": "crawled/text-classification/cointegrated_rubert-tiny-sentiment-balanced/pytorch_model.bin",
       "cluster": "text-classification",
       "provenance": {
         "source": "Hugging Face Hub",
-        "url": "https://huggingface.co/ssary/XLM-RoBERTa-German-sentiment/blob/main/pytorch_model.bin",
-        "crawled_at": "2026-08-29T15:19:20Z"
+        "url": "https://huggingface.co/cointegrated/rubert-tiny-sentiment-balanced/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:31:14Z"
       }
     },
     {
-      "repo_id": "magic-leap-community/superpoint",
-      "likes": 26,
-      "downloads": 22235,
-      "size": 5211510,
-      "sha256": "ee46dc3eaf52d1f65d15a4953f30573526e34031a4c26268fa3867614ef1b65c",
-      "local_path": "crawled/feature-extraction/magic-leap-community_superpoint/pytorch_model.bin",
-      "cluster": "feature-extraction",
+      "repo_id": "cointegrated/rubert-tiny-toxicity",
+      "likes": 48,
+      "downloads": 422169,
+      "size": 47168503,
+      "sha256": "3acf3c98b1f80cfd8cdbf45178993636be89c320df713cbcac0f25d31ab36b3d",
+      "local_path": "crawled/text-classification/cointegrated_rubert-tiny-toxicity/pytorch_model.bin",
+      "cluster": "text-classification",
       "provenance": {
         "source": "Hugging Face Hub",
-        "url": "https://huggingface.co/magic-leap-community/superpoint/blob/main/pytorch_model.bin",
-        "crawled_at": "2026-08-29T15:33:57Z"
+        "url": "https://huggingface.co/cointegrated/rubert-tiny-toxicity/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:19:53Z"
       }
     },
     {
-      "repo_id": "edbeeching/decision-transformer-gym-hopper-expert",
+      "repo_id": "cointegrated/rubert-tiny2-cedr-emotion-detection",
+      "likes": 40,
+      "downloads": 37662,
+      "size": 116820471,
+      "sha256": "b43e25fc5e624a0b3d8b14bfb488f6939f23440e07adbf46b7deb1a0ed0cb309",
+      "local_path": "crawled/text-classification/cointegrated_rubert-tiny2-cedr-emotion-detection/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cointegrated/rubert-tiny2-cedr-emotion-detection/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:22:27Z"
+      }
+    },
+    {
+      "repo_id": "cross-encoder/ms-marco-MiniLM-L12-v2",
+      "likes": 111,
+      "downloads": 1786662,
+      "size": 133530889,
+      "sha256": "207bb14d184b7728b7c2a68c685678aab636ae301a46f99fe05e5ffdae89e4d8",
+      "local_path": "crawled/text-classification/cross-encoder_ms-marco-MiniLM-L12-v2/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cross-encoder/ms-marco-MiniLM-L12-v2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:10:23Z"
+      }
+    },
+    {
+      "repo_id": "cross-encoder/ms-marco-MiniLM-L2-v2",
+      "likes": 14,
+      "downloads": 935455,
+      "size": 62484521,
+      "sha256": "e92ec9f854a5d8651f86db03375c55f4e4f893b7518177d4f2c8e31e3b9013a1",
+      "local_path": "crawled/text-classification/cross-encoder_ms-marco-MiniLM-L2-v2/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cross-encoder/ms-marco-MiniLM-L2-v2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:35:05Z"
+      }
+    },
+    {
+      "repo_id": "cross-encoder/ms-marco-MiniLM-L4-v2",
+      "likes": 28,
+      "downloads": 6357608,
+      "size": 76693769,
+      "sha256": "943560a8b409a98f7b1addf7f93d0c09efb2a3027daa12680ab3cf07b7298fe7",
+      "local_path": "crawled/text-classification/cross-encoder_ms-marco-MiniLM-L4-v2/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cross-encoder/ms-marco-MiniLM-L4-v2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:25:49Z"
+      }
+    },
+    {
+      "repo_id": "cross-encoder/ms-marco-MiniLM-L6-v2",
+      "likes": 308,
+      "downloads": 86404649,
+      "size": 90903017,
+      "sha256": "3ae17b87eda3d184502a821fddff43d82feb7c206f665a851c491ec715b497ed",
+      "local_path": "crawled/text-classification/cross-encoder_ms-marco-MiniLM-L6-v2/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cross-encoder/ms-marco-MiniLM-L6-v2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:22:57Z"
+      }
+    },
+    {
+      "repo_id": "cross-encoder/ms-marco-TinyBERT-L2",
+      "likes": 21,
+      "downloads": 17348,
+      "size": 17565609,
+      "sha256": "74cfcb4bad39a47c89f21932bdd6c8061f97cca298d8a4d85cb851c8a90d74ac",
+      "local_path": "crawled/text-classification/cross-encoder_ms-marco-TinyBERT-L2/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cross-encoder/ms-marco-TinyBERT-L2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:30:11Z"
+      }
+    },
+    {
+      "repo_id": "cross-encoder/ms-marco-TinyBERT-L2-v2",
+      "likes": 44,
+      "downloads": 469502,
+      "size": 17565609,
+      "sha256": "17110c74b1e615554fa3a9242c36210dd36defe6946e819c2e80872b3508aae9",
+      "local_path": "crawled/text-classification/cross-encoder_ms-marco-TinyBERT-L2-v2/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cross-encoder/ms-marco-TinyBERT-L2-v2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:20:49Z"
+      }
+    },
+    {
+      "repo_id": "marieke93/MiniLM-evidence-types",
+      "likes": 18,
+      "downloads": 52558,
+      "size": 133521773,
+      "sha256": "51c124a137ec5afe807e7f595773b450a7a3d1b8a86e7af528f98422e0a36ce1",
+      "local_path": "crawled/text-classification/marieke93_MiniLM-evidence-types/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/marieke93/MiniLM-evidence-types/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:32:26Z"
+      }
+    },
+    {
+      "repo_id": "microsoft/MiniLM-L12-H384-uncased",
+      "likes": 111,
+      "downloads": 56103,
+      "size": 133483028,
+      "sha256": "bcc275fe3e183a68e629c55355be77ef51c2ee780990173ca8f8edc65152fae7",
+      "local_path": "crawled/text-classification/microsoft_MiniLM-L12-H384-uncased/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/microsoft/MiniLM-L12-H384-uncased/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:16:12Z"
+      }
+    },
+    {
+      "repo_id": "microsoft/xtremedistil-l12-h384-uncased",
+      "likes": 15,
+      "downloads": 235,
+      "size": 133522134,
+      "sha256": "250ce302c017e1add9abe6aed0ccd6edcc11d5299eecfab6e7ce537cb4dafedc",
+      "local_path": "crawled/text-classification/microsoft_xtremedistil-l12-h384-uncased/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/microsoft/xtremedistil-l12-h384-uncased/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:34:26Z"
+      }
+    },
+    {
+      "repo_id": "microsoft/xtremedistil-l6-h256-uncased",
+      "likes": 34,
+      "downloads": 3294,
+      "size": 51044621,
+      "sha256": "5530fdc0e6626d8fb88f29173fa6c8c40b96a21263beb9f38ec2e9fb58062dd7",
+      "local_path": "crawled/text-classification/microsoft_xtremedistil-l6-h256-uncased/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/microsoft/xtremedistil-l6-h256-uncased/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:24:52Z"
+      }
+    },
+    {
+      "repo_id": "microsoft/xtremedistil-l6-h384-uncased",
+      "likes": 23,
+      "downloads": 1344,
+      "size": 90897162,
+      "sha256": "38bd5f8a7d1b7045de8fee25bfac1777edf5a2ec8cd3399b21bde917b0278e23",
+      "local_path": "crawled/text-classification/microsoft_xtremedistil-l6-h384-uncased/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/microsoft/xtremedistil-l6-h384-uncased/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:29:55Z"
+      }
+    },
+    {
+      "repo_id": "mrm8488/bert-tiny-finetuned-sms-spam-detection",
+      "likes": 57,
+      "downloads": 27824,
+      "size": 17565824,
+      "sha256": "2f3645d7e83cfc96cd781210dfc7dd879ef187a04df644d6a8f34138b9d6a9b1",
+      "local_path": "crawled/text-classification/mrm8488_bert-tiny-finetuned-sms-spam-detection/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mrm8488/bert-tiny-finetuned-sms-spam-detection/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:16:50Z"
+      }
+    },
+    {
+      "repo_id": "pandalla/datatager_E-Commerce_review_extraction",
+      "likes": 27,
+      "downloads": 9,
+      "size": 117441341,
+      "sha256": "a1eef5cff792c373bd1611874fc3b0acd491a1145a5aafd16db43885131baa95",
+      "local_path": "crawled/text-classification/pandalla_datatager_E-Commerce_review_extraction/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/pandalla/datatager_E-Commerce_review_extraction/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:27:19Z"
+      }
+    },
+    {
+      "repo_id": "seara/rubert-tiny2-russian-sentiment",
+      "likes": 35,
+      "downloads": 23981,
+      "size": 116813471,
+      "sha256": "f6cd179bc20f33ddf17fd16318da2257574f831363d46d6a77a21faafb2f2c0f",
+      "local_path": "crawled/text-classification/seara_rubert-tiny2-russian-sentiment/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/seara/rubert-tiny2-russian-sentiment/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:24:04Z"
+      }
+    },
+    {
+      "repo_id": "shahrukhx01/bert-mini-finetune-question-detection",
+      "likes": 17,
+      "downloads": 10698,
+      "size": 44719369,
+      "sha256": "21c75d631b9856288316df0751a1a29bcc1e204cfc48968eab2bde760ae9c72a",
+      "local_path": "crawled/text-classification/shahrukhx01_bert-mini-finetune-question-detection/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/shahrukhx01/bert-mini-finetune-question-detection/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:33:04Z"
+      }
+    },
+    {
+      "repo_id": "shahrukhx01/question-vs-statement-classifier",
+      "likes": 47,
+      "downloads": 44148,
+      "size": 44719369,
+      "sha256": "e47836a61bc13290316c2029d3855a3b6d2094910e3a13358bee83e63f0125d4",
+      "local_path": "crawled/text-classification/shahrukhx01_question-vs-statement-classifier/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/shahrukhx01/question-vs-statement-classifier/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:18:56Z"
+      }
+    },
+    {
+      "repo_id": "vineetsharma/customer-support-intent-albert",
+      "likes": 21,
+      "downloads": 33,
+      "size": 46826306,
+      "sha256": "571a79b39953414d1205f76bea68225425af334ae3ce22415c0a8ed01970444f",
+      "local_path": "crawled/text-classification/vineetsharma_customer-support-intent-albert/pytorch_model.bin",
+      "cluster": "text-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/vineetsharma/customer-support-intent-albert/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:30:45Z"
+      }
+    },
+    {
+      "repo_id": "Abhishekcr448/Tiny-Hinglish-Chat-21M",
+      "likes": 8,
+      "downloads": 174,
+      "size": 84149626,
+      "sha256": "23895ab8531b96f1a03dd5a5933b28897de929df675d440e7009543c0074ae9c",
+      "local_path": "crawled/text-generation/Abhishekcr448_Tiny-Hinglish-Chat-21M/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Abhishekcr448/Tiny-Hinglish-Chat-21M/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:42:21Z"
+      }
+    },
+    {
+      "repo_id": "EleutherAI/pythia-14m-deduped",
+      "likes": 30,
+      "downloads": 18885,
+      "size": 53331725,
+      "sha256": "2cc82c70e5ff5ec456c00ff3023e321546a04a1626806606057efb4f4d407f13",
+      "local_path": "crawled/text-generation/EleutherAI_pythia-14m-deduped/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/EleutherAI/pythia-14m-deduped/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:15:52Z"
+      }
+    },
+    {
+      "repo_id": "HuggingFaceM4/tiny-random-LlamaForCausalLM",
       "likes": 20,
-      "downloads": 398,
-      "size": 6600494,
-      "sha256": "4c16a90bfc8bcca09a015021250df79d6d1450e85ac01b7ca5ac549318695893",
-      "local_path": "crawled/feature-extraction/edbeeching_decision-transformer-gym-hopper-expert/pytorch_model.bin",
-      "cluster": "feature-extraction",
+      "downloads": 233210,
+      "size": 2071008,
+      "sha256": "ead8d18a1b6d6948761f23fec1647cda5b6af3dbdd23a30769824ab26f4c30b8",
+      "local_path": "crawled/text-generation/HuggingFaceM4_tiny-random-LlamaForCausalLM/pytorch_model.bin",
+      "cluster": "text-generation",
       "provenance": {
         "source": "Hugging Face Hub",
-        "url": "https://huggingface.co/edbeeching/decision-transformer-gym-hopper-expert/blob/main/pytorch_model.bin",
-        "crawled_at": "2026-08-29T15:34:35Z"
+        "url": "https://huggingface.co/HuggingFaceM4/tiny-random-LlamaForCausalLM/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:19:41Z"
       }
     },
     {
-      "repo_id": "edbeeching/decision-transformer-gym-hopper-medium",
-      "likes": 7,
-      "downloads": 2690,
-      "size": 6600494,
-      "sha256": "b753583ea04ec9ef07f986792e1572c9d757ffca00bd3d95a51a64454a7c057b",
-      "local_path": "crawled/feature-extraction/edbeeching_decision-transformer-gym-hopper-medium/pytorch_model.bin",
-      "cluster": "feature-extraction",
+      "repo_id": "Maykeye/TinyLLama-v0",
+      "likes": 45,
+      "downloads": 139702,
+      "size": 9269994,
+      "sha256": "ae959aaff509d66f9dd85c53f16481463286950a21e0349c7793f8412fc4a094",
+      "local_path": "crawled/text-generation/Maykeye_TinyLLama-v0/pytorch_model.bin",
+      "cluster": "text-generation",
       "provenance": {
         "source": "Hugging Face Hub",
-        "url": "https://huggingface.co/edbeeching/decision-transformer-gym-hopper-medium/blob/main/pytorch_model.bin",
-        "crawled_at": "2026-08-29T15:38:07Z"
+        "url": "https://huggingface.co/Maykeye/TinyLLama-v0/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-30T00:37:36Z"
       }
     },
     {
-      "repo_id": "matth/flowformer",
+      "repo_id": "RajuKandasamy/tamillama_tiny_30m",
+      "likes": 15,
+      "downloads": 439,
+      "size": 121036057,
+      "sha256": "02b793d3d6f1d73841208077c361fb41b1d87cba8c957537ff61c69f884246a6",
+      "local_path": "crawled/text-generation/RajuKandasamy_tamillama_tiny_30m/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/RajuKandasamy/tamillama_tiny_30m/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:36:13Z"
+      }
+    },
+    {
+      "repo_id": "TristanBehrens/js-fakes-4bars",
+      "likes": 11,
+      "downloads": 56,
+      "size": 78557661,
+      "sha256": "45ee67cbca1e3005006503fbd2068873b8b1a064ece8880edcc7300a3e221ae1",
+      "local_path": "crawled/text-generation/TristanBehrens_js-fakes-4bars/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/TristanBehrens/js-fakes-4bars/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:38:52Z"
+      }
+    },
+    {
+      "repo_id": "Xenova/llama2.c-stories15M",
       "likes": 7,
+      "downloads": 17861,
+      "size": 60784601,
+      "sha256": "bc9437da923cbcda55152668229bc074aad9543e18fefa9a11c3f9ef7872e9c5",
+      "local_path": "crawled/text-generation/Xenova_llama2.c-stories15M/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Xenova/llama2.c-stories15M/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:42:56Z"
+      }
+    },
+    {
+      "repo_id": "ai-guru/lakhclean_mmmtrack_4bars_d-2048",
+      "likes": 36,
+      "downloads": 84,
+      "size": 105915613,
+      "sha256": "42bda0df7ff96166407c5c6602126716e103eba0a18614c247f6e2fc1d0e08b2",
+      "local_path": "crawled/text-generation/ai-guru_lakhclean_mmmtrack_4bars_d-2048/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ai-guru/lakhclean_mmmtrack_4bars_d-2048/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:13:07Z"
+      }
+    },
+    {
+      "repo_id": "arman-bd/guppylm-9M",
+      "likes": 19,
+      "downloads": 160,
+      "size": 34930539,
+      "sha256": "6faec973e60786c8942d632e857c536c5404d4970b4c30ca48c096740d18af79",
+      "local_path": "crawled/text-generation/arman-bd_guppylm-9M/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/arman-bd/guppylm-9M/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:34:14Z"
+      }
+    },
+    {
+      "repo_id": "concedo/OPT-19M-ChatSalad",
+      "likes": 18,
+      "downloads": 63,
+      "size": 38651257,
+      "sha256": "7624a5951b915ed3e73acf2550985ae9531c5a3498716c53183d0b853e5e7821",
+      "local_path": "crawled/text-generation/concedo_OPT-19M-ChatSalad/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/concedo/OPT-19M-ChatSalad/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:34:18Z"
+      }
+    },
+    {
+      "repo_id": "crumbly/cramp-25m",
+      "likes": 8,
       "downloads": 11,
-      "size": 139813,
-      "sha256": "2338a4f355efd4f48b7776dc4c5a19eb6aad4ed4351256b68953a9ef1711b9f1",
-      "local_path": "crawled/feature-extraction/matth_flowformer/pytorch_model.bin",
-      "cluster": "feature-extraction",
+      "size": 83159107,
+      "sha256": "76044fcc21e277f2b02ff8bc252d6ac4100a9e77de8bd31cf9aff57e3e51ccf1",
+      "local_path": "crawled/text-generation/crumbly_cramp-25m/pytorch_model.bin",
+      "cluster": "text-generation",
       "provenance": {
         "source": "Hugging Face Hub",
-        "url": "https://huggingface.co/matth/flowformer/blob/main/pytorch_model.bin",
-        "crawled_at": "2026-08-29T15:38:17Z"
+        "url": "https://huggingface.co/crumbly/cramp-25m/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:41:07Z"
       }
     },
     {
-      "repo_id": "amaai-lab/apex",
-      "likes": 6,
-      "downloads": 325,
-      "size": 3329187,
-      "sha256": "02aeef0b954270c3bb898f68a04b384c218b2bcf7721a07dba08698670295707",
-      "local_path": "crawled/feature-extraction/amaai-lab_apex/pytorch_model.bin",
-      "cluster": "feature-extraction",
+      "repo_id": "google/reformer-crime-and-punishment",
+      "likes": 11,
+      "downloads": 85892,
+      "size": 11013576,
+      "sha256": "2e4c1cab4d0ce76ef9d6a5517b4a697974cd7aa497879638317cc5391d672c21",
+      "local_path": "crawled/text-generation/google_reformer-crime-and-punishment/pytorch_model.bin",
+      "cluster": "text-generation",
       "provenance": {
         "source": "Hugging Face Hub",
-        "url": "https://huggingface.co/amaai-lab/apex/blob/main/pytorch_model.bin",
-        "crawled_at": "2026-08-29T15:39:17Z"
+        "url": "https://huggingface.co/google/reformer-crime-and-punishment/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:36:25Z"
+      }
+    },
+    {
+      "repo_id": "jploski/retnet-mini-shakespeare",
+      "likes": 11,
+      "downloads": 73,
+      "size": 39647857,
+      "sha256": "1351004897498a9e2b8e58541767d6d33de0502ac4582593d467ec8e31868d77",
+      "local_path": "crawled/text-generation/jploski_retnet-mini-shakespeare/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/jploski/retnet-mini-shakespeare/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:37:11Z"
+      }
+    },
+    {
+      "repo_id": "junnyu/roformer_chinese_sim_char_small",
+      "likes": 10,
+      "downloads": 75,
+      "size": 62277500,
+      "sha256": "36aeaf129a8a7a5096dd8a10337a18ecbf9168ec7b2b64a46ef35e6f8fef9447",
+      "local_path": "crawled/text-generation/junnyu_roformer_chinese_sim_char_small/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/junnyu/roformer_chinese_sim_char_small/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:40:08Z"
+      }
+    },
+    {
+      "repo_id": "ncfrey/ChemGPT-4.7M",
+      "likes": 20,
+      "downloads": 1297,
+      "size": 70836865,
+      "sha256": "a8a39c5ea1d50c450632e003d21c90f847d815a801934b03a12b02010b74d21b",
+      "local_path": "crawled/text-generation/ncfrey_ChemGPT-4.7M/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ncfrey/ChemGPT-4.7M/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:19:06Z"
+      }
+    },
+    {
+      "repo_id": "nickypro/tinyllama-15M",
+      "likes": 17,
+      "downloads": 563,
+      "size": 30401177,
+      "sha256": "f3e720da97064941f725446e0232da8b368417aa09d633d7d0b9a468fe46080c",
+      "local_path": "crawled/text-generation/nickypro_tinyllama-15M/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/nickypro/tinyllama-15M/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:33:25Z"
+      }
+    },
+    {
+      "repo_id": "or4cl3ai/Aiden_t5",
+      "likes": 19,
+      "downloads": 121,
+      "size": 189,
+      "sha256": "69fa6267e5c110bc8bd630b4635b083f6d8e33d43f05dd9ab299380d9cb22868",
+      "local_path": "crawled/text-generation/or4cl3ai_Aiden_t5/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/or4cl3ai/Aiden_t5/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:31:47Z"
+      }
+    },
+    {
+      "repo_id": "roneneldan/TinyStories-1M",
+      "likes": 70,
+      "downloads": 213025,
+      "size": 48578813,
+      "sha256": "07f9609ea882b8163ff3b23d40e2b82cb715d409631beb15c84b164f3877dae7",
+      "local_path": "crawled/text-generation/roneneldan_TinyStories-1M/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/roneneldan/TinyStories-1M/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T08:58:22Z"
+      }
+    },
+    {
+      "repo_id": "sshleifer/tiny-gpt2",
+      "likes": 36,
+      "downloads": 1199839,
+      "size": 2514146,
+      "sha256": "b706b24034032bdfe765ded5ab6403d201d295a995b790cb24c74becca5c04e6",
+      "local_path": "crawled/text-generation/sshleifer_tiny-gpt2/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/sshleifer/tiny-gpt2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-30T00:38:22Z"
+      }
+    },
+    {
+      "repo_id": "trl-internal-testing/tiny-random-LlamaForCausalLM",
+      "likes": 8,
+      "downloads": 760232,
+      "size": 4136310,
+      "sha256": "e497a072e37c2a4ac371a9c0fd2013ab808cd5516f9ffdafeb36e4bc9f055ace",
+      "local_path": "crawled/text-generation/trl-internal-testing_tiny-random-LlamaForCausalLM/pytorch_model.bin",
+      "cluster": "text-generation",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/trl-internal-testing/tiny-random-LlamaForCausalLM/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T09:40:15Z"
+      }
+    },
+    {
+      "repo_id": "ArBert/albert-base-v2-finetuned-ner",
+      "likes": 4,
+      "downloads": 52,
+      "size": 44413847,
+      "sha256": "0f94163b672053a527d1a5e2cdcf5af4c98029f373e8c1da52f54de5e86662f3",
+      "local_path": "crawled/token-classification/ArBert_albert-base-v2-finetuned-ner/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ArBert/albert-base-v2-finetuned-ner/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:06:40Z"
+      }
+    },
+    {
+      "repo_id": "IlyaGusev/ru-word-stress-transformer",
+      "likes": 5,
+      "downloads": 35,
+      "size": 12835213,
+      "sha256": "b93628caf4493a15351b7b17bfb6c4d77a26960f08ee247f8959b6eb70e7db24",
+      "local_path": "crawled/token-classification/IlyaGusev_ru-word-stress-transformer/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/IlyaGusev/ru-word-stress-transformer/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:05:49Z"
+      }
+    },
+    {
+      "repo_id": "Leo97/KoELECTRA-small-v3-modu-ner",
+      "likes": 25,
+      "downloads": 770622,
+      "size": 56330037,
+      "sha256": "6d572aed6fa7e3a5dea23bdef206e109a1b7314b9ae7b5238cbc684d84f22d34",
+      "local_path": "crawled/token-classification/Leo97_KoELECTRA-small-v3-modu-ner/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Leo97/KoELECTRA-small-v3-modu-ner/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:58:45Z"
+      }
+    },
+    {
+      "repo_id": "albertvillanova/autonlp-wikiann-entity_extraction-1e67664-1301123",
+      "likes": 3,
+      "downloads": 17,
+      "size": 67605529,
+      "sha256": "95150bb720fac158b432ae3fb17a5146456f0db9a918f9e242e8e28c9915b8d5",
+      "local_path": "crawled/token-classification/albertvillanova_autonlp-wikiann-entity_extraction-1e67664-1301123/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/albertvillanova/autonlp-wikiann-entity_extraction-1e67664-1301123/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:09:55Z"
+      }
+    },
+    {
+      "repo_id": "amoeba04/koelectra-small-v3-privacy-ner",
+      "likes": 4,
+      "downloads": 274,
+      "size": 56338966,
+      "sha256": "d497c33874d5e32589ae903ea27764b380d29b025e1ace0b9ee29a7bbc3ca5ad",
+      "local_path": "crawled/token-classification/amoeba04_koelectra-small-v3-privacy-ner/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/amoeba04/koelectra-small-v3-privacy-ner/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:08:56Z"
+      }
+    },
+    {
+      "repo_id": "benjamin/wtp-bert-mini",
+      "likes": 5,
+      "downloads": 9684,
+      "size": 29577694,
+      "sha256": "0a1d2957d9ba5813e577073ddd9260440f35e1b67fa405623e5140f711d6ab91",
+      "local_path": "crawled/token-classification/benjamin_wtp-bert-mini/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/benjamin/wtp-bert-mini/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:06:10Z"
+      }
+    },
+    {
+      "repo_id": "ckiplab/albert-base-chinese-ner",
+      "likes": 12,
+      "downloads": 1375,
+      "size": 40069401,
+      "sha256": "fa85a21f1e8e9d70fec279db92eba51c4438491dba68092057f2583f9b173f50",
+      "local_path": "crawled/token-classification/ckiplab_albert-base-chinese-ner/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ckiplab/albert-base-chinese-ner/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T10:59:47Z"
+      }
+    },
+    {
+      "repo_id": "ckiplab/albert-tiny-chinese-ner",
+      "likes": 3,
+      "downloads": 3057,
+      "size": 16037849,
+      "sha256": "03f6e38f92ada4b59b88ae9122a50a0c98b85f07722ff1234048928e55ed10d3",
+      "local_path": "crawled/token-classification/ckiplab_albert-tiny-chinese-ner/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ckiplab/albert-tiny-chinese-ner/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:09:59Z"
+      }
+    },
+    {
+      "repo_id": "ckiplab/albert-tiny-chinese-ws",
+      "likes": 7,
+      "downloads": 74860,
+      "size": 15949017,
+      "sha256": "2ededb20956722e26434fcda12b31a1da568e1629228be273cffe53f275b9d94",
+      "local_path": "crawled/token-classification/ckiplab_albert-tiny-chinese-ws/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ckiplab/albert-tiny-chinese-ws/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:01:59Z"
+      }
+    },
+    {
+      "repo_id": "ckiplab/bert-tiny-chinese-ner",
+      "likes": 5,
+      "downloads": 278,
+      "size": 45891063,
+      "sha256": "b42dfb2bf2752be7885dcbd0fbf8b2954bd07948645925df1ba569514c6f4a7e",
+      "local_path": "crawled/token-classification/ckiplab_bert-tiny-chinese-ner/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ckiplab/bert-tiny-chinese-ner/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:05:40Z"
+      }
+    },
+    {
+      "repo_id": "cointegrated/rubert-tiny2-sentence-compression",
+      "likes": 4,
+      "downloads": 32,
+      "size": 116420477,
+      "sha256": "e5e075a4e8bc398eca4af6eca352611edbebe5b93ff068ee7a53e86fbd453bbc",
+      "local_path": "crawled/token-classification/cointegrated_rubert-tiny2-sentence-compression/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cointegrated/rubert-tiny2-sentence-compression/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:08:16Z"
+      }
+    },
+    {
+      "repo_id": "flair/chunk-english-fast",
+      "likes": 6,
+      "downloads": 832,
+      "size": 72916359,
+      "sha256": "34b54a6811c6507a5927018b4b0be94791ed97b7071daa589c00826693aca48f",
+      "local_path": "crawled/token-classification/flair_chunk-english-fast/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/flair/chunk-english-fast/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:03:07Z"
+      }
+    },
+    {
+      "repo_id": "flair/pos-english-fast",
+      "likes": 7,
+      "downloads": 3950,
+      "size": 75266317,
+      "sha256": "2897b43fa61696cb584642b5aab18728fa78580d88073e93343e65aafc3925de",
+      "local_path": "crawled/token-classification/flair_pos-english-fast/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/flair/pos-english-fast/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:02:26Z"
+      }
+    },
+    {
+      "repo_id": "flair/upos-english-fast",
+      "likes": 5,
+      "downloads": 3145,
+      "size": 72851335,
+      "sha256": "33bc2c250d4ae8714641305b21bbfcbf069fae647b3f15db45a90de187c14bde",
+      "local_path": "crawled/token-classification/flair_upos-english-fast/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/flair/upos-english-fast/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:04:56Z"
+      }
+    },
+    {
+      "repo_id": "flair/upos-multi-fast",
+      "likes": 5,
+      "downloads": 169,
+      "size": 72105507,
+      "sha256": "eb8d2732935a24eb64a73891e8ae3f12b37a5cf8ca1e3d8d22059e21a32ec912",
+      "local_path": "crawled/token-classification/flair_upos-multi-fast/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/flair/upos-multi-fast/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:05:02Z"
+      }
+    },
+    {
+      "repo_id": "gagan3012/bert-tiny-finetuned-ner",
+      "likes": 6,
+      "downloads": 1086,
+      "size": 17501357,
+      "sha256": "0d10049bb6ee5ff10f0a73fd1ca30100a563dc0d5019fa4470123a319424c909",
+      "local_path": "crawled/token-classification/gagan3012_bert-tiny-finetuned-ner/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/gagan3012/bert-tiny-finetuned-ner/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:03:31Z"
+      }
+    },
+    {
+      "repo_id": "medical-ner-proj/albert-medical-ner-proj",
+      "likes": 8,
+      "downloads": 20,
+      "size": 44415807,
+      "sha256": "4fe3848ef10b6a3156889140a2b6a70172be540cd3ab8eec95945e91a5eadd02",
+      "local_path": "crawled/token-classification/medical-ner-proj_albert-medical-ner-proj/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/medical-ner-proj/albert-medical-ner-proj/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:01:29Z"
+      }
+    },
+    {
+      "repo_id": "mrm8488/TinyBERT-spanish-uncased-finetuned-ner",
+      "likes": 3,
+      "downloads": 19,
+      "size": 58028453,
+      "sha256": "21b8d6f1c6f3eb135425202543449dd97a9d7580a8d7e6b771a083d52403cab1",
+      "local_path": "crawled/token-classification/mrm8488_TinyBERT-spanish-uncased-finetuned-ner/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mrm8488/TinyBERT-spanish-uncased-finetuned-ner/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:10:39Z"
+      }
+    },
+    {
+      "repo_id": "mrm8488/biomedtra-small-finenuned-clinical-ner",
+      "likes": 4,
+      "downloads": 17,
+      "size": 54287661,
+      "sha256": "33dc748f8552ed9d625cdd53f6bf24b0184da93c7ea241283194d51aa811de7e",
+      "local_path": "crawled/token-classification/mrm8488_biomedtra-small-finenuned-clinical-ner/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mrm8488/biomedtra-small-finenuned-clinical-ner/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:07:13Z"
+      }
+    },
+    {
+      "repo_id": "mrm8488/mobilebert-finetuned-pos",
+      "likes": 8,
+      "downloads": 992,
+      "size": 98684455,
+      "sha256": "7cc337dc38076d5a680b9ffb6579b6727d334b949fe242672609604dfcaf8271",
+      "local_path": "crawled/token-classification/mrm8488_mobilebert-finetuned-pos/pytorch_model.bin",
+      "cluster": "token-classification",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mrm8488/mobilebert-finetuned-pos/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-08-31T11:00:53Z"
       }
     }
   ]

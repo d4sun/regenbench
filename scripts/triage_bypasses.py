@@ -20,8 +20,9 @@ def compile_triage_report():
     print("====================================================")
 
     bypass_dir = "data/bypasses"
+    # Accept both flat exports (<hash>.json) and run-scoped exports (<run>/*.json).
     meta_pattern = os.path.join(bypass_dir, "*", "*.json")
-    meta_files = glob.glob(meta_pattern)
+    meta_files = glob.glob(meta_pattern) + glob.glob(os.path.join(bypass_dir, "*.json"))
 
     print(f"Found {len(meta_files)} exported bypass metadata records.")
 

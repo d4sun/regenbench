@@ -1,6 +1,15 @@
 # RegenBench — Comprehensive Implementation Documentation
 
-> **Note (2026-08-30)**: This report is an archival snapshot from 2026-08-28 (pre-fix, 446 bypasses, 47.2% H1). Live numbers are in [`docs/evaluation-report.md`](evaluation-report.md) (990 valid, 514 bypasses, 51.9% H1) and [`README.md#latest-results`](../README.md#latest-results). See also `docs/evaluation-report.md` for reachable-space coverage (48.5% opcode / 80% callable) and `CLAUDE.md` for peer-review fixes. Content below is preserved for implementation reference; quantitative tables in §5 are superseded.
+> **Note (2026-08-31)**: This is the implementation reference (modules,
+> invariants, attack families, DB schema). Quantitative results are **not**
+> maintained here — the authoritative, live numbers are in
+> [`docs/evaluation-report.md`](evaluation-report.md) (regenerated from the
+> campaign DB), [`README.md#latest-results`](../README.md#latest-results), and
+> the per-run `docs/fuzzing-report-*.md`. Historical quantitative tables in §5
+> are archival. The clean-slate pass (2026-08-31) reset all experiment
+> artifacts and rebuilt the corpus as **100 real HuggingFace checkpoints**
+> (5 clusters × 20; no synthetics) — see `docs/experiment-plan.md` and
+> `docs/QUICKSTART.md`.
 
 **Branch**: dev  
 **Generated**: 2026-08-28 (archival; regenerated live report is `docs/evaluation-report.md` at 2026-08-30)  
@@ -330,8 +339,52 @@ Loads `dangerous_callables.yaml` into `RegistryEntry` objects keyed by `(module,
   1. Reinforces callable weights: `weight += 0.2 * fitness`
   2. Rewards families via tier-based combo reinforcement (Tier1/2/3 deltas)
   3. Adjusts mutation probabilities based on evasion rate:
-     - < 20%: increase probs by 0.05 (capped at MAX: op_swap=0.25, callable_sub=0.25, arg_fuzz=0.30)
-     - > 60%: decrease probs by 0.03 (floored at MIN: 0.05)
+- < 20%: increase probs by 0.05 (capped at MAX: op_swap=0.25, callable_sub=0.25, arg_fuzz=0.30)
+      - > 60%: decrease probs by 0.03 (floored at MIN: 0.05)
+
+#### `pipeline/monitor.py` (T3.15)
+**Load-time monitoring + deterministic strace oracle.**
+- `StraceOracle` — containerized `strace -f` syscall analysis; 0% FP on the
+  benign corpus, replaces DynaHug as the deterministic execution signal
+  (bypass confirmation is trigger-polling / StraceOracle, not DynaHug).
+- `LoadTimeMonitor` — records torch-load wall time; malicious payloads load
+  measurably slower than benign (secondary signal).
+
+#### `pipeline/sanitizer.py`, `pipeline/repair.py`, `pipeline/defense.py` (T3.12)
+**Defense prototype: static sanitization + repair/quarantine policy.**
+- `PickleSanitizer` rewrites 5 direct sinks (`os.system`, `subprocess.Popen`,
+  `builtins.exec/eval`, `IPython.utils.process.system` → `builtins.len`);
+  `indirect_chain`/`runstring`/`posix.execv` escapes are **quarantined**, not
+  reserialized (guaranteed benign preservation; remaining escapes quarantined).
+- `repair.py` implements the repair decision + quarantine policy;
+  `defense.py` orchestrates the end-to-end defense pipeline. Source artifacts
+  are never mutated; only content that survives
+  `torch.load(weights_only=True)` in the sandbox is reserialized.
+
+#### `pipeline/plausibility.py`
+**Deterministic bypass confirmation wrapper** around the ExecutionOracle
+(trigger-polling); the verdict that gates H1/H2/H3 confirmation.
+
+#### `pipeline/shelf_life.py` (H3)
+**Bypass shelf-life DB + rescan + decay.**
+- `register_bypasses_from_campaign_db` bulk-registers confirmed bypasses into
+  `data/shelf_life.db` (`bypass_records`, `rescans`).
+- `ShelfLifeTracker.rescan_bypass` re-runs a bypass against an explicit
+  historical image and logs `evasion_retained`.
+
+#### `pipeline/differential.py`
+**RQ1 cross-parser disagreement generation** — `differential_mutate` /
+`disagreement` for pickle-parser differential fuzzing (`--differential-prob`).
+
+#### `pipeline/oracle_ensemble.py`
+**Deprecated** AND-gate ensemble (`dynahug and anomaly and executed`). It
+suppresses true positives, so bypass confirmation is trigger-execution only;
+DynaHug is a supplementary `decision_score`. Imports sklearn at top — do not
+import where sklearn is absent.
+
+#### `pipeline/gguf_tools.py` (T3.7)
+**GGUF parser/writer + attack generators** (malformed-header families + Jinja2
+SSTI chat-template), used by the format-complexity GGUF demo.
 
 ### 3.2 Scanner/Container Infrastructure
 
@@ -446,7 +499,7 @@ Key flow:
 **Snapshots complete run into `results/<timestamp>/`.** Copies DB, reports, bypasses, corpus metadata, GGUF/MalHug inventories, generates `results.md` and `results.json`.
 
 #### `scripts/run_task3_demo.py` (T3.11)
-**GGUF attack surface demo.** Scans 7 malicious GGUF attack families + 24 real benign GGUFs across all scanners and ggufref oracle. Produces `docs/task3-demo.md` (standalone); the unified `scripts/demo_task3.py` also covers GGUF in `docs/demo-report.md#5` (synthetic benign default).
+**GGUF attack surface demo.** Scans 7 malicious GGUF attack families + 24 real benign GGUFs across all scanners and ggufref oracle. Output is consolidated into `docs/demo-report.md#5`; the unified `scripts/demo_task3.py` also covers GGUF (synthetic benign default when the real corpus is absent).
 
 #### `scripts/crawl_benign.py` (T2.4, T2.5)
 **Crawls benign HuggingFace checkpoints.** Downloads `pytorch_model.bin` from public non-gated repos, deduplicates by SHA-256, writes `data/crawled/seed_manifest.json`.
@@ -499,7 +552,7 @@ Key flow:
 ### 3.4 Data & Corpus
 
 #### `data/crawled/`
-Real benign HuggingFace checkpoints crawled by `crawl_benign.py`. Organized by cluster/repo with `pytorch_model.bin` files. `seed_manifest.json` records SHA-256 provenance.
+Real benign HuggingFace checkpoints crawled by `crawl_benign.py`. Organized by cluster/repo with `pytorch_model.bin` files. `seed_manifest.json` records SHA-256 provenance. **Target corpus: 100 real models, 5 task clusters × 20** (text-generation, text-classification, feature-extraction, token-classification, question-answering); no synthetic models. The crawl is resumable and backfills pre-existing downloads into the manifest.
 
 #### `data/malhug/`
 MalHug real malicious corpus (ASE 2024). 73 malicious HuggingFace models with `manifest.json`.
@@ -510,9 +563,10 @@ SQLite database for bypass shelf-life tracking (versioned re-scan results).
 #### `real_benign_corpus/`
 Flat corpus directory for FP studies:
 - `all/` — hard links to all crawled checkpoints (flat `<cluster>__<repo>.bin` naming)
-- `oracle-calibrated/<version>/` — calibrated oracle models + traces
+- `oracle_positive/`, `oracle_negative/` — seed-selection views (hard links) split by DynaHug score
+- `oracle-calibrated/<version>/` — calibrated oracle models + traces; default is `oracle-calibrated/current`
 - `oracle-validation.json` — DynaHug scores on sample
-- `oracle-split.json` — corpus split metadata
+- `oracle-split.json` — deterministic cluster-stratified train/eval split (disjointness guard)
 
 #### `data/candidates/<run_id>/`
 Generated candidate checkpoints per campaign run (persisted for export).
@@ -907,7 +961,7 @@ Scaled proof campaign on this host over all 5 families with adaptive evasion (`-
 ### 5.8 Task 3: GGUF Attack Surface (format-complexity demo) — LIVE
 
 - `ggufref` oracle (reference parser): detects 7/7 GGUF attacks (6 malformed-header families + Jinja2 SSTI CVE-2024-34359) with 0 FP on 13 synthetic benign GGUFs (`data/gguf_benign_corpus/`, `benign_gguf()` minimal) — dedicated oracle contribution. Real corpus `data/gguf_benign_corpus/` via `scripts/crawl_gguf.py` optional (~24 TinyLlama/vocab GGUFs, same 0 FP expected).
-- Pickle-oriented panel is not applicable to GGUF: modelscan 0.8.8 misses all 7 (0/7, no GGUF rules); fickling flags benign GGUF as malicious when forced (catastrophic FP). GGUF results demonstrate format complexity, not scanner robustness. See `docs/task3-demo.md` (standalone) and `docs/demo-report.md#5`.
+- Pickle-oriented panel is not applicable to GGUF: modelscan 0.8.8 misses all 7 (0/7, no GGUF rules); fickling flags benign GGUF as malicious when forced (catastrophic FP). GGUF results demonstrate format complexity, not scanner robustness. See `docs/demo-report.md#5`.
 
 ---
 

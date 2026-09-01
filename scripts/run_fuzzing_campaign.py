@@ -124,7 +124,7 @@ def parse_args() -> argparse.Namespace:
                       help="probability of applying differential pickle-parser mutation (Phase 3a)")
     ap.add_argument("--family-synthesis-prob", type=float, default=0.0,
                       help="probability of applying family-synthesis mutation (Phase 3b)")
-    ap.add_argument("--oracle-model-dir", default="real_benign_corpus/oracle-calibrated/v5-recalibrated",
+    ap.add_argument("--oracle-model-dir", default="real_benign_corpus/oracle-calibrated/current",
                       help="path to recalibrated DynaHug model directory")
     ap.add_argument("--family-quota-min-pct", type=float, default=0.15,
                     help="P1.1: minimum fraction per family per round (default 0.15, 0 to disable)")
@@ -136,7 +136,7 @@ def parse_args() -> argparse.Namespace:
                     help="Task 3 smoke mode: one round and five candidates from ci/corpus")
     ap.add_argument("--ensemble-oracle", action="store_true",
                       help="use ensemble oracle (DynaHug + syscall anomaly detector)")
-    ap.add_argument("--anomaly-model-dir", default="real_benign_corpus/oracle-calibrated/v5-recalibrated/anomaly",
+    ap.add_argument("--anomaly-model-dir", default="real_benign_corpus/oracle-calibrated/current/anomaly",
                       help="path to trained anomaly detector model")
     ap.add_argument("--anomaly-threshold", type=float, default=0.0,
                       help="anomaly score threshold for ensemble decision")

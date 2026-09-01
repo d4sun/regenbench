@@ -1,0 +1,322 @@
+{
+  "task": "oracle-fp-eval-disjoint",
+  "model_dir": "real_benign_corpus/oracle-calibrated/current",
+  "role": "eval",
+  "n": 50,
+  "false_positives": 45,
+  "errors": 5,
+  "fp_rate": 0.9,
+  "score_stats": {
+    "n": 45,
+    "min": -0.102,
+    "median": -0.102,
+    "max": -0.102,
+    "mean": -0.102,
+    "std": 0.0,
+    "spread": 0.0,
+    "positive_rate": 0.0
+  },
+  "duration_s": 257.0,
+  "results": [
+    {
+      "artifact": "text-generation__Abhishekcr448_Tiny-Hinglish-Chat-21M.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__BAAI_bge-small-en.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-generation__HuggingFaceM4_tiny-random-LlamaForCausalLM.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "token-classification__IlyaGusev_ru-word-stress-transformer.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "question-answering__Intel_distilbert-base-uncased-distilled-squad-int8-static-inc.bin",
+      "verdict": "error",
+      "decision_score": null,
+      "exit_code": 2
+    },
+    {
+      "artifact": "question-answering__LinhDuong_bloom-7b1-alpaca.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-generation__RajuKandasamy_tamillama_tiny_30m.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__Supabase_gte-small.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__TaylorAI_bge-micro-v2.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__TaylorAI_gte-tiny.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "question-answering__Wikidepia_indobert-lite-squad.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "question-answering__ag14850_Mosquito.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "token-classification__albertvillanova_autonlp-wikiann-entity_extraction-1e67664-1301123.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "token-classification__benjamin_wtp-bert-mini.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "token-classification__ckiplab_albert-base-chinese-ner.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "token-classification__ckiplab_bert-tiny-chinese-ner.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-classification__cointegrated_rubert-tiny-toxicity.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-classification__cointegrated_rubert-tiny2-cedr-emotion-detection.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "token-classification__cointegrated_rubert-tiny2-sentence-compression.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-generation__concedo_OPT-19M-ChatSalad.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-classification__cross-encoder_ms-marco-MiniLM-L2-v2.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-classification__cross-encoder_ms-marco-MiniLM-L4-v2.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-classification__cross-encoder_ms-marco-MiniLM-L6-v2.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-generation__crumbly_cramp-25m.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "question-answering__dccuchile_albert-base-spanish-finetuned-qa-mlqa.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "question-answering__deepset_minilm-uncased-squad2.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__facebook_encodec_48khz.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "token-classification__flair_chunk-english-fast.bin",
+      "verdict": "error",
+      "decision_score": null,
+      "exit_code": 2
+    },
+    {
+      "artifact": "token-classification__flair_upos-english-fast.bin",
+      "verdict": "error",
+      "decision_score": null,
+      "exit_code": 2
+    },
+    {
+      "artifact": "token-classification__flair_upos-multi-fast.bin",
+      "verdict": "error",
+      "decision_score": null,
+      "exit_code": 2
+    },
+    {
+      "artifact": "text-generation__jploski_retnet-mini-shakespeare.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-generation__junnyu_roformer_chinese_sim_char_small.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-classification__microsoft_xtremedistil-l6-h256-uncased.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-classification__microsoft_xtremedistil-l6-h384-uncased.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "question-answering__mrm8488_bert-tiny-5-finetuned-squadv2.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-classification__mrm8488_bert-tiny-finetuned-sms-spam-detection.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "token-classification__mrm8488_biomedtra-small-finenuned-clinical-ner.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "question-answering__mrm8488_mobilebert-uncased-finetuned-squadv2.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-generation__ncfrey_ChemGPT-4.7M.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__ntu-spml_distilhubert.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-generation__or4cl3ai_Aiden_t5.bin",
+      "verdict": "error",
+      "decision_score": null,
+      "exit_code": 2
+    },
+    {
+      "artifact": "text-classification__seara_rubert-tiny2-russian-sentiment.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__sentence-transformers_all-MiniLM-L12-v2.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__sentence-transformers_all-MiniLM-L6-v2.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__sentence-transformers_multi-qa-MiniLM-L6-cos-v1.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__sentence-transformers_paraphrase-MiniLM-L6-v2.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "question-answering__srcocotero_tiny-bert-qa.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-generation__sshleifer_tiny-gpt2.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "question-answering__twmkn9_albert-base-v2-squad2.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-classification__vineetsharma_customer-support-intent-albert.bin",
+      "verdict": "malicious",
+      "decision_score": -0.10200638959745745,
+      "exit_code": 1
+    }
+  ]
+}

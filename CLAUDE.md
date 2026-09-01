@@ -17,15 +17,34 @@ pipeline/generator.py + mutators/templates/evasion     panel scanners + dynahug 
 
 Campaign loop lives in `scripts/run_fuzzing_campaign.py`; per-candidate verdicts, fitness, coverage → SQLite via `pipeline/db.py`; reports → `docs/fuzzing-report-<run>.md`.
 
-## Hypothesis status (current, post-fix scaled run)
+## Corpus state (2026-08-31 clean-slate pass)
+
+- **100 real models** crawled from Hugging Face Hub into `data/crawled/` (5 clusters × 20:
+  text-generation, text-classification, feature-extraction, token-classification, question-answering),
+  linked flat into `real_benign_corpus/all/` as `<cluster>__<repo>.bin`. **No synthetic models.**
+  `real_benign_corpus_v2/` (17 real + 83 synthetic) was deleted.
+- Crawl **fixes** in `scripts/crawl_benign.py`: resume now backfills already-downloaded files into
+  `seed_manifest.json` (was under-reporting: manifest 6 vs disk 17); the security filter is live and
+  only excludes `danger`/`blocked` artifacts (HF stamps every `pytorch_model.bin` pickle with
+  `caution`, so excluding caution would reject the whole corpus).
+- Regenerable experiment artifacts (campaign DB, shelf-life DB, shadowpickle DB, logs, candidates,
+  results, stale pre-fix reports, `real_benign_corpus/text-generation-only/` broken symlinks) were
+  reset. Kept: `data/crawled/` models + manifest, `data/malhug/manifest.json`, `reference/`,
+  committed `oracle-calibrated/` (fallback), all source.
+- Oracle model dir default is now `real_benign_corpus/oracle-calibrated/current` (fresh
+  recalibration on the 100-model corpus; committed v1–v5 kept as fallback).
+- Interactive guides: `notebooks/` (thin subprocess wrappers around every script),
+  `docs/QUICKSTART.md`, `docs/README.md` (doc index).
+
+## Hypothesis status (current, post-reset fresh run)
 
 | H | Verdict | Evidence |
 |---|---|---|
-| **H1** | **Supported** (reframed to proposal wording: relative improvement over baseline, not an absolute 70% threshold) | Fuzzing 51.9% vs ShadowPickle baseline 25.0% confirmed bypass rate; per-scanner PickleScan 51.9% vs 25%, ModelScan 62.9% vs 50%, Fickling 94.2% vs 100% |
-| **H2** | **Valid negative result** | Uncorroborated == confirmed (514); the static panel already detects all non-executing candidates, so the dual-oracle adds no precision — dynamic validation's value is confirming payload execution (trigger polling), not filtering false evasions |
-| **H3** | **Supported** | 100% retention of 514 bypasses across 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10) |
+| **H1** | **Supported** (relative improvement over baseline, not an absolute threshold) | Fuzzing 34.0% vs ShadowPickle baseline 25.0% confirmed bypass rate; per-scanner PickleScan 34.0% vs 25%, ModelScan 51.5% vs 50%, Fickling 100% vs 100% |
+| **H2** | **Valid negative result** | Uncorroborated == confirmed (297); the static panel already detects all non-executing candidates, so the dual-oracle adds no precision — dynamic validation's value is confirming payload execution (trigger polling), not filtering false evasions |
+| **H3** | **Supported** | 99.3–100% retention of 297 bypasses across 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10); 2 pypi_injected/splice bypasses caught by old picklescan/modelscan rules |
 
-Scaled proof campaign (this host, docker): guided 428/554 valid bypasses (77.3%), unguided 86/436 (19.7%), Fisher p≈0; Q_first guided [1], unguided [12]. Full details in `docs/evaluation-report.md` (regenerate with `scripts/run_evaluation_suite.py`).
+Fresh run (2026-08-31, this host, docker, 100 real HF corpus): guided 223/473 valid bypasses (47.1%), unguided 74/401 (18.5%), Fisher p=0, z=8.92; Q_first guided [4], unguided [3]. Full details in `docs/evaluation-report.md` (regenerate with `scripts/run_evaluation_suite.py`).
 
 **Peer-review fixes (2026-08-30)**: reachable-space coverage (was 0.5% opcode / 0.8% callable against theoretical max; now 45.6% opcode / 60-80% callable reachable + family entropy + family bypass coverage, see `docs/evaluation-report.md` Coverage Growth), per-round family quotas (≤40% per family, ≥1 per family, entropy target 1.5), payload-level callable diversification for template families (5→12 sinks), `StraceOracle` (0% FP strace-based syscall oracle replacing DynaHug 63.5% FP), GGUF re-scoped as format-complexity demo (synthetic `benign_gguf()` default, real `data/gguf_benign_corpus/` optional), repair triage (30% escapes are `indirect_chain`/`runstring` quarantined, not sanitized).
 
@@ -94,6 +113,10 @@ Containers: `containers/<name>/` build skinned `regenbench/<name>` images; all s
 ## Common commands
 
 ```bash
+# interactive guides (thin subprocess wrappers around every script)
+jupyter nbconvert --to notebook --execute --inplace notebooks/*.ipynb   # or: jupyter lab notebooks/
+# crawl 100 real models (5 clusters x 20, resumable; backfills existing files)
+python scripts/crawl_benign.py --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering --limit-per-cluster 20 --max-size 134217728 --out-dir data/crawled --scan-cap 20000 --workers 8
 # fitness ablation (guided vs unguided, 5 replicates; needs docker+images)
 bash run_fitness_ablation_experiment.sh
 # oracle-dominant validation
@@ -117,4 +140,5 @@ for d in base picklescan modelscan fickling modeltracer dynahug gguf; do contain
 1. Edit the code.
 2. `python -m pytest tests/ -x -q` (fast, host-only).
 3. `python scripts/run_pilot_campaign.py --quick --attack-families gadget,overwritten,external,indirect_chain,pypi_injected` for a small end-to-end check.
-4. Full ablation only when the quick run behaves: `bash run_fitness_ablation_experiment.sh`, then triage with `scripts/analyze_fitness_ablation.py --db data/regenbench_campaign.db`.
+4. Follow `docs/QUICKSTART.md` / `notebooks/` for the full pipeline (crawl 100 → oracle → campaigns → eval → shelf-life).
+5. Full ablation only when the quick run behaves: `bash run_fitness_ablation_experiment.sh`, then triage with `scripts/analyze_fitness_ablation.py --db data/regenbench_campaign.db`.
