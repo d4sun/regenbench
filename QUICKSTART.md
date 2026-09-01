@@ -98,9 +98,14 @@ python3 scripts/run_evaluation_suite.py --db data/regenbench_campaign.db \
   --corpus-dir real_benign_corpus/all --fp-sample 100   # slow FP/monitor docker scans
 python3 scripts/triage_bypasses.py                      # -> docs/triage-report.md
 python3 scripts/benchmark_perf.py                       # -> docs/perf-report.md
-python3 scripts/demo_task3.py --backend docker          # -> docs/demo-report.md
+
+# GGUF attack surface (format-complexity demo)
+python3 scripts/crawl_gguf.py                           # -> data/gguf_benign_corpus/ (24 real GGUFs)
+python3 scripts/run_task3_demo.py --backend docker      # -> docs/task3-demo.md (GGUF matrix + FP)
+python3 scripts/demo_task3.py --backend docker          # -> docs/demo-report.md (incl. GGUF section)
 ```
-- Headline numbers are consolidated in [`RESULTS.md`](RESULTS.md).
+- Headline numbers (including GGUF: ggufref 7/7 vs modelscan 0/7, FP 0/24)
+  are consolidated in [`RESULTS.md`](RESULTS.md).
 
 ## 6. Shelf-life rescans (H3)
 

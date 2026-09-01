@@ -142,7 +142,59 @@ re-runs a bypass against an explicit historical image and logs
 `evasion_retained`. Six historical images are buildable:
 picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10.
 
-## 8. Corpus & oracle pipeline (reproduce)
+## 8. GGUF attack surface (`pipeline/gguf_tools.py`, `containers/gguf/`)
+
+A **format-complexity demo**, not a scanner-robustness claim. It generates 7
+GGUF attack families and scans them with the `ggufref` reference oracle versus
+modelscan.
+
+### 8.1 Builders
+
+`gguf_tools.build_gguf` / `benign_gguf` / `generate_candidate_gguf` emit GGUF
+v3 bytes (metadata-only, zero tensors) for 7 families:
+
+- `ssti_chat_template` — Jinja2 SSTI in `tokenizer.chat_template`
+  (CVE-2024-34359); renders through the unsandboxed Jinja2 path and writes a
+  trigger file via `os.popen`.
+- 6 malformed-header families that reproduce the vellaveto attack
+  *technique*: `nkv_overflow`, `ntensors_overflow`, `string_overflow`,
+  `path_traversal`, `negative_dims`, `version_zero` — all rejected by the
+  ggml-org reference reader and all missed by modelscan 0.8.8.
+
+### 8.2 Reference oracle (`containers/gguf/`)
+
+`loader.py` parses with the ggml-org `gguf==0.19.0` reader in a **single
+pass**, classifies the malformed families with a bounded `kv_count` walker
+(capped at 100k), and renders `tokenizer.chat_template` through Jinja2 exactly
+like llama-cpp-python. `validator.py` normalizes to the unified verdict schema.
+A file is only `malicious` when it matches an attack signature — reference-reader
+rejection alone stays `benign` (the reader has real bugs on some legitimate
+vocab GGUFs, which keeps FP=0 on the real corpus).
+
+### 8.3 Isolation and the single scan path
+
+All GGUF scanning goes through `pipeline/scanners.run_scan(gguf_ref=True)` —
+the single owner of the GGUF flags. The SSTI render runs in an isolated,
+**network-disabled** container (`--network none`) with a container-scoped
+`--tmpfs /tmp` and no host filesystem access; the loader observes the trigger
+by polling *inside* the container. `label=disable` is only needed on
+SELinux-enforcing hosts. `Runner` routes `.gguf` → `ggufref` via `SCANNERS`
+exts; `demo_task3.py`, `run_task3_demo.py`, `validity.validate_gguf`, and
+`run_known_answers._gguf_run` all call the same path (no bespoke subprocess
+construction).
+
+### 8.4 Corpus and measured results
+
+`scripts/crawl_gguf.py` fetches 24 real TinyLlama + llama.cpp vocab GGUFs into
+`data/gguf_benign_corpus/` (regenerable, gitignored). Measured:
+**ggufref 7/7 malicious** (6 malformed + SSTI), **modelscan 0/7** (no GGUF
+rules), benign-synth benign; **real-corpus FP 0/24 for both**. `ggufref` is
+`.gguf`-capable (as is modelscan); picklescan/fickling/modeltracer/dynahug are
+not routed to `.gguf` (format gap). See `RESULTS.md` and the regenerable
+`docs/demo-report.md#5` / `docs/task3-demo.md`. Known-answers:
+`reference/known_answers/gguf_malformed/` covers all 7 families.
+
+## 9. Corpus & oracle pipeline (reproduce)
 
 ```sh
 # crawl 100 real checkpoints
@@ -157,7 +209,7 @@ python3 scripts/calibrate_oracle.py real_benign_corpus/all --split-file real_ben
 python3 scripts/fit_oracle_sweep.py --traces real_benign_corpus/oracle-calibrated/current/traces.json --export --gamma 0.1 --nu 0.01 --export-dir real_benign_corpus/oracle-calibrated/current --backend docker
 ```
 
-## 9. Known limitations (honest notes)
+## 10. Known limitations (honest notes)
 
 - **Fickling 7% FP** on the 100-model torch corpus (allowlist limitation).
 - **DynaHug ~94% FP** on benign traces (supplementary signal only).
@@ -165,5 +217,10 @@ python3 scripts/fit_oracle_sweep.py --traces real_benign_corpus/oracle-calibrate
   not an absolute threshold.
 - **Repair**: ~30% of escapes are `indirect_chain`/`runstring` and are
   quarantined, not sanitized.
+- **GGUF**: fickling reads GGUF bytes as pickle → 100% FP on any GGUF
+  (format gap, not routed to `.gguf`); modelscan has no GGUF header/type rules
+  (0/7); the `ggufref` oracle renders untrusted Jinja2 (isolated, see §8.3).
+  GGUF is a static demo surface — no GGUF candidate enters the
+  campaign/DB/fitness pipeline.
 - The Rust crate (`crates/`) is not wired into the Python pipeline (Python is
   the source of truth).

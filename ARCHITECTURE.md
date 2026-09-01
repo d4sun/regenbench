@@ -74,6 +74,16 @@ callable sampling.
 - Each scanner/oracle emits **one JSON verdict line** on stdout:
   `{"verdict": "benign"|"malicious"|"error", "decision_score": float, ...}`.
   The host parses the last stdout line (`pipeline/scanners.py:run_scan`).
+- **`regenbench/gguf` (`ggufref`)** is the GGUF reference oracle (ggml-org
+  reader + Jinja2 SSTI render). All GGUF scanning goes through the single
+  `run_scan(gguf_ref=True)` path, which isolates the SSTI render: `--network
+  none`, container-scoped `--tmpfs /tmp`, no host filesystem access
+  (trigger detection happens by polling *inside* the container). On
+  SELinux-enforcing hosts the artifact mount may additionally need
+  `--security-opt label=disable` (not required on SELinux-absent hosts).
+  `Runner` routes `.gguf` → `ggufref` via `SCANNERS` exts; the demos
+  (`demo_task3.py`, `run_task3_demo.py`), `validity.validate_gguf`, and
+  `run_known_answers._gguf_run` all call the same path.
 - Artifacts are mounted read-only with a **shared SELinux label** (`:ro,z`).
   A private relabel (`:ro,Z`) would race under concurrent scans and crash
   containers nondeterministically (`scripts/verify_host.sh` probes this).
@@ -151,6 +161,7 @@ Migrations are idempotent (`PRAGMA table_info` + `ALTER TABLE` in
 | `pipeline/sanitizer.py` | static sink rewriting (5 direct sinks) |
 | `pipeline/repair.py` | repair decision + quarantine policy |
 | `pipeline/differential.py` | RQ1 cross-parser disagreement generation |
+| `pipeline/gguf_tools.py` | GGUF v3 builder + 7 attack families (SSTI + 6 malformed-header) | `build_gguf`, `benign_gguf`, `generate_candidate_gguf` |
 
 ## 6. Key invariants
 
