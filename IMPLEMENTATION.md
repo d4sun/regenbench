@@ -173,26 +173,34 @@ vocab GGUFs, which keeps FP=0 on the real corpus).
 
 ### 8.3 Isolation and the single scan path
 
-All GGUF scanning goes through `pipeline/scanners.run_scan(gguf_ref=True)` —
+All GGUF scanning goes through `pipeline.scanners.run_scan(gguf_ref=True)` —
 the single owner of the GGUF flags. The SSTI render runs in an isolated,
 **network-disabled** container (`--network none`) with a container-scoped
-`--tmpfs /tmp` and no host filesystem access; the loader observes the trigger
-by polling *inside* the container. `label=disable` is only needed on
-SELinux-enforcing hosts. `Runner` routes `.gguf` → `ggufref` via `SCANNERS`
-exts; `demo_task3.py`, `run_task3_demo.py`, `validity.validate_gguf`, and
-`run_known_answers._gguf_run` all call the same path (no bespoke subprocess
-construction).
+`--tmpfs /tmp` and no host filesystem access. Execution is confirmed by a
+**strace-based oracle** (`containers/gguf/loader.py --strace-mode`): the render
+runs under `strace -f` and a process spawn (`execve`) marks the payload as
+executed — **decoupled** from ggufref's static `SSTI_SIGNALS` / trigger-file
+detection (mirroring the pickle-side StraceOracle). Obfuscated SSTI payloads
+that avoid every static signal (Jinja2 `attr` + string-split) therefore
+produce confirmed bypasses (ggufref benign + executed). `label=disable` is
+only needed on SELinux-enforcing hosts. `Runner` routes `.gguf` → `ggufref`
+via `SCANNERS` exts; `demo_task3.py`, `run_task3_demo.py`,
+`validity.validate_gguf`, and `run_known_answers._gguf_run` all call the same
+path (no bespoke subprocess construction).
 
 ### 8.4 Corpus and measured results
 
 `scripts/crawl_gguf.py` fetches 24 real TinyLlama + llama.cpp vocab GGUFs into
 `data/gguf_benign_corpus/` (regenerable, gitignored). Measured:
-**ggufref 7/7 malicious** (6 malformed + SSTI), **modelscan 0/7** (no GGUF
-rules), benign-synth benign; **real-corpus FP 0/24 for both**. `ggufref` is
-`.gguf`-capable (as is modelscan); picklescan/fickling/modeltracer/dynahug are
-not routed to `.gguf` (format gap). See `RESULTS.md` and the regenerable
-`docs/demo-report.md#5` / `docs/task3-demo.md`. Known-answers:
-`reference/known_answers/gguf_malformed/` covers all 7 families.
+**ggufref detects 7/10** attack families (baseline SSTI + 6 malformed),
+**modelscan 0/10** (no GGUF rules), benign-synth benign; the 3
+`ssti_obfuscated_*` variants are **confirmed bypasses** (ggufref benign +
+modelscan benign + strace-executed); **real-corpus FP 0/24 for both**.
+`ggufref` is `.gguf`-capable (as is modelscan); picklescan/fickling/
+modeltracer/dynahug are not routed to `.gguf` (format gap). See `RESULTS.md`
+and the regenerable `docs/demo-report.md#5` / `docs/task3-demo.md`.
+Known-answers: `reference/known_answers/gguf_malformed/` covers all 7
+malformed/SSTI families.
 
 ### 8.5 Unified database & report (cross-format)
 

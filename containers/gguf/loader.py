@@ -271,9 +271,70 @@ def _discover_trigger(template: str) -> str | None:
     return m.group(1) if m else None
 
 
+def render_with_strace(template: str) -> dict:
+    """Render the chat template under ``strace -f`` and report whether it
+    executed (a child process was spawned: execve/execveat).
+
+    Execution confirmation is **decoupled from static detection**: the render
+    runs as a subprocess under strace inside the container (network-disabled,
+    container-scoped tmpfs /tmp), and ``strace_executed`` is decided from the
+    syscall log, independent of ggufref's SSTI_SIGNALS / trigger-file polling.
+    This mirrors the pickle-side StraceOracle methodology.
+    """
+    import subprocess
+    import tempfile
+
+    tmpl = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".j2",
+                                         delete=False, dir="/tmp") as f:
+            f.write(template)
+            tmpl = f.name
+        log = "/tmp/gguf_strace.log"
+        try:
+            os.remove(log)
+        except OSError:
+            pass
+        # Replicate loader.render_chat_template's exact llama-cpp-python context.
+        code = (
+            "import jinja2;"
+            "t=jinja2.Environment(loader=jinja2.BaseLoader(),trim_blocks=True,"
+            "lstrip_blocks=True).from_string(open('{tmpl}').read());"
+            "t.render(messages=[{{'role':'user','content':'regenbench'}}],"
+            "eos_token='</s>',bos_token='<s>',"
+            "raise_exception=lambda m:(_ for _ in ()).throw(ValueError(m)),"
+            "add_generation_prompt=True,functions=None,function_call=None,"
+            "tools=None,tool_choice=None)"
+        ).format(tmpl=tmpl)
+        proc = subprocess.run(
+            ["strace", "-f", "-e", "trace=execve,execveat,clone,openat,write",
+             "-o", log, "python3.13", "-c", code],
+            capture_output=True, text=True, timeout=25)
+        log_text = ""
+        try:
+            with open(log) as f:
+                log_text = f.read()
+        except OSError:
+            pass
+        executed = ("execve(" in log_text or "execveat(" in log_text)
+        return {"strace_executed": executed, "strace_log": log_text[-3000:],
+                "rc": proc.returncode, "stderr": (proc.stderr or "")[-300:]}
+    except Exception as e:  # noqa: BLE001
+        return {"strace_executed": False, "strace_log": "",
+                "error": f"{type(e).__name__}: {str(e)[:200]}"}
+    finally:
+        if tmpl:
+            try:
+                os.remove(tmpl)
+            except OSError:
+                pass
+
+
 def main() -> int:
-    target = sys.argv[1] if len(sys.argv) > 1 else "/artifact"
-    trigger = sys.argv[2] if len(sys.argv) > 2 else None
+    args = [a for a in sys.argv[1:] if a.startswith("--")]
+    strace_mode = "--strace-mode" in args
+    target = next((a for a in sys.argv[1:] if not a.startswith("--")), "/artifact")
+    trigger = None
     try:
         with open(target, "rb") as f:
             data = f.read()
@@ -289,6 +350,8 @@ def main() -> int:
     suspicious = [s for s in SSTI_SIGNALS if template and s in template]
 
     triggered = False
+    strace_executed = False
+    strace_log = ""
     rendered = False
     render_error = None
     if template is not None:
@@ -300,9 +363,15 @@ def main() -> int:
             except OSError:
                 pass
         try:
-            render_chat_template(template)
-            # The JFrog PoC runs os.popen("touch <path>") during render; poll
-            # briefly for the sentinel (the popen child may be asynchronous).
+            if strace_mode:
+                # Decoupled execution confirmation: render under strace and
+                # observe process spawns; independent of SSTI_SIGNALS/trigger.
+                sr = render_with_strace(template)
+                strace_executed = sr.get("strace_executed", False)
+                strace_log = sr.get("strace_log", "")
+            else:
+                render_chat_template(template)
+            # Trigger-file poll (baseline SSTI detection path).
             import time
             deadline = time.monotonic() + 3.0
             while time.monotonic() < deadline:
@@ -323,6 +392,8 @@ def main() -> int:
         "rendered": rendered,
         "render_error": render_error,
         "triggered": triggered,
+        "strace_executed": strace_executed,
+        "strace_log": strace_log,
     }))
     return 0 if ok else 1
 

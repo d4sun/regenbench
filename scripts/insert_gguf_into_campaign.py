@@ -46,6 +46,9 @@ RUN_ID = "gguf-demo"
 # IMPLEMENTATION.md §8): header_field / ssti_vector / tensor_meta.
 GGUF_PRIMITIVE_TYPE = {
     "ssti_chat_template": "ssti_vector",
+    "ssti_obfuscated_1": "ssti_vector",
+    "ssti_obfuscated_2": "ssti_vector",
+    "ssti_obfuscated_3": "ssti_vector",
     "nkv_overflow": "header_field",
     "ntensors_overflow": "header_field",
     "string_overflow": "header_field",
@@ -98,6 +101,15 @@ def main(argv: list[str] | None = None) -> int:
     cur = db.cursor()
     now = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
 
+    # Idempotent full replace of the previous gguf-demo run.
+    cur.execute("DELETE FROM panel_results WHERE candidate_id IN "
+                "(SELECT candidate_id FROM candidates WHERE run_id=?)", (RUN_ID,))
+    cur.execute("DELETE FROM campaign_fitness WHERE candidate_id IN "
+                "(SELECT candidate_id FROM candidates WHERE run_id=?)", (RUN_ID,))
+    cur.execute("DELETE FROM candidates WHERE run_id=?", (RUN_ID,))
+    cur.execute("DELETE FROM campaign_runs WHERE run_id=?", (RUN_ID,))
+    db.commit()
+
     inserted = 0
     for name, path, family, is_benign in items:
         candidate_id = hashlib.sha256(f"gguf:{name}".encode()).hexdigest()
@@ -108,6 +120,12 @@ def main(argv: list[str] | None = None) -> int:
         ref_v = (out_ref or {}).get("verdict") or "error"
         ms_v = (out_ms or {}).get("verdict") or "error"
         triggered = bool((out_ref or {}).get("triggered"))
+        load_ok = bool(((out_ref or {}).get("summary") or {}).get("load_ok"))
+        # GGUF execution confirmation: strace-observed process spawn, decoupled
+        # from static detection (SSTI_SIGNALS / trigger polling).
+        strace_executed = bool(((out_ref or {}).get("summary") or {}).get("strace_executed"))
+        # Valid = loadable (benign) OR strace-executed (attack that ran).
+        is_valid = 1 if (load_ok or strace_executed) else 0
 
         primitives = [] if is_benign else [family]
         fmt_spec = {
@@ -115,9 +133,10 @@ def main(argv: list[str] | None = None) -> int:
             "malformed": (out_ref or {}).get("malformed"),
             "ssti": (out_ref or {}).get("ssti_suspicious"),
             "triggered": triggered,
+            "strace_executed": strace_executed,
         }
         panel_verdict = "all_benign" if ref_v == "benign" and ms_v == "benign" else "flagged"
-        oracle_verdict = "malicious" if triggered else "benign"
+        oracle_verdict = "malicious" if (triggered or strace_executed) else "benign"
 
         cur.execute(
             """INSERT OR REPLACE INTO candidates
@@ -143,7 +162,7 @@ def main(argv: list[str] | None = None) -> int:
         cur.execute(
             "INSERT OR REPLACE INTO campaign_fitness (candidate_id, fitness_score, is_valid)"
             " VALUES (?,?,?)",
-            (candidate_id, 0.0, 1))
+            (candidate_id, 0.0, is_valid))
         inserted += 1
         print(f"  {name:44s} ggufref={ref_v:9s} modelscan={ms_v:9s} panel={panel_verdict}",
               flush=True)

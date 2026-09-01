@@ -129,8 +129,8 @@ class TestGgufReferenceClassification(unittest.TestCase):
 
     def test_all_malformed_families_rejected(self):
         for fam in GGUF_ATTACKS:
-            if fam == "ssti_chat_template":
-                continue  # SSTI loads OK; it is a render-time, not parse-time, attack
+            if fam.startswith("ssti_"):
+                continue  # SSTI families load OK (render-time / exec-time attacks)
             with self.subTest(fam=fam):
                 out = self._classify(generate_candidate_gguf(fam))
                 self.assertFalse((out.get("summary") or {}).get("load_ok"),

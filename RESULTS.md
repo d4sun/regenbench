@@ -132,22 +132,37 @@ Ground truth is provenance-based (verified public HF repos). The ExecutionOracle
 
 ## GGUF attack surface (format-complexity demo)
 
-A **format-complexity demo**, not a scanner-robustness claim: it generates 7
-GGUF attack families and measures how the `ggufref` reference oracle and the
-static panel react. All GGUF scanning goes through a single shared
-`pipeline.scanners.run_scan(gguf_ref=True)` path, so
-`scripts/run_task3_demo.py --backend docker` and the GGUF section of
+A **format-complexity demo**, not a scanner-robustness claim: it generates 10
+GGUF attack families (7 malformed/SSTI + 3 obfuscated-SSTI) and measures how
+the `ggufref` reference oracle and the static panel react. All GGUF scanning
+goes through a single shared `pipeline.scanners.run_scan(gguf_ref=True)` path,
+so `scripts/run_task3_demo.py --backend docker` and the GGUF section of
 `scripts/demo_task3.py --backend docker` emit byte-identical verdicts.
+
+> **Post-oracle correction (confirmed bypasses).** Initial GGUF results showed
+> 0 confirmed bypasses because execution confirmation (trigger-file polling)
+> was coupled to ggufref's static `triggered` detection. We decoupled the two
+> with a **strace-based GGUF execution oracle** (`containers/gguf/loader.py
+> --strace-mode`, mirroring the pickle-side StraceOracle): execution is
+> confirmed by observing `execve` syscalls during the Jinja2 render. Three
+> **obfuscated-SSTI variants** (Jinja2 `attr` + string-split, a real
+> Flask/Jinja2 RCE technique) avoid every static `SSTI_SIGNALS` substring while
+> remaining execution-confirmed — producing **3 confirmed GGUF bypasses**
+> (ggufref benign + modelscan benign + executed). Baseline SSTI + 6 malformed
+> are still detected (ggufref **7/10**).
 
 ### Full detection matrix (all 6 panel scanners)
 
 `BEN` = benign, `MAL` = malicious, `ERR` = error / no verdict. Rows shown are
-the 7 attack files + synthetic benign + the 24-file real corpus (all real
+the 10 attack files + synthetic benign + the 24-file real corpus (all real
 files behave like the examples below).
 
 | artifact | modelscan | picklescan | fickling | modeltracer | dynahug | ggufref |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
 | gguf_ssti_chat_template.gguf | BEN | BEN | MAL | ERR | ERR | **MAL** |
+| gguf_ssti_obfuscated_1.gguf | BEN | BEN | MAL | ERR | ERR | BEN |
+| gguf_ssti_obfuscated_2.gguf | BEN | BEN | MAL | ERR | ERR | BEN |
+| gguf_ssti_obfuscated_3.gguf | BEN | BEN | MAL | ERR | ERR | BEN |
 | gguf_malformed_nkv_overflow.gguf | BEN | BEN | MAL | ERR | ERR | **MAL** |
 | gguf_malformed_ntensors_overflow.gguf | BEN | BEN | MAL | ERR | ERR | **MAL** |
 | gguf_malformed_string_overflow.gguf | BEN | BEN | MAL | ERR | ERR | **MAL** |
@@ -165,18 +180,21 @@ instead of reporting a misleading rate.
 
 | scanner | malicious | benign | error | attack count | rate |
 | :--- | :---: | :---: | :---: | :---: | :---: |
-| **ggufref** | 7 | 0 | 0 | 7 | 100% |
-| **modelscan** | 0 | 7 | 0 | 7 | 0% |
+| **ggufref** | 7 | 3 | 0 | 10 | 70% |
+| **modelscan** | 0 | 10 | 0 | 10 | 0% |
 
-`ggufref` and `modelscan` are the only scanners the pipeline routes to
-`.gguf` (`SCANNERS` exts). `picklescan`/`fickling`/`modeltracer`/`dynahug`
-are a documented **format-coverage gap**, not a measured rate.
+The 3 ggufref `benign` attacks (`ssti_obfuscated_1..3`) are **confirmed
+bypasses** (execution-confirmed via strace); `ggufref` and `modelscan` are the
+only scanners the pipeline routes to `.gguf` (`SCANNERS` exts).
+`picklescan`/`fickling`/`modeltracer`/`dynahug` are a documented
+**format-coverage gap**, not a measured rate.
 
 ### Per-family findings (ggufref)
 
 | family | ggufref findings |
 | :--- | :--- |
 | `ssti_chat_template` | `ssti:__class__`, `ssti:__subclasses__`, `ssti:__builtins__`, `ssti:__import__`, `ssti:popen`, `ssti:_module`, **`ssti:triggered`** (template render executed `os.popen("touch …")`) |
+| `ssti_obfuscated_1..3` | **no static signals**; `execution:strace-executed` (Jinja2 `attr` + string-split gadget spawned a process — confirmed bypass) |
 | `nkv_overflow` | `nkv-overflow`, `reference-error:IndexError: index 0 is out of bounds…` |
 | `ntensors_overflow` | `ntensors-overflow`, `reference-error:IndexError: index 0 is out of bounds…` |
 | `string_overflow` | `string-overflow`, `reference-error:IndexError: index 0 is out of bounds…` |

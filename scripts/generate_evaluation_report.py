@@ -47,6 +47,30 @@ def cross_format_summary(db: str) -> dict:
     return out
 
 
+def gguf_surface_summary(db: str) -> list[dict]:
+    """Per-family GGUF surface rows (panel verdict, execution, confirmed)."""
+    import sqlite3
+    conn = sqlite3.connect(db)
+    cur = conn.cursor()
+    rows = cur.execute(
+        """SELECT c.mutation_template, c.panel_verdict, f.is_valid,
+                  p1.verdict, p2.verdict
+           FROM candidates c
+           JOIN campaign_fitness f ON f.candidate_id=c.candidate_id
+           JOIN panel_results p1 ON p1.candidate_id=c.candidate_id AND p1.scanner='ggufref'
+           JOIN panel_results p2 ON p2.candidate_id=c.candidate_id AND p2.scanner='modelscan'
+           WHERE c.format='gguf' AND c.attack_primitives IS NOT NULL
+             AND c.attack_primitives != '[]'
+           ORDER BY c.mutation_template""").fetchall()
+    conn.close()
+    out = []
+    for fam, panel, valid, ref, ms in rows:
+        confirmed = (valid == 1 and panel == "all_benign")
+        out.append({"family": fam, "ggufref": ref, "modelscan": ms,
+                    "valid": valid, "confirmed": confirmed})
+    return out
+
+
 def main():
     db = 'data/regenbench_campaign.db'
     print("Loading campaign stats...")
@@ -143,6 +167,28 @@ def main():
         report_lines.append(f"| `{fmt}` | {d['panel']} | {d['generated']} | {d['valid']} | "
                             f"{d['confirmed']} | {yield_pct:.1f}% |")
     report_lines.append("")
+    report_lines.append("### GGUF attack surface (post-oracle correction)")
+    report_lines.append("")
+    report_lines.append("**Methodological note**: initial GGUF results showed 0 confirmed bypasses "
+                        "because GGUF execution confirmation (trigger-file polling) was coupled to "
+                        "ggufref's static `triggered` detection — any payload that executed was "
+                        "automatically caught. We decoupled the two by adding a **strace-based "
+                        "execution oracle** for GGUF (`containers/gguf/loader.py --strace-mode`, "
+                        "mirroring the pickle-side StraceOracle): execution is confirmed by "
+                        "observing `execve` syscalls during the Jinja2 render, independent of "
+                        "`SSTI_SIGNALS`/trigger polling. Obfuscated SSTI payloads that avoid every "
+                        "static signal (Jinja2 `attr` + string-split, a real Flask/Jinja2 RCE "
+                        "technique) then produce genuine confirmed bypasses.")
+    report_lines.append("")
+    gs = gguf_surface_summary(db)
+    if gs:
+        report_lines.append("| Family | ggufref | modelscan | Execution (strace) | Confirmed bypass |")
+        report_lines.append("|---|---:|---:|---:|---:|")
+        for r in gs:
+            report_lines.append(f"| `{r['family']}` | {r['ggufref']} | {r['modelscan']} | "
+                                f"{'executed' if r['valid'] else 'n/a'} | "
+                                f"{'**YES**' if r['confirmed'] else 'no'} |")
+        report_lines.append("")
     report_lines.append("## RQ1: Robustness of Static Scanners")
     report_lines.append("**Hypothesis H1**: *Directed fuzzing achieves high evasion rates against static scanners compared to published baselines.*")
     report_lines.append("")

@@ -52,7 +52,7 @@ def main() -> int:
         # errors on legitimate benign models; 180s keeps ~2.4x headroom while
         # still catching true runaway loaders.
         proc = subprocess.run(
-            ["python3.13", LOADER, target],
+            ["python3.13", LOADER, "--strace-mode", target],
             capture_output=True, text=True, timeout=180,
         )
     except subprocess.TimeoutExpired:
@@ -71,6 +71,7 @@ def main() -> int:
     malformed = detail.get("malformed", [])
     ssti = detail.get("ssti_suspicious", [])
     triggered = bool(detail.get("triggered"))
+    strace_executed = bool(detail.get("strace_executed"))
     load_ok = bool(detail.get("load_ok"))
 
     findings = list(malformed) + [f"ssti:{s}" for s in ssti]
@@ -78,13 +79,19 @@ def main() -> int:
         findings.append(f"reference-error:{detail['reference_error'][:120]}")
     if triggered:
         findings.append("ssti:triggered")
+    if strace_executed:
+        # Decoupled execution signal (strace syscall observation). Reported
+        # separately from the static verdict; the host decides a confirmed
+        # bypass = executed AND panel all-benign.
+        findings.append("execution:strace-executed")
 
     verdict, exit_code, decision_score = "benign", 0, 1.0
     if malformed:
         verdict, exit_code, decision_score = "malicious", 1, -1.0
     elif ssti or triggered:
         verdict, exit_code, decision_score = "malicious", 1, -1.0
-    # else: benign (reader rejection without an attack signature stays benign)
+    # else: benign (reader rejection without an attack signature stays benign;
+    #       strace_executed is an execution signal, not a static-detection hit)
 
     raw = [
         f"ggufref {VERSION} | load_ok={load_ok}",
@@ -96,7 +103,8 @@ def main() -> int:
     if malformed:
         raw.append("malformed: " + ", ".join(malformed))
     if detail.get("chat_template_present"):
-        raw.append(f"chat_template: ssti_signals={ssti} triggered={triggered}")
+        raw.append(f"chat_template: ssti_signals={ssti} triggered={triggered} "
+                   f"strace_executed={strace_executed}")
     if detail.get("render_error"):
         raw.append(f"render_error: {detail['render_error']}")
 
@@ -111,6 +119,7 @@ def main() -> int:
             "load_ok": load_ok,
             "tensors": header.get("tensor_count"),
             "kv": header.get("kv_count"),
+            "strace_executed": strace_executed,
         },
         "raw_output": "\n".join(raw)[:20000],
     })

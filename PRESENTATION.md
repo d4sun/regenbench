@@ -39,9 +39,10 @@ patched* versus which remain exploitable at scale" (see §3, weakness 1).
 | PickleScan evasion | 34.0% (297/874) |
 | ModelScan evasion | 51.5% (450/874) |
 | Fickling | **N/A on torch** (`fickling --trace` → "No pickle files detected") |
-| GGUF surface | 7 attacks: ggufref **7/7** detected, modelscan **0/7**; real-corpus FP **0/24**; confirmed bypasses 0 |
-| Cross-format | `pt` 973/874/**297** (34.0%); `gguf` 32/32/**0** (0.0%) |
+| GGUF surface | 10 attack families: ggufref detects **7/10** (baseline SSTI + 6 malformed); **3 obfuscated-SSTI confirmed bypasses**; real-corpus FP **0/24** |
+| Cross-format | `pt` 973/874/**297** (34.0%); `gguf` 35/28/**3** (10.7%) |
 | Bypass-family entropy | guided 0.0, unguided ~0.30 (all `pypi_injected` except 4 gadget) |
+| GGUF execution oracle | **strace-based** (`execve` syscall observation), decoupled from static detection |
 | FP over 100 benign | PickleScan 0%, ModelScan 0%, DynaHug 94% (supplementary), Fickling N/A |
 | Monitor | detection 100%, false-alarm 0% |
 | Pre-filter | 1.69× throughput |
@@ -89,6 +90,20 @@ patched* versus which remain exploitable at scale" (see §3, weakness 1).
 
 ---
 
+## 3.5 Methodological correction — GGUF oracle decoupling (Slide 8.5)
+
+> **Problem.** Initial GGUF results showed **0 confirmed bypasses**. Root cause: the GGUF execution-confirmation mechanism (trigger-file polling) was **coupled** to ggufref's static `triggered` detection — any payload that executed was automatically caught. A confirmed bypass was structurally impossible.
+>
+> **Fix.** Decoupled execution confirmation from static detection by adding a **strace-based GGUF execution oracle** (`containers/gguf/loader.py --strace-mode`): execution is confirmed by observing `execve` syscalls during the Jinja2 render, independent of `SSTI_SIGNALS` / trigger polling. This mirrors the pickle-side StraceOracle (the same lesson that demoted DynaHug's 94%-FP statistical oracle).
+>
+> **Result.** Obfuscated SSTI payloads (Jinja2 `attr` + string-split — a real Flask/Jinja2 RCE technique) avoid all 13 static signals while staying execution-confirmed via `execve`. **3 confirmed GGUF bypasses** (ggufref benign + modelscan benign + executed). Baseline SSTI + 6 malformed are still detected (ggufref **7/10**).
+>
+> **Lesson.** Benchmarks must not couple their validity oracle with their detection oracle. This correction strengthens both the pickle and GGUF pipelines.
+
+**Rehearse the line:** *"We corrected a benchmark design flaw by decoupling execution confirmation from static detection, consistent with our pickle-side methodology."*
+
+---
+
 ## 4. Slide outline (13 slides)
 
 | # | Slide | Key message |
@@ -101,8 +116,9 @@ patched* versus which remain exploitable at scale" (see §3, weakness 1).
 | 7 | H1 | Guided 47.1% vs unguided 18.5% vs baseline 25% — **honest**: driven by `pypi_injected` dominance (a scanner-bias finding) |
 | 8 | Scanner breakdown | PickleScan 34%, ModelScan 51.5%, **Fickling N/A (torch format gap)**; GGUF: ggufref 7/7, modelscan 0/7 |
 | 9 | H2 | DynaHug 94% FP → statistical oracles fail on benign loader noise; ExecutionOracle 0% FP → deterministic trigger polling is the viable path |
+| 8.5 | **Methodological correction (GGUF)** | Initial GGUF: 0 bypasses because execution confirmation (trigger poll) was coupled to ggufref's `triggered` detection. Fix: **strace-based GGUF execution oracle** (decouple confirmation from static detection, mirroring the pickle-side StraceOracle). Result: 3 obfuscated-SSTI confirmed bypasses. Lesson: **benchmarks must not couple their validity oracle with their detection oracle** |
 | 10 | H3 | 99.3–100% retention × 6 versions → scanners not patching `pypi_injected` effectively |
-| 11 | Cross-format | One DB, two surfaces: `pt` 297 bypasses (34%), `gguf` 0 (reference oracle uncompromised), FP 0/24 |
+| 11 | Cross-format | One DB, two surfaces: `pt` 297 bypasses (34%), `gguf` **3** bypasses (obfuscated SSTI), FP 0/24 |
 | 12 | Defense | Sanitizer + quarantine; 30% escapes quarantined, not sanitized |
 | 13 | Limitations | One-family dominance, bounded pilot, DynaHug environment-specific, Fickling torch gap |
 
