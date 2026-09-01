@@ -104,6 +104,55 @@ patched* versus which remain exploitable at scale" (see §3, weakness 1).
 
 ---
 
+## 3.6 GGUF Q&A (rehearsed answers)
+
+**Q1 — "Why is the GGUF yield (10.7%) so much lower than pickle (34%)?"**
+> The GGUF surface is narrower (7 families vs the pickle pipeline's 5 families
+> + 11 evasion strategies). More importantly, `ggufref` is a **reference
+> oracle designed for correctness**, not a production scanner with heuristic
+> shortcuts. The 3 bypasses are significant because they prove that even a
+> correct reference implementation can miss obfuscated SSTI when relying on
+> static substring detection. The yield difference reflects surface breadth,
+> not pipeline weakness.
+
+**Q2 — "Did you just move the goalposts to get non-zero GGUF bypasses?"**
+> No. The initial 0-bypass result exposed a benchmark design flaw: execution
+> confirmation and static detection shared the same mechanism. We fixed it by
+> applying the same architectural lesson learned on the pickle side — demoting
+> DynaHug's statistical oracle in favor of deterministic strace confirmation.
+> The strace oracle was already part of our pickle pipeline; extending it to
+> GGUF is **methodological consistency, not goalpost movement**.
+
+**Q3 — "Is 3 bypasses statistically significant?"**
+> In isolation, 3 is a small absolute number. But these are confirmed bypasses
+> against a reference oracle that was catching 100% before the fix. The
+> significance is architectural: decoupling execution confirmation from static
+> detection enables the benchmark to find bypasses that would otherwise be
+> structurally impossible. The number validates the design correction, not the
+> attack-surface breadth.
+
+**Q4 — "Why is GGUF less important than pickle?"**
+> The pickle surface is mature and widely deployed (1M+ models on HF), so
+> scanner evasion is critical. The GGUF surface is emerging; our benchmark
+> proves the architecture can ingest it and already finds bypasses against
+> reference-grade detection.
+
+## 3.7 One pipeline, two surfaces (cross-format slide)
+
+| Metric | PyTorch Pickle | GGUF |
+|--------|---------------|------|
+| Candidates | 973 | 35 |
+| Valid | 874 (89.8%) | 28 (80.0%) |
+| Confirmed bypasses | 297 (34.0%) | 3 (10.7%) |
+| Panel | PickleScan + ModelScan | ggufref + modelscan |
+| Oracle | Strace + trigger poll | Strace + reference reader |
+| FP on real corpus | 0% (StraceOracle) | 0% (24 real GGUFs) |
+
+This proves the architecture is **format-agnostic** and honest about per-format
+yields — GGUF's lower yield is surface breadth, not pipeline weakness.
+
+---
+
 ## 4. Slide outline (13 slides)
 
 | # | Slide | Key message |
@@ -162,7 +211,26 @@ sqlite3 data/regenbench_campaign.db \
 CANDIDATE=$(sqlite3 data/regenbench_campaign.db "SELECT filepath FROM candidates WHERE panel_verdict='all_benign' LIMIT 1;")
 docker run --rm -v "$(pwd)/$CANDIDATE:/mnt/model.pt:ro,z" --entrypoint python3.13 \
   regenbench/fickling:latest -m fickling --trace /mnt/model.pt   # -> "No pickle files detected"
+
+# GGUF bypass family diversity (the money query for Q&A)
+sqlite3 data/regenbench_campaign.db \
+  "SELECT c.mutation_template, f.is_valid, c.panel_verdict, COUNT(*) FROM candidates c \
+   JOIN campaign_fitness f ON f.candidate_id=c.candidate_id \
+   WHERE c.format='gguf' AND c.attack_primitives != '[]' GROUP BY 1,2,3;"
+#   -> 3 rows all_benign (ssti_obfuscated_1/2/3); all others flagged
+
+# strace execution proof for one obfuscated SSTI candidate (have this ready)
+ls /tmp/gguf_strace.log   # produced in-container by --strace-mode; show execve( lines
 ```
+
+### Demo-day pre-flight checklist
+
+- [ ] **Slide 8.5 rehearsed** — explain the confirmation/detection coupling in 30 s.
+- [ ] **Strace log ready** — a `--strace-mode` run of an obfuscated SSTI candidate (shows `execve(`).
+- [ ] **DB query ready** — the GGUF family-diversity query above.
+- [ ] **pytest output** — `193 passed` (host-only) + the container-gated obfuscation tests.
+- [ ] **Cross-format report** — `docs/evaluation-report.md` with the 35/28/3 table.
+- [ ] **Container rebuild proof** — `docker images | grep regenbench/gguf` shows a fresh timestamp.
 
 ---
 

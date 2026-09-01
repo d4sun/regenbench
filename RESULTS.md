@@ -189,6 +189,30 @@ only scanners the pipeline routes to `.gguf` (`SCANNERS` exts).
 `picklescan`/`fickling`/`modeltracer`/`dynahug` are a documented
 **format-coverage gap**, not a measured rate.
 
+### GGUF family diversity (honest)
+
+All 3 confirmed GGUF bypasses are the `ssti_obfuscated_*` obfuscation family
+(bypass-family Shannon entropy = 0.0); the 6 malformed-header families and the
+baseline `ssti_chat_template` produced **0** bypasses (all flagged by
+`ggufref`). Verified query:
+
+```sql
+SELECT c.mutation_template, f.is_valid, c.panel_verdict, COUNT(*)
+FROM candidates c JOIN campaign_fitness f ON f.candidate_id=c.candidate_id
+WHERE c.format='gguf' AND c.attack_primitives != '[]'
+GROUP BY 1,2,3;
+-- 3 rows: ssti_obfuscated_1/2/3 valid=1 all_benign; all others flagged
+```
+
+### ModelScan 0/10 (scanner-coverage gap)
+
+ModelScan reports **0/10** on the GGUF attacks — it parses GGUF metadata
+superficially but has **no GGUF-specific detection rules** (no header/type
+validation), so it finds no malicious indicators on malformed headers or SSTI
+templates. This is a **format-coverage gap in the scanner**, not a limitation
+of the benchmark: the panel's only reliable GGUF detector is the `ggufref`
+reference oracle (7/10), which the obfuscated variants then bypass.
+
 ### Per-family findings (ggufref)
 
 | family | ggufref findings |
