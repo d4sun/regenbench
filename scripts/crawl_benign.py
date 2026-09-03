@@ -1,10 +1,14 @@
 #!/usr/bin/env python3
 """T2.4 & T2.5 — Crawl benign Hugging Face corpus, deduplicate, and build versioned seed manifest.
 
-Downloads pytorch_model.bin files from Hugging Face for three task clusters:
+Downloads pytorch_model.bin files from Hugging Face for five task clusters:
 - text-generation
 - text-classification
 - feature-extraction
+- token-classification
+- question-answering
+
+Also crawls GGUF artifacts for the same clusters (dual-format mode).
 
 Filters by likes, enforces size safety, handles rate limits, deduplicates by SHA256,
 balances clusters, and records provenance tracking inside data/crawled/seed_manifest.json.
@@ -200,6 +204,7 @@ def crawl_cluster(
                     "sha256": sha256_val,
                     "local_path": os.path.relpath(dest_path, start=os.path.dirname(out_dir)),
                     "cluster": cluster,
+                    "format": "pt",
                     "provenance": {
                         "source": "Hugging Face Hub",
                         "url": f"https://huggingface.co/{m.id}/blob/main/pytorch_model.bin",
@@ -261,6 +266,7 @@ def crawl_cluster(
             "sha256": sha256_val,
             "local_path": os.path.relpath(downloaded_path, start=os.path.dirname(out_dir)),
             "cluster": cluster,
+            "format": "pt",
             "provenance": {
                 "source": "Hugging Face Hub",
                 "url": f"https://huggingface.co/{m.id}/blob/main/pytorch_model.bin",
@@ -304,21 +310,247 @@ def crawl_cluster(
     return crawled
 
 
+# GGUF-specific constants
+GGUF_FILENAMES = [
+    "model.gguf",
+    "ggml-model.gguf",
+    "model-q4_0.gguf",
+    "model-q4_1.gguf",
+    "model-q5_0.gguf",
+    "model-q5_1.gguf",
+    "model-q8_0.gguf",
+    "model-f16.gguf",
+    "model-f32.gguf",
+]
+
+# Cluster filter mapping for HF Hub (some clusters have different filter names)
+CLUSTER_FILTER_MAP = {
+    "text-generation": "text-generation",
+    "text-classification": "text-classification",
+    "feature-extraction": "feature-extraction",
+    "token-classification": "token-classification",
+    "question-answering": "question-answering",
+}
+
+
+def has_gguf_file(model) -> bool:
+    """True if the model's sibling list advertises a GGUF file."""
+    for sib in (getattr(model, "siblings", None) or []):
+        rfilename = getattr(sib, "rfilename", None)
+        if rfilename and rfilename.endswith(".gguf"):
+            return True
+    return False
+
+
+def get_gguf_file_info(api: HfApi, repo_id: str) -> list[dict[str, Any]]:
+    """Query repository for all GGUF files with metadata."""
+    time.sleep(0.5)
+    try:
+        info = call_api_with_retry(api.model_info, repo_id, files_metadata=True, securityStatus=True)
+        gguf_files = []
+        for sib in (info.siblings or []):
+            rfilename = getattr(sib, "filename", None) or getattr(sib, "rfilename", None)
+            if rfilename and rfilename.endswith(".gguf"):
+                gguf_files.append({
+                    "path": rfilename,
+                    "size": getattr(sib, "size", None),
+                    "lfs": getattr(sib, "lfs", None),
+                    "security": getattr(info, "security_repo_status", None),
+                })
+        return gguf_files
+    except Exception as e:
+        print(f"  [info] Could not get GGUF file tree for {repo_id}: {e}")
+        return []
+
+
+def crawl_cluster_gguf(
+    api: HfApi,
+    cluster: str,
+    limit: int,
+    max_size: int,
+    out_dir: str,
+    seen_hashes: set[str],
+    scan_cap: int = 10000,
+    workers: int = 6,
+) -> list[dict[str, Any]]:
+    """Crawl benign GGUF models for a specific task cluster."""
+    print(f"\n[crawl-gguf] Starting crawl for cluster: {cluster} "
+          f"(target limit: {limit}, max_size: {max_size} bytes, "
+          f"scan_cap: {scan_cap}, workers: {workers})")
+
+    crawled: list[dict[str, Any]] = []
+    try:
+        models = call_api_with_retry(
+            api.list_models,
+            filter=CLUSTER_FILTER_MAP.get(cluster, cluster),
+            sort="likes",
+            limit=scan_cap,
+            full=True,
+        )
+    except Exception as e:
+        print(f"[error] Failed to list models for {cluster}: {e}")
+        return []
+
+    lock = threading.Lock()
+
+    def _process_gguf(m) -> dict[str, Any] | None:
+        if getattr(m, "private", False) or getattr(m, "gated", False) or getattr(m, "disabled", None):
+            return None
+
+        if not has_gguf_file(m):
+            return None
+
+        gguf_files = get_gguf_file_info(api, m.id)
+        if not gguf_files:
+            return None
+
+        # Prefer smaller quantization (q4_0, q4_1) for benign corpus
+        gguf_files.sort(key=lambda x: x.get("size") or float("inf"))
+        finfo = gguf_files[0]
+
+        if is_security_unsafe(finfo.get("security")):
+            print(f"  [skip] {m.id} flagged security-unsafe by HuggingFace; excluding")
+            return None
+
+        size = finfo["size"]
+        if size is None and finfo["lfs"]:
+            size = finfo["lfs"].size
+        if size is None or size > max_size:
+            return None
+
+        safe_repo_name = m.id.replace("/", "_")
+        dest_dir = os.path.join(out_dir, cluster, safe_repo_name)
+        os.makedirs(dest_dir, exist_ok=True)
+        dest_path = os.path.join(dest_dir, os.path.basename(finfo["path"]))
+        likes = getattr(m, "likes", 0)
+        downloads = getattr(m, "downloads", 0)
+
+        if os.path.exists(dest_path):
+            sha = hashlib.sha256()
+            with open(dest_path, "rb") as f:
+                for chunk in iter(lambda: f.read(1 << 20), b""):
+                    sha.update(chunk)
+            sha256_val = sha.hexdigest()
+            with lock:
+                if sha256_val in seen_hashes:
+                    return None
+                seen_hashes.add(sha256_val)
+                crawled.append({
+                    "repo_id": m.id,
+                    "likes": likes,
+                    "downloads": downloads,
+                    "size": os.path.getsize(dest_path),
+                    "sha256": sha256_val,
+                    "local_path": os.path.relpath(dest_path, start=os.path.dirname(out_dir)),
+                    "cluster": cluster,
+                    "format": "gguf",
+                    "provenance": {
+                        "source": "Hugging Face Hub",
+                        "url": f"https://huggingface.co/{m.id}/blob/main/{finfo['path']}",
+                        "crawled_at": time.strftime(
+                            "%Y-%m-%dT%H:%M:%SZ", time.gmtime(os.path.getmtime(dest_path))),
+                    },
+                })
+            print(f"  [backfill] {m.id} recorded from existing download "
+                  f"({os.path.getsize(dest_path)} bytes)")
+            return None
+
+        print(f"[crawl-gguf] Downloading {m.id}/{finfo['path']} ({size / (1024*1024):.2f} MB)...")
+        try:
+            time.sleep(0.5)
+            downloaded_path = call_api_with_retry(
+                hf_hub_download,
+                repo_id=m.id,
+                filename=finfo["path"],
+                local_dir=dest_dir,
+            )
+        except Exception as e:
+            print(f"  [warning] Failed to download {m.id}: {e}")
+            return None
+
+        sha = hashlib.sha256()
+        try:
+            with open(downloaded_path, "rb") as f:
+                for chunk in iter(lambda: f.read(1 << 20), b""):
+                    sha.update(chunk)
+        except OSError as e:
+            print(f"  [warning] Failed to hash {downloaded_path}: {e}")
+            return None
+
+        sha256_val = sha.hexdigest()
+
+        with lock:
+            if sha256_val in seen_hashes:
+                print(f"  [skip] {m.id} is a duplicate (SHA256 already exists in seed corpus)")
+                try:
+                    os.remove(downloaded_path)
+                except OSError:
+                    pass
+                return None
+            seen_hashes.add(sha256_val)
+
+        metadata = {
+            "repo_id": m.id,
+            "likes": likes,
+            "downloads": downloads,
+            "size": size,
+            "sha256": sha256_val,
+            "local_path": os.path.relpath(downloaded_path, start=os.path.dirname(out_dir)),
+            "cluster": cluster,
+            "format": "gguf",
+            "provenance": {
+                "source": "Hugging Face Hub",
+                "url": f"https://huggingface.co/{m.id}/blob/main/{finfo['path']}",
+                "crawled_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+            }
+        }
+        with lock:
+            crawled.append(metadata)
+        print(f"  [success] Saved to {metadata['local_path']} | SHA256: {metadata['sha256'][:16]}...")
+        return metadata
+
+    import concurrent.futures
+    import itertools
+
+    batch_size = max(2 * workers, 4)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as ex:
+        it = iter(models)
+        while True:
+            batch = list(itertools.islice(it, batch_size))
+            if not batch:
+                break
+            futures: dict[concurrent.futures.Future, str] = {
+                ex.submit(_process_gguf, m): m.id for m in batch
+            }
+            for fut in concurrent.futures.as_completed(futures):
+                fut.result()
+            with lock:
+                if len(crawled) >= limit:
+                    break
+
+    crawled.sort(key=lambda r: r["likes"], reverse=True)
+    crawled = crawled[:limit]
+    print(f"[crawl-gguf] Cluster {cluster} complete: {len(crawled)} models (capped at {limit})")
+    return crawled
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--clusters", default="text-generation,text-classification,feature-extraction",
+    ap.add_argument("--clusters", default="text-generation,text-classification,feature-extraction,token-classification,question-answering",
                     help="comma-separated list of task clusters to crawl")
-    ap.add_argument("--limit-per-cluster", type=int, default=1000,
+    ap.add_argument("--limit-per-cluster", type=int, default=20,
                     help="maximum number of models to crawl per cluster")
-    ap.add_argument("--max-size", type=int, default=15 * 1024 * 1024,
-                    help="maximum size of pytorch_model.bin in bytes")
+    ap.add_argument("--max-size", type=int, default=134217728,
+                    help="maximum size of model file in bytes (default 128MB)")
     ap.add_argument("--out-dir", default="data/crawled",
                     help="output directory to save files and manifest")
-    ap.add_argument("--scan-cap", type=int, default=10000,
+    ap.add_argument("--scan-cap", type=int, default=20000,
                     help="maximum number of models to scan per cluster before giving up")
-    ap.add_argument("--workers", type=int, default=6,
+    ap.add_argument("--workers", type=int, default=8,
                     help="parallel worker threads for per-model processing "
                          "(metadata lookup + download + hash); scans stay sequential")
+    ap.add_argument("--format", choices=["pt", "gguf", "both"], default="both",
+                    help="which formats to crawl: pt (pytorch_model.bin), gguf (*.gguf), or both")
     args = ap.parse_args()
 
     api = HfApi()
@@ -339,24 +571,46 @@ def main() -> int:
                   f"{len(seen_hashes)} known hashes")
         except Exception as e:
             print(f"[warning] Could not read existing manifest {manifest_path}: {e}")
-    
-    for cluster in clusters:
-        cluster_metadata = crawl_cluster(
-            api,
-            cluster=cluster,
-            limit=args.limit_per_cluster,
-            max_size=args.max_size,
-            out_dir=args.out_dir,
-            seen_hashes=seen_hashes,
-            scan_cap=args.scan_cap,
-            workers=args.workers,
-        )
-        all_metadata.extend(cluster_metadata)
+
+    # Crawl PT models
+    if args.format in ("pt", "both"):
+        for cluster in clusters:
+            cluster_metadata = crawl_cluster(
+                api,
+                cluster=cluster,
+                limit=args.limit_per_cluster,
+                max_size=args.max_size,
+                out_dir=args.out_dir,
+                seen_hashes=seen_hashes,
+                scan_cap=args.scan_cap,
+                workers=args.workers,
+            )
+            all_metadata.extend(cluster_metadata)
+
+    # Crawl GGUF models
+    if args.format in ("gguf", "both"):
+        for cluster in clusters:
+            cluster_metadata = crawl_cluster_gguf(
+                api,
+                cluster=cluster,
+                limit=args.limit_per_cluster,
+                max_size=args.max_size,
+                out_dir=args.out_dir,
+                seen_hashes=seen_hashes,
+                scan_cap=args.scan_cap,
+                workers=args.workers,
+            )
+            all_metadata.extend(cluster_metadata)
 
     # Balance counts check
     summary_counts = {}
+    format_counts = {"pt": 0, "gguf": 0}
     for c in clusters:
-        summary_counts[c] = sum(1 for m in all_metadata if m["cluster"] == c)
+        pt_count = sum(1 for m in all_metadata if m["cluster"] == c and m.get("format", "pt") == "pt")
+        gguf_count = sum(1 for m in all_metadata if m["cluster"] == c and m.get("format") == "gguf")
+        summary_counts[c] = {"pt": pt_count, "gguf": gguf_count, "total": pt_count + gguf_count}
+        format_counts["pt"] += pt_count
+        format_counts["gguf"] += gguf_count
 
     # Save final versioned seed manifest (T2.5)
     manifest = {
@@ -365,6 +619,7 @@ def main() -> int:
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "summary": {
             "total_models": len(all_metadata),
+            "formats": format_counts,
             "clusters": summary_counts,
         },
         "models": all_metadata,
@@ -383,8 +638,10 @@ def main() -> int:
     pruned = 0
     for dirpath, _dirs, names in os.walk(args.out_dir):
         for n in names:
-            if n != "pytorch_model.bin":
-                continue
+            if n not in ("pytorch_model.bin",):
+                # For GGUF files, check extension
+                if not any(n.endswith(ext) for ext in [".gguf"]):
+                    continue
             p = os.path.join(dirpath, n)
             rel = os.path.relpath(p, start=os.path.dirname(args.out_dir))
             if rel in kept_local:
@@ -398,8 +655,9 @@ def main() -> int:
         print(f"[crawl] Pruned {pruned} overshoot/dedup checkpoint(s) not in the manifest.")
 
     print(f"\n[crawl] Crawl complete. Downloaded {len(all_metadata)} total models.")
-    for c, count in summary_counts.items():
-        print(f"  - {c}: {count} models")
+    for c, counts in summary_counts.items():
+        print(f"  - {c}: {counts['total']} models (pt: {counts['pt']}, gguf: {counts['gguf']})")
+    print(f"  Total by format: pt={format_counts['pt']}, gguf={format_counts['gguf']}")
     print(f"[crawl] Seed manifest written to {manifest_path}")
     return 0
 

@@ -226,22 +226,35 @@ class TestPayloadTemplates(unittest.TestCase):
         self.assertIn("sys.modules['collections']", src.replace('"collections"', "'collections'"))
 
     def test_family_registry_shape(self):
-        self.assertEqual(
-            FAMILIES,
-            ("gadget", "overwritten", "external", "indirect_chain", "pypi_injected"),
-        )
+        # FAMILIES now includes both pickle and GGUF families
+        expected_pickle_families = ("gadget", "overwritten", "external", "indirect_chain", "pypi_injected")
+        expected_gguf_families = ("ssti_chat_template", "nkv_overflow", "ntensors_overflow", "string_overflow", "path_traversal", "negative_dims", "version_zero", "ssti_obfuscated_1", "ssti_obfuscated_2", "ssti_obfuscated_3")
+        
+        # Check pickle families are at the start
+        self.assertEqual(FAMILIES[:5], expected_pickle_families)
+        # Check GGUF families are at the end
+        self.assertEqual(FAMILIES[5:], expected_gguf_families)
+        # Total count
+        self.assertEqual(len(FAMILIES), 15)
+        
         self.assertIsNone(family_template("gadget"))
         for fam in ("overwritten", "external", "indirect_chain", "pypi_injected"):
             self.assertIsInstance(family_template(fam), AttackTemplate)
         self.assertIsInstance(family_template("pypi_injected"),
                               PyPIInjectedTemplate)
         self.assertEqual(set(FAMILY_LABELS), set(FAMILIES))
-        self.assertEqual(set(FAMILY_TEMPLATES), set(FAMILIES) - {"gadget"})
+        # GGUF families don't have templates in FAMILY_TEMPLATES
+        self.assertEqual(set(FAMILY_TEMPLATES), set(FAMILIES[:5]) - {"gadget"})
         for fam in FAMILIES:
             self.assertIn(FAMILY_LABELS[fam], (
                 "inject_payload_into_torch", "shadowpickle_overwritten",
                 "shadowpickle_external", "shadowpickle_indirect_chain",
                 "shadowpickle_pypi_injected",
+                "gguf_ssti_chat_template", "gguf_malformed_nkv_overflow",
+                "gguf_malformed_ntensors_overflow", "gguf_malformed_string_overflow",
+                "gguf_malformed_path_traversal", "gguf_malformed_negative_dims",
+                "gguf_malformed_version_zero", "gguf_ssti_obfuscated_1",
+                "gguf_ssti_obfuscated_2", "gguf_ssti_obfuscated_3",
             ))
 
 

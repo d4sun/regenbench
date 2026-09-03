@@ -97,7 +97,10 @@ def _run_validation_cmd(cmd, retry_cmd, timeout):
 
 
 class ValidityOracle:
-    """Validates candidates to ensure they load successfully and trigger execution."""
+    """Validates candidates to ensure they load successfully and trigger execution.
+    
+    Supports both PT (pickle/torch) and GGUF formats with a unified interface.
+    """
 
     def __init__(self, container_backend: str | None = None, container_image: str = "localhost/regenbench/base:latest",
                  timeout: int = 20):
@@ -108,7 +111,20 @@ class ValidityOracle:
         self.image = container_image
         self.timeout = timeout
 
-    def validate_pickle(self, pkl_bytes: bytes, trigger_file: str) -> bool:
+    def validate(self, bytes_payload: bytes, trigger_file: str, format: str) -> dict:
+        """Unified validation dispatcher for PT and GGUF formats.
+        
+        Returns:
+            dict with keys: verdict (executed|benign|error), trigger_found (bool), duration (float)
+        """
+        if format == 'pt':
+            return self.validate_torch(bytes_payload, trigger_file)
+        elif format == 'gguf':
+            return self.validate_gguf(bytes_payload, trigger_file)
+        else:
+            raise ValueError(f"Unknown format: {format}")
+
+    def validate_pickle(self, pkl_bytes: bytes, trigger_file: str) -> dict:
         """Confirm that the pickle parses/loads successfully and triggers the payload execution."""
         # Clean up any existing trigger file
         if os.path.exists(trigger_file):
@@ -173,10 +189,11 @@ assert obj is not None
                 os.remove(trigger_file)
             except OSError:
                 pass
-                
-        return success_load and executed
+                 
+        return {"verdict": "executed" if (success_load and executed) else "benign", 
+                "trigger_found": executed, "duration": 0.0}
 
-    def validate_torch(self, pt_bytes: bytes, trigger_file: str) -> bool:
+    def validate_torch(self, pt_bytes: bytes, trigger_file: str) -> dict:
         """Confirm that the PyTorch model checkpoint loads without error and triggers execution."""
         if os.path.exists(trigger_file):
             try:
@@ -244,16 +261,17 @@ assert isinstance(obj, dict)
                 os.remove(trigger_file)
             except OSError:
                 pass
-                
-        return success_load and executed
+                 
+        return {"verdict": "executed" if (success_load and executed) else "benign",
+                "trigger_found": executed, "duration": 0.0}
 
-    def validate_gguf(self, gguf_bytes: bytes) -> bool:
+    def validate_gguf(self, gguf_bytes: bytes, trigger_file: str = "/tmp/trigger_gguf.txt") -> dict:
         """Confirm that a GGUF artifact parses with the reference reader
-        (ggml-org/gguf) inside the Task-3 sandbox.
+        (ggml-org/gguf) inside the Task-3 sandbox, and/or executes via strace.
 
         Thin wrapper over :func:`pipeline.scanners.run_scan` (the single path
         that knows the GGUF reference-oracle isolation flags); interprets the
-        loader's ``summary.load_ok``.
+        loader's ``summary.load_ok`` and ``summary.strace_executed``.
 
         Ground truth for the demo corpus: malformed-header attacks are rejected
         by the reference reader (their whole point), so ``False`` is the
@@ -266,7 +284,14 @@ assert isinstance(obj, dict)
         has_container_tool = shutil.which(self.backend) is not None
         if not has_container_tool:
             print("[validity-debug] validate_gguf requires the gguf container")
-            return False
+            return {"verdict": "error", "trigger_found": False, "duration": 0.0}
+
+        # Clean up trigger file
+        if os.path.exists(trigger_file):
+            try:
+                os.remove(trigger_file)
+            except OSError:
+                pass
 
         with tempfile.NamedTemporaryFile(suffix=".gguf", delete=False) as f:
             f.write(gguf_bytes)
@@ -278,11 +303,23 @@ assert isinstance(obj, dict)
                 timeout=self.timeout, gguf_ref=True)
             if err or out is None:
                 print("[validity-debug] gguf oracle error:", (err or "")[:200])
-                return False
-            ok = bool((out.get("summary") or {}).get("load_ok"))
+                return {"verdict": "error", "trigger_found": False, "duration": 0.0}
+            summary = out.get("summary") or {}
+            executed = bool(summary.get("load_ok") or summary.get("strace_executed"))
         finally:
             try:
                 os.remove(host_path)
             except OSError:
                 pass
-        return ok
+
+        # Check trigger file if execution was confirmed
+        if executed:
+            executed = _trigger_exists(trigger_file, wait=2.0)
+            if executed:
+                try:
+                    os.remove(trigger_file)
+                except OSError:
+                    pass
+
+        return {"verdict": "executed" if executed else "benign",
+                "trigger_found": executed, "duration": 0.0}

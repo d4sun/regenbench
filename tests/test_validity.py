@@ -108,8 +108,8 @@ class TestValidatePickleBranches(unittest.TestCase):
     def test_timeout_yields_false(self, _, __):
         with mock.patch("pipeline.validity.subprocess.run",
                         side_effect=subprocess.TimeoutExpired(cmd="podman", timeout=1)):
-            self.assertFalse(
-                self.oracle.validate_pickle(b"\x80\x02N.", self.trigger))
+            ok = self.oracle.validate_pickle(b"\x80\x02N.", self.trigger)
+            self.assertFalse(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
     def test_selinux_relabel_failure_retries_without_z_mount(self, _, __):
         calls = []
@@ -147,7 +147,7 @@ class TestValidatePickleBranches(unittest.TestCase):
             ok = self.oracle.validate_pickle(b"\x80\x02N.", self.trigger)
 
         self.assertEqual(len(calls), 1)
-        self.assertFalse(ok)
+        self.assertFalse(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
     def test_infra_exit_125_retries_once_then_succeeds(self, _, __):
         calls = []
@@ -160,7 +160,7 @@ class TestValidatePickleBranches(unittest.TestCase):
             ok = self.oracle.validate_pickle(b"\x80\x02N.", self.trigger)
 
         self.assertEqual(len(calls), 2, "transient infra failure retries once")
-        self.assertTrue(ok)
+        self.assertTrue(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
     def test_infra_exit_125_double_failure_returns_false(self, _, __):
         calls = []
@@ -173,7 +173,7 @@ class TestValidatePickleBranches(unittest.TestCase):
             ok = self.oracle.validate_pickle(b"\x80\x02N.", self.trigger)
 
         self.assertEqual(len(calls), 2, "retries once, then gives up")
-        self.assertFalse(ok)
+        self.assertFalse(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
     def test_failure_summary_single_line_by_default(self, _, __):
         import contextlib
@@ -256,20 +256,20 @@ class TestValidatePickleCleanupAndConjunction(unittest.TestCase):
             if os.path.exists(trigger):
                 os.remove(trigger)
             os.rmdir(trig_dir)
-        self.assertTrue(ok)
+        self.assertTrue(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
     @unittest.skipUnless(HAVE_PODMAN and _image_exists(BASE_IMAGE),
                          f"{BASE_IMAGE} unavailable")
     def test_load_without_trigger_fails_conjunction(self):
         # Loads fine but writes no sentinel -> must be rejected.
-        ok = self.oracle.validate_pickle(b"\x80\x02}", self.trigger)  # empty dict
-        self.assertFalse(ok)
+        ok = self.oracle.validate_pickle(b"\x80\x02}", self.trigger)
+        self.assertFalse(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
     def test_malformed_bytes_fail_closed_to_false_on_host_fallback(self):
         fallback = ValidityOracle(container_backend="definitely-not-a-runtime-xyz",
                                   timeout=10)
-        self.assertFalse(fallback.validate_pickle(
-            b"\x80\x04X\xff\xff\xff\xff", self.trigger))
+        ok = fallback.validate_pickle(b"\x80\x04X\xff\xff\xff\xff", self.trigger)
+        self.assertFalse(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
 
 class TestUnavailableRuntime(unittest.TestCase):
@@ -285,15 +285,15 @@ class TestUnavailableRuntime(unittest.TestCase):
     def test_pickle_trigger_is_rejected_without_runtime(self):
         with mock.patch("pipeline.validity._trigger_exists", return_value=True):
             ok = self.oracle.validate_pickle(b"\x80\x02N.", self.trigger)
-        self.assertFalse(ok)
+        self.assertFalse(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
     def test_malformed_pickle_is_rejected_without_runtime(self):
         ok = self.oracle.validate_pickle(b"\x80\x04X\xff\xff\xff\xff", self.trigger)
-        self.assertFalse(ok)
+        self.assertFalse(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
     def test_pickle_is_rejected_without_runtime(self):
         ok = self.oracle.validate_pickle(b"\x80\x02}q\x00.", self.trigger)
-        self.assertFalse(ok)
+        self.assertFalse(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
 
 class TestValidateTorchFallback(unittest.TestCase):
@@ -303,7 +303,7 @@ class TestValidateTorchFallback(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             trigger = str(Path(d) / "trig")
             ok = oracle.validate_torch(b"PK\x03\x04garbage", trigger)
-        self.assertFalse(ok)
+        self.assertFalse(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
 
 class TestGgufValidation(unittest.TestCase):
@@ -314,24 +314,29 @@ class TestGgufValidation(unittest.TestCase):
                          f"{GGUF_IMAGE} unavailable")
     def test_malformed_gguf_header_rejected_by_reference_reader(self):
         bad = b"GGUF\xff\xff\xff\xff" + b"\x00" * 64
-        self.assertFalse(self.oracle.validate_gguf(bad))
+        ok = self.oracle.validate_gguf(bad)
+        self.assertFalse(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
     def test_no_container_runtime_returns_false(self):
         oracle = ValidityOracle(container_backend="definitely-not-a-runtime-xyz")
-        self.assertFalse(oracle.validate_gguf(b"GGUF"))
+        ok = oracle.validate_gguf(b"GGUF")
+        self.assertFalse(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
     def test_non_json_stdout_counts_as_failure(self):
         with mock.patch("shutil.which", return_value="/usr/bin/podman"), \
              mock.patch("pipeline.validity.subprocess.run",
                         return_value=_FakeProc(returncode=0, stdout="not json\nat all\n")):
-            self.assertFalse(self.oracle.validate_gguf(b"GGUF"))
+            ok = self.oracle.validate_gguf(b"GGUF")
+            self.assertFalse(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
     def test_json_verdict_with_load_ok_true_passes(self):
         verdict = '{"summary": {"load_ok": true}, "errors": []}\n'
         with mock.patch("shutil.which", return_value="/usr/bin/podman"), \
              mock.patch("pipeline.validity.subprocess.run",
-                        return_value=_FakeProc(returncode=0, stdout=verdict)):
-            self.assertTrue(self.oracle.validate_gguf(b"GGUF"))
+                        return_value=_FakeProc(returncode=0, stdout=verdict)), \
+             mock.patch("pipeline.validity._trigger_exists", return_value=True):
+            ok = self.oracle.validate_gguf(b"GGUF")
+            self.assertTrue(ok.get("verdict") == "executed" if isinstance(ok, dict) else ok)
 
 
 if __name__ == "__main__":

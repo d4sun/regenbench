@@ -18,3 +18,7 @@ class PlausibilityOracle:
 
     def confirm(self, cand_bytes: bytes, trigger_file: str) -> bool:
         return self.validity.validate_torch(cand_bytes, trigger_file)
+
+    def confirm_gguf(self, gguf_bytes: bytes) -> bool:
+        """Confirm a GGUF candidate: valid if it loads (load_ok) OR strace shows execution."""
+        return self.validity.validate_gguf(gguf_bytes)

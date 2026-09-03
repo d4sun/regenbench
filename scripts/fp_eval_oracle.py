@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
-"""DynaHug FP evaluation on a disjoint model split (Plan Phase 4.1/4.4).
+"""Oracle FP evaluation on a disjoint model split (Plan Phase 4.1/4.4).
 
 Runs the calibrated oracle over ONLY the 'eval' half of
 real_benign_corpus/oracle-split.json -- models guaranteed disjoint from the
 calibration trace pool -- and reports the false-positive rate plus full
 decision-score distribution.
 
+Supports both PT (DynaHug) and GGUF (ggufref) oracles.
+
 Usage:
     python3 scripts/fp_eval_oracle.py \
-        --model-dir real_benign_corpus/oracle-calibrated/current \
+        --model-dir real_benign_corpus/oracle-calibrated/pt \
+        --format pt \
+        [--split-file real_benign_corpus/oracle-split.json] [--role eval]
+    python3 scripts/fp_eval_oracle.py \
+        --model-dir real_benign_corpus/oracle-calibrated/gguf \
+        --format gguf \
         [--split-file real_benign_corpus/oracle-split.json] [--role eval]
 """
 
@@ -30,19 +37,32 @@ from pipeline.scanners import run_scan  # noqa: E402
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--model-dir", required=True)
-    ap.add_argument("--corpus", default=str(REPO / "real_benign_corpus/all"))
+    ap.add_argument("--format", choices=["pt", "gguf"], default="pt",
+                    help="format: pt (DynaHug) or gguf (ggufref)")
+    ap.add_argument("--corpus-pt", default=str(REPO / "real_benign_corpus/all_pt"))
+    ap.add_argument("--corpus-gguf", default=str(REPO / "real_benign_corpus/all_gguf"))
     ap.add_argument("--split-file", default=str(REPO / "real_benign_corpus/oracle-split.json"))
     ap.add_argument("--role", choices=["train", "eval"], default="eval")
-    ap.add_argument("--image", default="regenbench/dynahug")
+    ap.add_argument("--image-pt", default="regenbench/dynahug")
+    ap.add_argument("--image-gguf", default="regenbench/gguf")
     ap.add_argument("--backend", default="podman")
     ap.add_argument("--timeout", type=int, default=180)
     ap.add_argument("--out", default=None)
     args = ap.parse_args()
 
-    corpus_dir = Path(args.corpus)
+    # Select corpus and image based on format
+    if args.format == "pt":
+        corpus_dir = Path(args.corpus_pt)
+        image = args.image_pt
+        ext = ".bin"
+    else:
+        corpus_dir = Path(args.corpus_gguf)
+        image = args.image_gguf
+        ext = ".gguf"
+
     by_repo = {}
-    for p in sorted(corpus_dir.glob("*.bin")):
-        stem = p.name[: -len(".bin")]
+    for p in sorted(corpus_dir.glob(f"*{ext}")):
+        stem = p.name[: -len(ext)]
         if "__" in stem:
             _, repo = stem.split("__", 1)
         else:
@@ -55,15 +75,17 @@ def main() -> int:
         print(f"[fp-eval] WARNING {len(missing)} split repos not in corpus: "
               f"{sorted(missing)[:5]} ...")
     artifacts = [str(by_repo[r]) for r in sorted(wanted) if r in by_repo]
-    print(f"[fp-eval] role={args.role}: scanning {len(artifacts)} models with "
+    print(f"[fp-eval] format={args.format} role={args.role}: scanning {len(artifacts)} models with "
           f"oracle_model_dir={args.model_dir}")
 
     results = []
     t0 = time.time()
     for i, art in enumerate(artifacts, 1):
-        out, err = run_scan(args.backend, f"{args.image}:latest", art,
+        gguf_ref = (args.format == "gguf")
+        out, err = run_scan(args.backend, f"{image}:latest", art,
                             timeout=args.timeout,
-                            oracle_model_dir=args.model_dir)
+                            oracle_model_dir=args.model_dir,
+                            gguf_ref=gguf_ref)
         verdict = "error" if err or out is None else out.get("verdict")
         score = None if err or out is None else out.get("decision_score")
         repo = Path(art).name
@@ -80,6 +102,7 @@ def main() -> int:
     errors = sum(1 for r in results if r["verdict"] == "error")
     summary = {
         "task": "oracle-fp-eval-disjoint",
+        "format": args.format,
         "model_dir": args.model_dir,
         "role": args.role,
         "n": len(results),

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 2b — recalibrate the DynaHug OCSVM on this environment's traces.
+"""Phase 2b — recalibrate the oracles (DynaHug for PT, ggufref for GGUF) on this environment's traces.
 
 The pretrained upstream DynaHug OCSVM (arXiv:2604.19438 default
 text-generation model) collapses in our container environment: every real
@@ -9,7 +9,12 @@ the RBF decision_function pins to exactly -rho (~ -1.3489). This makes the
 oracle a constant "malicious" classifier (see reference/oracle-sanity.json and
 the oracle-validation gate).
 
-This script recalibrates the oracle: it runs the exact same sandbox
+For GGUF, the ggufref oracle parses GGUF files with the ggml-org reference
+reader and renders chat templates through the unsandboxed Jinja2 path
+(CVE-2024-34359). The strace-based execution oracle for GGUF observes
+execve syscalls during Jinja2 render.
+
+This script recalibrates the oracles: it runs the exact same sandbox
 deserialization + strace count collection the wrapper uses, builds
 presence+frequency features over the pinned syscall vocabulary, and fits a
 fresh One-Class SVM using the upstream hyperparameters (RBF, gamma=0.1,
@@ -23,9 +28,13 @@ Artifacts written to --out-dir:
 
 Usage:
     PYTHONPATH=.:.pip_deps python3 scripts/calibrate_oracle.py \
-        real_benign_corpus/all/text-generation \
-        --out real_benign_corpus/oracle-calibrated/text-generation \
-        --sample 120 --backend podman --image regenbench/dynahug
+        real_benign_corpus/all_pt \
+        --out real_benign_corpus/oracle-calibrated/pt \
+        --format pt --sample 120 --backend docker --image regenbench/dynahug
+    PYTHONPATH=.:.pip_deps python3 scripts/calibrate_oracle.py \
+        real_benign_corpus/all_gguf \
+        --out real_benign_corpus/oracle-calibrated/gguf \
+        --format gguf --sample 120 --backend docker --image regenbench/gguf
 """
 
 from __future__ import annotations
@@ -88,14 +97,16 @@ def build_features(counts: dict) -> dict:
 
 
 def collect_trace(backend: str, image_full: str, path: str,
-                  timeout: int) -> dict | None:
+                  timeout: int, format: str = "pt") -> dict | None:
     """Run the oracle container on `path` and return (counts, details) or None."""
     t0 = time.time()
     cmd = [
         backend, "run", "--rm",
         "-v", f"{os.path.abspath(path)}:/artifact:ro,z",
-        image_full, "/artifact",
     ]
+    if format == "gguf":
+        cmd += ["--network", "none", "--tmpfs", "/tmp"]
+    cmd += [image_full, "/artifact"]
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
     except subprocess.TimeoutExpired:
@@ -120,29 +131,18 @@ def collect_trace(backend: str, image_full: str, path: str,
     return {"counts": counts, "duration": time.time() - t0, "raw": out}
 
 
-def score_matrix(samples: list[dict], model, vectorizer, scaler) -> list[float]:
-    import numpy as np
-
-    fnames = vectorizer.get_feature_names_out()
-    freq_idx = [i for i, n in enumerate(fnames) if n.startswith("frequency_")]
-    scores = []
-    for s in samples:
-        X = vectorizer.transform([s["features"]])
-        Xs = X.copy()
-        Xs[:, freq_idx] = scaler.transform(X[:, freq_idx])
-        scores.append(float(model.decision_function(Xs)[0]))
-    return scores
-
-
 def main() -> int:
     ap = argparse.ArgumentParser(prog="calibrate_oracle", description=__doc__)
     ap.add_argument("corpus_dir", help="directory of real benign checkpoints")
     ap.add_argument("--out", default="real_benign_corpus/oracle-calibrated",
                     help="output artifact dir")
+    ap.add_argument("--format", choices=["pt", "gguf"], default="pt",
+                    help="format to calibrate: pt (dynahug) or gguf (ggufref)")
     ap.add_argument("--sample", type=int, default=120,
                     help="max checkpoints to trace")
     ap.add_argument("--seed", type=int, default=1337)
-    ap.add_argument("--image", default="regenbench/dynahug")
+    ap.add_argument("--image", default=None,
+                    help="container image (default: regenbench/dynahug for pt, regenbench/gguf for gguf)")
     ap.add_argument("--tag", default=":latest")
     ap.add_argument("--backend", choices=["podman", "docker"], default="podman")
     ap.add_argument("--timeout", type=int, default=180)
@@ -161,28 +161,37 @@ def main() -> int:
                          "data; guarantees no model is ever fit on it)")
     args = ap.parse_args()
 
+    # Default images per format
+    if args.image is None:
+        args.image = "regenbench/dynahug" if args.format == "pt" else "regenbench/gguf"
+
     global SYSCALLS_NAMES
     image_full = f"{args.image}{args.tag}"
     SYSCALLS_NAMES = extract_syscalls(image_full, args.backend)
-    print(f"[calibrate-oracle] syscall vocabulary: {len(SYSCALLS_NAMES)} names")
+    print(f"[calibrate-oracle] format={args.format}, syscall vocabulary: {len(SYSCALLS_NAMES)} names")
 
     # P2.2 Option A: differential trace — subtract blank load baseline
-    # If ci/corpus/torch/benign/benign.pt exists, trace it and subtract from candidates
     blank_counts = None
-    blank_path = "ci/corpus/torch/benign/benign.pt"
-    if os.path.exists(blank_path):
+    blank_path = "ci/corpus/torch/benign/benign.pt" if args.format == "pt" else None
+    if blank_path and os.path.exists(blank_path):
         print(f"[calibrate-oracle] collecting blank baseline from {blank_path} ...")
-        blank_res = collect_trace(args.backend, image_full, blank_path, args.timeout)
+        blank_res = collect_trace(args.backend, image_full, blank_path, args.timeout, args.format)
         if blank_res and blank_res.get("counts"):
             blank_counts = blank_res["counts"]
             print(f"[calibrate-oracle] blank baseline: {len(blank_counts)} syscalls, e.g. {list(blank_counts.items())[:3]}")
         else:
             print("[calibrate-oracle] blank baseline failed, using raw counts")
 
+    # File extensions per format
+    if args.format == "pt":
+        exts = (".pt", ".pth", ".bin")
+    else:
+        exts = (".gguf",)
+
     files = []
     for dirpath, _dirs, names in os.walk(args.corpus_dir):
         for n in names:
-            if n.endswith((".pt", ".pth", ".bin")):
+            if n.endswith(exts):
                 files.append(os.path.join(dirpath, n))
     if not files:
         print(f"[calibrate-oracle] no artifacts under {args.corpus_dir}")
@@ -193,10 +202,10 @@ def main() -> int:
         with open(args.split_file) as f:
             split = json.load(f)
         split_repos = set(split[args.split_role])
-        # Flat layout: <cluster>__<repo>.bin; nested: .../<repo>/<file>
+        # Flat layout: <cluster>__<repo>.<ext>
         def repo_of(path: str) -> str:
             stem = os.path.basename(path)
-            for ext in (".pt", ".pth", ".bin"):
+            for ext in exts:
                 if stem.endswith(ext):
                     stem = stem[: -len(ext)]
                     break
@@ -217,7 +226,7 @@ def main() -> int:
     traced = []
     failed = 0
     for i, p in enumerate(files, 1):
-        res = collect_trace(args.backend, image_full, p, args.timeout)
+        res = collect_trace(args.backend, image_full, p, args.timeout, args.format)
         if res is None:
             failed += 1
             continue
@@ -235,7 +244,7 @@ def main() -> int:
         res["features"] = build_features(res["counts"])
         res["path"] = p
         stem = os.path.basename(p)
-        for ext in (".pt", ".pth", ".bin"):
+        for ext in exts:
             if stem.endswith(ext):
                 stem = stem[: -len(ext)]
                 break
@@ -319,6 +328,7 @@ def main() -> int:
 
     report = {
         "task": "oracle-calibration",
+        "format": args.format,
         "image": image_full,
         "backend": args.backend,
         "gamma": args.gamma,

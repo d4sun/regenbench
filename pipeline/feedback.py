@@ -12,7 +12,7 @@ from typing import Any
 
 from pipeline.opcodes import parse_pickle, OPCODES_BY_BYTE
 from pipeline.registry import get_armable_entries, get_all_entries, is_dangerous
-from pipeline.templates import FAMILIES, FAMILY_TEMPLATES
+from pipeline.templates import FAMILIES, FAMILY_TEMPLATES, GGUF_FAMILIES
 from pipeline.db import log_coverage
 
 
@@ -130,8 +130,33 @@ REACHABLE_OPCODES: frozenset[str] = frozenset({
 })
 
 
+# GGUF header fields for coverage tracking (format-native coverage space)
+REACHABLE_GGUF_HEADERS: frozenset[str] = frozenset({
+    "magic", "version", "tensor_count", "kv_count",
+    "metadata_type", "tensor_type", "alignment", "offset",
+    "name_length", "dimensions", "ggml_type",
+})
+
+# GGUF callable sinks (Jinja2 functions that can execute code)
+REACHABLE_GGUF_CALLABLES: frozenset[tuple[str, str]] = frozenset({
+    ("os", "popen"),
+    ("os", "system"),
+    ("subprocess", "Popen"),
+    ("subprocess", "run"),
+    ("builtins", "__import__"),
+    ("builtins", "exec"),
+    ("builtins", "eval"),
+    ("jinja2", "attr"),
+    ("jinja2", "join"),
+    ("jinja2", "namespace"),
+})
+
+
 class CoverageTracker:
-    """Logs non-decreasing opcode, callable and family coverage over rounds."""
+    """Logs non-decreasing opcode, callable and family coverage over rounds.
+    
+    Supports both PT (pickle opcode/callable coverage) and GGUF (header field/callable coverage).
+    """
 
     def __init__(self, db_path: str, run_id: str = ""):
         self.db_path = db_path
@@ -140,6 +165,10 @@ class CoverageTracker:
         self.seen_callables: set[tuple[str, str]] = set()
         self.seen_families: set[str] = set()
         self.seen_families_with_bypass: set[str] = set()
+        
+        # GGUF-specific coverage tracking
+        self.seen_gguf_headers: set[str] = set()
+        self.seen_gguf_callables: set[tuple[str, str]] = set()
 
         # Denominator = reachable space, not theoretical maximum.  Full
         # pickletools (~70) includes never-emitted ops (PERSID etc.); registry
@@ -148,15 +177,24 @@ class CoverageTracker:
         self.total_opcodes = len(REACHABLE_OPCODES)
         self.total_callables = max(1, len(get_armable_entries()))
         self.total_families = len(FAMILIES)
+        self.total_gguf_headers = len(REACHABLE_GGUF_HEADERS)
+        self.total_gguf_callables = len(REACHABLE_GGUF_CALLABLES)
 
     def track_candidate(self, file_path: str, family: str | None = None,
                         is_bypass: bool = False) -> None:
         """Parse a candidate file and log all seen opcodes, callables and families."""
+        from pipeline.templates import family_format
+        
         if family is not None:
             self.seen_families.add(family)
             if is_bypass:
                 self.seen_families_with_bypass.add(family)
         if not os.path.exists(file_path):
+            return
+
+        fmt = family_format(family) if family else "pt"
+        if fmt == "gguf":
+            self._track_gguf(file_path)
             return
 
         try:
@@ -232,6 +270,54 @@ class CoverageTracker:
                     except Exception:
                         pass
 
+    def _track_gguf(self, file_path: str) -> None:
+        """Track GGUF header fields and Jinja2 callables from chat_template."""
+        from pipeline.gguf_tools import parse_gguf
+        
+        try:
+            with open(file_path, "rb") as f:
+                gguf_data = f.read()
+            parsed = parse_gguf(gguf_data)
+            
+            # Track header fields
+            if "header" in parsed:
+                for field in parsed["header"]:
+                    self.seen_gguf_headers.add(field)
+            
+            # Track metadata KV pairs (header fields)
+            if "metadata" in parsed:
+                for key, value in parsed["metadata"].items():
+                    self.seen_gguf_headers.add(key)
+                    # Check for Jinja2 SSTI callables in chat_template
+                    if key == "tokenizer.chat_template" and isinstance(value, str):
+                        self._extract_jinja2_callables(value)
+        except Exception:
+            pass
+
+    def _extract_jinja2_callables(self, template: str) -> None:
+        """Extract Jinja2 callables from a chat_template string."""
+        import re
+        # Common dangerous patterns in Jinja2 templates
+        patterns = [
+            r'\{\{\s*(\w+(?:\.\w+)*)\s*\(',  # {{ func(
+            r'\{\%\s*(\w+(?:\.\w+)*)\s',      # {% func
+            r'\|\s*(\w+)\s*\)',               # | filter)
+            r'attribute\s*\(\s*[\'"]([^\'"]+)',  # attribute('x')
+        ]
+        dangerous_callables = {
+            "os.popen", "os.system", "subprocess.Popen", "subprocess.run",
+            "builtins.__import__", "builtins.exec", "builtins.eval",
+            "jinja2.attr", "jinja2.join", "jinja2.namespace",
+        }
+        for pattern in patterns:
+            for match in re.finditer(pattern, template):
+                func_name = match.group(1) if match.groups() else match.group(0)
+                # Check if this matches any known dangerous callable
+                for dc in dangerous_callables:
+                    if dc in func_name or func_name in dc:
+                        module, name = dc.split(".", 1)
+                        self.seen_gguf_callables.add((module, name))
+
     def log_round(self, round_num: int, family_counts: dict[str, int] | None = None) -> tuple[float, float]:
         """Calculate and log current coverage percentages to the database."""
         # Reachable-space coverage (primary)
@@ -241,9 +327,14 @@ class CoverageTracker:
         family_bypass_cov = len(self.seen_families_with_bypass) / max(1, self.total_families)
         entropy = self.family_entropy(family_counts) if family_counts is not None else 0.0
 
+        # GGUF coverage
+        gguf_header_cov = len(self.seen_gguf_headers & REACHABLE_GGUF_HEADERS) / max(1, self.total_gguf_headers)
+        gguf_callable_cov = len(self.seen_gguf_callables & REACHABLE_GGUF_CALLABLES) / max(1, self.total_gguf_callables)
+
         log_coverage(self.db_path, round_num, opcode_cov, callable_cov,
                      run_id=self.run_id, family_cov=family_cov,
-                     family_bypass_cov=family_bypass_cov, entropy=entropy)
+                     family_bypass_cov=family_bypass_cov, entropy=entropy,
+                     gguf_header_cov=gguf_header_cov, gguf_callable_cov=gguf_callable_cov)
         return opcode_cov, callable_cov
 
     def family_coverage(self) -> tuple[float, float]:

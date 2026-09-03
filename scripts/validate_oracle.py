@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""Phase 2 gate — bulk DynaHug oracle validation on real benign checkpoints.
+"""Phase 2 gate — bulk oracle validation on real benign checkpoints (PT + GGUF).
 
-Runs the DynaHug oracle container on a set of real HuggingFace checkpoints and
-records verdict + decision_score per model. This is a *formal gate*: before any
-fuzzing campaign, we must establish that the pretrained OCSVM produces a
-meaningful decision-score distribution (not a constant collapse to ~ -1.35).
+Runs the DynaHug oracle (for PT) and ggufref oracle (for GGUF) on a set of
+real HuggingFace checkpoints and records verdict + decision_score per model.
+This is a *formal gate*: before any fuzzing campaign, we must establish that
+the oracles produce meaningful decision-score distributions.
 
 Metrics recorded per model:
-    repo_id, sha256, size_bytes, cluster, verdict, decision_score, exit_code,
+    repo_id, sha256, size_bytes, cluster, format, verdict, decision_score, exit_code,
     duration
 
 Summary diagnostics written to the report:
@@ -19,7 +19,7 @@ and reported, so oracle false positives on benign models are visible.
 
 Usage:
     PYTHONPATH=.:.pip_deps python3 scripts/validate_oracle.py \
-        real_benign_corpus/all --sample 60 \
+        real_benign_corpus/all --sample 60 --format both \
         --out real_benign_corpus/oracle-validation.json \
         --backend podman
 """
@@ -35,10 +35,14 @@ import statistics
 import sys
 import time
 
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from pipeline.scanners import full_image, run_scan
 
-DEFAULT_IMAGE = "regenbench/dynahug"
-ORACLE_EXTS = (".pt", ".pth", ".bin")
+DEFAULT_IMAGE_PT = "regenbench/dynahug"
+DEFAULT_IMAGE_GGUF = "regenbench/gguf"
+ORACLE_EXTS_PT = (".pt", ".pth", ".bin")
+ORACLE_EXTS_GGUF = (".gguf",)
 
 
 def sha256_of(path: str) -> str:
@@ -73,30 +77,42 @@ def arch_family(repo_id: str) -> str:
     return "other"
 
 
-def find_checkpoints(root: str, sample: int) -> list[dict]:
+def find_checkpoints(root: str, sample: int, format: str = "both") -> list[dict]:
     files = []
-    for dirpath, _dirs, names in os.walk(root):
-        for n in names:
-            if n.endswith(ORACLE_EXTS):
-                p = os.path.join(dirpath, n)
-                # Flat layout: <cluster>__<repo>.bin  (e.g. crawled output).
-                base = n[: -(len(".bin"))] if n.endswith(".bin") else n
-                if "__" in base:
-                    cluster, repo = base.split("__", 1)
-                    repo_id = repo
-                else:
-                    # Nested layout: <corpus>/<cluster>/<repo>/model.bin
-                    cluster = os.path.basename(os.path.dirname(dirpath))
-                    repo_id = os.path.basename(os.path.dirname(p))
-                files.append({"path": p, "cluster": cluster, "repo_id": repo_id})
+    if format in ("pt", "both"):
+        for dirpath, _dirs, names in os.walk(root):
+            for n in names:
+                if n.endswith(ORACLE_EXTS_PT):
+                    p = os.path.join(dirpath, n)
+                    base = n[: -(len(".bin"))] if n.endswith(".bin") else n
+                    if "__" in base:
+                        cluster, repo = base.split("__", 1)
+                        repo_id = repo
+                    else:
+                        cluster = os.path.basename(os.path.dirname(dirpath))
+                        repo_id = os.path.basename(os.path.dirname(p))
+                    files.append({"path": p, "cluster": cluster, "repo_id": repo_id, "format": "pt"})
+    if format in ("gguf", "both"):
+        for dirpath, _dirs, names in os.walk(root):
+            for n in names:
+                if n.endswith(ORACLE_EXTS_GGUF):
+                    p = os.path.join(dirpath, n)
+                    base = n[:-5]  # remove .gguf
+                    if "__" in base:
+                        cluster, repo = base.split("__", 1)
+                        repo_id = repo
+                    else:
+                        cluster = os.path.basename(os.path.dirname(dirpath))
+                        repo_id = os.path.basename(os.path.dirname(p))
+                    files.append({"path": p, "cluster": cluster, "repo_id": repo_id, "format": "gguf"})
     if len(files) > sample:
         files = random.sample(files, sample)
     return files
 
 
-def run_oracle(backend: str, image: str, path: str, timeout: int) -> dict:
+def run_oracle(backend: str, image: str, path: str, timeout: int, gguf_ref: bool = False) -> dict:
     t0 = time.time()
-    out, err = run_scan(backend, image, path, timeout=timeout)
+    out, err = run_scan(backend, image, path, timeout=timeout, gguf_ref=gguf_ref)
     dur = time.time() - t0
     if err:
         return {"verdict": "error", "decision_score": None, "exit_code": None,
@@ -188,7 +204,10 @@ def main() -> int:
     ap.add_argument("--sample", type=int, default=60,
                     help="number of checkpoints to scan (default 60)")
     ap.add_argument("--seed", type=int, default=1337, help="random sampling seed")
-    ap.add_argument("--image", default=DEFAULT_IMAGE)
+    ap.add_argument("--format", choices=["pt", "gguf", "both"], default="both",
+                    help="which formats to validate: pt (dynahug), gguf (ggufref), or both")
+    ap.add_argument("--image-pt", default=DEFAULT_IMAGE_PT, help="PT oracle image (dynahug)")
+    ap.add_argument("--image-gguf", default=DEFAULT_IMAGE_GGUF, help="GGUF oracle image (ggufref)")
     ap.add_argument("--tag", default=":latest")
     ap.add_argument("--backend", choices=["podman", "docker"], default="podman")
     ap.add_argument("--timeout", type=int, default=180)
@@ -200,25 +219,31 @@ def main() -> int:
         return 1
 
     random.seed(args.seed)
-    checkpoints = find_checkpoints(args.corpus_dir, args.sample)
+    checkpoints = find_checkpoints(args.corpus_dir, args.sample, args.format)
     if not checkpoints:
-        print(f"[oracle-validation] no torch/onnx artifacts found under {args.corpus_dir}")
+        print(f"[oracle-validation] no artifacts found under {args.corpus_dir} for format={args.format}")
         return 1
 
-    image_full = full_image(args.image, args.tag)
+    image_pt = full_image(args.image_pt, args.tag)
+    image_gguf = full_image(args.image_gguf, args.tag)
     print(f"[oracle-validation] scanning {len(checkpoints)} real checkpoints "
-          f"through {image_full} (backend={args.backend})")
+          f"(format={args.format}) through PT={image_pt}, GGUF={image_gguf} (backend={args.backend})")
 
     results = []
     for i, cp in enumerate(checkpoints, 1):
         repo_id = cp.get("repo_id") or os.path.basename(os.path.dirname(cp["path"]))
         size = os.path.getsize(cp["path"])
         sha = sha256_of(cp["path"])
-        res = run_oracle(args.backend, image_full, cp["path"], args.timeout)
+        fmt = cp.get("format", "pt")
+        if fmt == "pt":
+            res = run_oracle(args.backend, image_pt, cp["path"], args.timeout, gguf_ref=False)
+        else:
+            res = run_oracle(args.backend, image_gguf, cp["path"], args.timeout, gguf_ref=True)
         rec = {
             "index": i,
             "repo_id": repo_id,
             "cluster": cp["cluster"],
+            "format": fmt,
             "arch": arch_family(repo_id),
             "path": cp["path"],
             "sha256": sha,
@@ -230,15 +255,17 @@ def main() -> int:
         verdict = rec.get("verdict")
         score = rec.get("decision_score")
         score_str = f"{score:+.3f}" if score is not None else "  n/a "
-        print(f"  [{i}/{len(checkpoints)}] {repo_id:<50} {verdict:<10} {score_str} "
+        print(f"  [{i}/{len(checkpoints)}] {repo_id:<50} {fmt:<5} {verdict:<10} {score_str} "
               f"({rec['size_bucket']}, {round(rec['duration'], 1)}s)")
         sys.stdout.flush()
 
     summary = summarize(results)
     report = {
         "task": "oracle-validation",
-        "image": image_full,
+        "image_pt": image_pt,
+        "image_gguf": image_gguf,
         "backend": args.backend,
+        "format": args.format,
         "generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "summary": summary,
         "results": results,

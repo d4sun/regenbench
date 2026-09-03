@@ -272,3 +272,170 @@ SSTI_OBFUSCATED_VARIANTS: dict[str, str] = {
     "ssti_obfuscated_2": '{{ cycler.__init__|attr("__glob"+"als__")["os"]["sy"+"stem"]("touch /tmp/t_v2") }}',
     "ssti_obfuscated_3": '{{ lipsum|attr("__glob"+"als__")["os"]["sy"+"stem"]("touch /tmp/t_v3") }}',
 }
+
+
+def parse_gguf(data: bytes) -> dict:
+    """Parse a GGUF byte stream into a structured dict with header and metadata.
+    
+    Returns a dict with keys:
+    - 'header': dict with magic, version, tensor_count, kv_count
+    - 'metadata': dict of key-value pairs from the metadata section
+    - 'tensors': list of tensor info dicts (if any)
+    """
+    if len(data) < 12:
+        raise GGUFError("GGUF data too short for header")
+    
+    if data[:4] != GGUF_MAGIC:
+        raise GGUFError("Invalid GGUF magic")
+    
+    offset = 4
+    version = struct.unpack("<I", data[offset:offset+4])[0]
+    offset += 4
+    tensor_count = struct.unpack("<Q", data[offset:offset+8])[0]
+    offset += 8
+    kv_count = struct.unpack("<Q", data[offset:offset+8])[0]
+    offset += 8
+    
+    result = {
+        "header": {
+            "magic": GGUF_MAGIC.decode(),
+            "version": version,
+            "tensor_count": tensor_count,
+            "kv_count": kv_count,
+        },
+        "metadata": {},
+        "tensors": [],
+    }
+    
+    for _ in range(kv_count):
+        if offset >= len(data):
+            break
+        # Read key
+        key_len = struct.unpack("<Q", data[offset:offset+8])[0]
+        offset += 8
+        if offset + key_len > len(data):
+            break
+        key = data[offset:offset+key_len].decode("utf-8", "replace")
+        offset += key_len
+        
+        # Read value type
+        if offset + 4 > len(data):
+            break
+        vtype = struct.unpack("<I", data[offset:offset+4])[0]
+        offset += 4
+        
+        # Read value based on type
+        value = _parse_value(data, offset, vtype)
+        offset = value["offset"]
+        result["metadata"][key] = value["value"]
+    
+    # Parse tensors
+    for _ in range(tensor_count):
+        if offset >= len(data):
+            break
+        # Read tensor name
+        name_len = struct.unpack("<Q", data[offset:offset+8])[0]
+        offset += 8
+        if offset + name_len > len(data):
+            break
+        name = data[offset:offset+name_len].decode("utf-8", "replace")
+        offset += name_len
+        
+        # Read n_dims
+        if offset + 4 > len(data):
+            break
+        n_dims = struct.unpack("<I", data[offset:offset+4])[0]
+        offset += 4
+        
+        # Read dimensions
+        dims = []
+        for _ in range(n_dims):
+            if offset + 8 > len(data):
+                break
+            dim = struct.unpack("<Q", data[offset:offset+8])[0]
+            dims.append(dim)
+            offset += 8
+        
+        # Read ggml_type
+        if offset + 4 > len(data):
+            break
+        ggml_type = struct.unpack("<I", data[offset:offset+4])[0]
+        offset += 4
+        
+        # Read offset
+        if offset + 8 > len(data):
+            break
+        tensor_offset = struct.unpack("<Q", data[offset:offset+8])[0]
+        offset += 8
+        
+        result["tensors"].append({
+            "name": name,
+            "n_dims": n_dims,
+            "dims": dims,
+            "ggml_type": ggml_type,
+            "offset": tensor_offset,
+        })
+    
+    return result
+
+
+def _parse_value(data: bytes, offset: int, vtype: int) -> dict:
+    """Parse a GGUF metadata value and return (value, new_offset)."""
+    if vtype == STRING:
+        if offset + 8 > len(data):
+            return {"value": "", "offset": offset}
+        str_len = struct.unpack("<Q", data[offset:offset+8])[0]
+        offset += 8
+        if offset + str_len > len(data):
+            return {"value": "", "offset": offset}
+        value = data[offset:offset+str_len].decode("utf-8", "replace")
+        offset += str_len
+        return {"value": value, "offset": offset}
+    elif vtype == BOOL:
+        if offset >= len(data):
+            return {"value": False, "offset": offset}
+        value = bool(data[offset])
+        offset += 1
+        return {"value": value, "offset": offset}
+    elif vtype in (UINT8, INT8):
+        if offset >= len(data):
+            return {"value": 0, "offset": offset}
+        value = data[offset]
+        offset += 1
+        return {"value": value, "offset": offset}
+    elif vtype in (UINT16, INT16):
+        if offset + 2 > len(data):
+            return {"value": 0, "offset": offset}
+        value = struct.unpack("<H", data[offset:offset+2])[0]
+        offset += 2
+        return {"value": value, "offset": offset}
+    elif vtype in (UINT32, INT32, FLOAT32):
+        if offset + 4 > len(data):
+            return {"value": 0, "offset": offset}
+        value = struct.unpack("<I", data[offset:offset+4])[0]
+        offset += 4
+        return {"value": value, "offset": offset}
+    elif vtype in (UINT64, INT64, FLOAT64):
+        if offset + 8 > len(data):
+            return {"value": 0, "offset": offset}
+        value = struct.unpack("<Q", data[offset:offset+8])[0]
+        offset += 8
+        return {"value": value, "offset": offset}
+    elif vtype == ARRAY:
+        if offset + 12 > len(data):
+            return {"value": [], "offset": offset}
+        elem_type = struct.unpack("<I", data[offset:offset+4])[0]
+        offset += 4
+        count = struct.unpack("<Q", data[offset:offset+8])[0]
+        offset += 8
+        values = []
+        for _ in range(min(count, 100)):  # Limit array size for safety
+            if offset >= len(data):
+                break
+            elem_val = _parse_value(data, offset, elem_type)
+            values.append(elem_val["value"])
+            offset = elem_val["offset"]
+        return {"value": values, "offset": offset}
+    else:
+        # Unknown type, skip
+        return {"value": None, "offset": offset}

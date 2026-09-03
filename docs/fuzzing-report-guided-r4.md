@@ -1,4 +1,4 @@
-# ReGenBench Fuzzing Report (guided, replicate 1)
+# ReGenBench Fuzzing Report (guided, replicate 4)
 
 - Mode: **guided**  
 - Base checkpoint: `/home/d4sun/Projects/regenbench/real_benign_corpus/all/text-generation__HuggingFaceM4_tiny-random-LlamaForCausalLM.bin`  
@@ -9,21 +9,21 @@
 
 | Round | Valid / Generated | Confirmed Bypasses | Mean Fitness | Opcode Coverage (reachable) | Callable Coverage | Family bypass | Entropy |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| 1 | 20 / 20 | 5 | 10057.671 | 48.3% | 15.2% | 40% | 1.57 |
-| 2 | 19 / 20 | 7 | 9549.381 | 48.3% | 18.2% | 40% | 1.58 |
-| 3 | 20 / 20 | 9 | 10051.184 | 48.3% | 18.2% | 40% | 1.52 |
-| 4 | 20 / 20 | 7 | 10050.826 | 48.3% | 18.2% | 40% | 1.58 |
-| 5 | 20 / 20 | 7 | 10050.576 | 48.3% | 18.2% | 40% | 1.54 |
+| 1 | 18 / 20 | 3 | 2.268 | 50.0% | 24.2% | 20% | 1.56 |
+| 2 | 18 / 20 | 6 | 1.938 | 50.0% | 33.3% | 20% | 1.57 |
+| 3 | 18 / 20 | 9 | 2.359 | 50.0% | 48.5% | 20% | 1.40 |
+| 4 | 18 / 20 | 6 | 1.829 | 50.0% | 57.6% | 20% | 1.44 |
+| 5 | 17 / 20 | 9 | 1.968 | 50.0% | 63.6% | 20% | 1.43 |
 
 ## Attack-family distribution
 
 | Family | Candidates |
 | :--- | :---: |
-| gadget | 16 |
-| overwritten | 20 |
-| external | 17 |
-| indirect_chain | 24 |
-| pypi_injected | 23 |
+| gadget | 18 |
+| overwritten | 14 |
+| external | 16 |
+| indirect_chain | 16 |
+| pypi_injected | 36 |
 
 ## Per-scanner evasions (verdict=benign on valid candidates)
 
@@ -31,5 +31,5 @@ Evasion mode: **adaptive**
 
 | Scanner | Evasions |
 | :--- | :---: |
-| modelscan | 53 |
-| picklescan | 36 |
+| modelscan | 55 |
+| picklescan | 38 |

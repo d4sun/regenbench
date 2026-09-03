@@ -38,6 +38,7 @@ from pipeline.scanners import (
     expected_scanners,
     run_scan,
 )
+from pipeline.templates import family_format
 
 DEFAULT_EXTS = {".pkl", ".pt", ".pth", ".onnx", ".keras", ".h5", ".hdf5", ".joblib", ".model", ".bin", ".gguf"}
 
@@ -121,6 +122,7 @@ class Runner:
     def _scanners_for(self, src: str) -> list[str]:
         names = []
         ext = os.path.splitext(src)[1].lower()
+        fmt = "gguf" if ext in GGUF_EXTENSIONS else "pt"
         for name, meta in self.spec.items():
             if meta.get("mount_only_pt") and not self.config.oracle:
                 continue
@@ -130,12 +132,12 @@ class Runner:
             if name == "dynahug":
                 if not self.config.oracle:
                     continue
-                if ext not in ORACLE_EXTENSIONS:
-                    continue  # oracle only deserializes torch checkpoints
+                if fmt != "pt":
+                    continue  # dynahug oracle only deserializes torch checkpoints
             if name == "ggufref":
                 if not self.config.oracle:
                     continue
-                if ext not in GGUF_EXTENSIONS:
+                if fmt != "gguf":
                     continue  # reference parser only reads GGUF files
             names.append(name)
         return names
@@ -192,9 +194,10 @@ class Runner:
                 log_candidate(db_path, cand_id, src, "Fuzzer Campaign")
 
             scanners = self._scanners_for(scan_src)
+            fmt = "gguf" if os.path.splitext(scan_src)[1].lower() in GGUF_EXTENSIONS else "pt"
             
-            # Check pre-filter for DynaHug oracle
-            if "dynahug" in scanners and self.config.pre_filter:
+            # Check pre-filter for DynaHug oracle (PT only)
+            if "dynahug" in scanners and self.config.pre_filter and fmt == "pt":
                 admitted = is_admitted(scan_src)
                 if not admitted:
                     pre_filtered_artifacts.add(src)

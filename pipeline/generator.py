@@ -2,6 +2,7 @@
 
 Combines opcode taxonomy, dangerous-callable registry, and metadata/buffer
 sampling to produce syntactically valid malicious pickle candidates.
+Supports both PT (pickle/torch) and GGUF formats.
 """
 
 from __future__ import annotations
@@ -13,12 +14,13 @@ import struct
 import base64
 import tempfile
 import uuid
-from typing import Any
+from typing import Any, Literal
 
 from pipeline.opcodes import parse_pickle, OPCODES_BY_BYTE, OPCODES_BY_NAME, OpcodeCategory, OpcodeClassification
 from pipeline.registry import get_armable_entries, is_dangerous
 from pipeline.templates import inject_payload_into_torch
 from pipeline.differential import differential_mutate
+from pipeline.gguf_tools import generate_candidate_gguf
 
 
 def _structurally_sane(pkl_bytes: bytes) -> bool:
@@ -154,9 +156,18 @@ def _plausible_candidate(
 
 
 class CandidateGenerator:
-    """Fuzzer candidate generator implementing PickleFuzzer mutation and injection."""
+    """Fuzzer candidate generator implementing PickleFuzzer mutation and injection.
 
-    def __init__(self):
+    Supports both PT (pickle/torch) and GGUF formats.
+    """
+
+    def __init__(
+        self,
+        format: Literal['pt', 'gguf', 'mixed'] = 'pt',
+        pt_corpus_dir: str = 'real_benign_corpus/all_pt',
+        gguf_corpus_dir: str = 'real_benign_corpus/all_gguf',
+        format_ratio: float = 0.5,
+    ):
         # Sample values for metadata mutation
         self.sample_strings = [
             "benign", "fuzzed", "", "A" * 10, "A" * 256,
@@ -164,6 +175,12 @@ class CandidateGenerator:
         ]
         self.sample_ints = [0, 1, -1, 127, 255, 32767, 65535, 2147483647, -2147483648]
         self.sample_floats = [0.0, 1.0, -1.0, 3.14159, 1e-5, float("inf"), float("-inf"), float("nan")]
+        
+        # Dual-format configuration
+        self.format = format
+        self.pt_corpus_dir = pt_corpus_dir
+        self.gguf_corpus_dir = gguf_corpus_dir
+        self.format_ratio = format_ratio  # fraction of GGUF candidates in mixed mode
 
     def _mutate_argument(self, op: OpcodeClassification, arg: bytes) -> bytes:
         """Mutate an argument's metadata depending on the opcode classification."""
@@ -556,3 +573,76 @@ class CandidateGenerator:
                 pass
                 
         return result_bytes
+
+    def generate_candidate_gguf(
+        self,
+        attack_family: str,
+        trigger_path: str,
+    ) -> bytes:
+        """Generate a malicious GGUF candidate for the given attack family.
+        
+        GGUF candidates are generated from scratch (no benign seed mutation),
+        with the trigger path baked into the SSTI payload.
+        """
+        return generate_candidate_gguf(attack_family, trigger_path)
+
+    def generate_candidate(
+        self,
+        benign_pt_bytes: bytes | None = None,
+        payload_code: str | None = None,
+        dangerous_callable: tuple[str, str] | None = None,
+        mutate_meta: bool = True,
+        mutation_prob: float = 0.15,
+        op_swap_prob: float = 0.0,
+        callable_sub_prob: float = 0.0,
+        arg_fuzz_prob: float = 0.0,
+        stack_prob: float = 0.0,
+        attack_family: str = "gadget",
+        evasion_strategies: list[str] | None = None,
+        injection_transport: str | None = None,
+        differential_prob: float = 0.0,
+        family_synthesis_prob: float = 0.0,
+        gadget_to_overwritten_prob: float = 0.0,
+        external_to_pypi_prob: float = 0.0,
+        nested_reduce_prob: float = 0.0,
+        trigger_path: str | None = None,
+    ) -> tuple[bytes, str, str, list[str], str]:
+        """Unified candidate generation for both PT and GGUF formats.
+        
+        Returns:
+            (candidate_bytes, attack_family, format, callables_used, transport)
+        """
+        if self.format == 'pt' or (self.format == 'mixed' and random.random() > self.format_ratio):
+            # Generate PT candidate
+            if benign_pt_bytes is None:
+                raise ValueError("benign_pt_bytes required for PT format")
+            if payload_code is None:
+                raise ValueError("payload_code required for PT format")
+            result = self.generate_candidate_pt(
+                benign_pt_bytes=benign_pt_bytes,
+                payload_code=payload_code,
+                dangerous_callable=dangerous_callable,
+                mutate_meta=mutate_meta,
+                mutation_prob=mutation_prob,
+                op_swap_prob=op_swap_prob,
+                callable_sub_prob=callable_sub_prob,
+                arg_fuzz_prob=arg_fuzz_prob,
+                stack_prob=stack_prob,
+                attack_family=attack_family,
+                evasion_strategies=evasion_strategies,
+                injection_transport=injection_transport,
+                differential_prob=differential_prob,
+                family_synthesis_prob=family_synthesis_prob,
+                gadget_to_overwritten_prob=gadget_to_overwritten_prob,
+                external_to_pypi_prob=external_to_pypi_prob,
+                nested_reduce_prob=nested_reduce_prob,
+            )
+            callables_used = [f"{dangerous_callable[0]}::{dangerous_callable[1]}"] if dangerous_callable else [f"family::{attack_family}"]
+            return result, attack_family, 'pt', callables_used, injection_transport or ("splice" if evasion_strategies else "loads")
+        else:
+            # Generate GGUF candidate
+            if trigger_path is None:
+                trigger_path = "/tmp/trigger.txt"
+            result = self.generate_candidate_gguf(attack_family, trigger_path)
+            callables_used = [f"family::{attack_family}"]
+            return result, attack_family, 'gguf', callables_used, None

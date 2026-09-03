@@ -176,6 +176,15 @@ def init_db(db_path: str) -> None:
             if col_name not in cov_cols2:
                 cursor.execute(f"ALTER TABLE campaign_coverage ADD COLUMN {col_name} {col_type}")
 
+        # Migration: GGUF coverage columns
+        cov_cols3 = {row[1] for row in cursor.execute("PRAGMA table_info(campaign_coverage)").fetchall()}
+        for col_name, col_type in [
+            ("gguf_header_coverage", "REAL"),
+            ("gguf_callable_coverage", "REAL"),
+        ]:
+            if col_name not in cov_cols3:
+                cursor.execute(f"ALTER TABLE campaign_coverage ADD COLUMN {col_name} {col_type}")
+
         # Migration: P2.3 consensus tier
         cand_cols2 = {row[1] for row in cursor.execute("PRAGMA table_info(candidates)").fetchall()}
         if "consensus_tier" not in cand_cols2:
@@ -410,15 +419,18 @@ def get_candidate_summary(db_path: str, candidate_id: str) -> dict[str, Any] | N
 
 def log_coverage(db_path: str, round_num: int, opcode_cov: float, callable_cov: float,
                  run_id: str = "", family_cov: float = 0.0,
-                 family_bypass_cov: float = 0.0, entropy: float = 0.0) -> None:
+                 family_bypass_cov: float = 0.0, entropy: float = 0.0,
+                 gguf_header_cov: float = 0.0, gguf_callable_cov: float = 0.0) -> None:
     """Insert or replace round coverage statistics for a campaign run."""
     with _session(db_path) as (cursor, _):
         cursor.execute(
             """INSERT OR REPLACE INTO campaign_coverage 
             (run_id, round_num, opcode_coverage, callable_coverage,
-             family_coverage, family_bypass_coverage, entropy, timestamp) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+             family_coverage, family_bypass_coverage, entropy, 
+             gguf_header_coverage, gguf_callable_coverage, timestamp) 
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
             (run_id, round_num, opcode_cov, callable_cov,
              family_cov, family_bypass_cov, entropy,
+             gguf_header_cov, gguf_callable_cov,
              time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),
         )

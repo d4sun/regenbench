@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-"""Fit / sweep the DynaHug OCSVM *inside* the oracle image (Plan Phase 4.2).
+"""Fit / sweep the oracle OCSVM *inside* the oracle image (Plan Phase 4.2).
 
-Why inside the container: the dynahug image pins scikit-learn==1.7.1 /
+Why inside the container: the dynahug/gguf images pin scikit-learn==1.7.1 /
 joblib==1.5.2 (matching upstream's serialized artifacts), while the host may
 run a different Python/sklearn. Fitting where the model is consumed removes
 any cross-version serialization risk.
@@ -12,17 +12,18 @@ needed for sweeps.
 
 Modes:
   sweep   default: grid over --gamma x --nu, deterministic seeded train/holdout
-          split, per-combo score statistics + recommendation table.
+           split, per-combo score statistics + recommendation table.
   export  --export with --export-dir: refit ONE combo and joblib.dump the
-          model/vectorizer/scaler into a drop-in DYNAHUG_MODEL_DIR.
+           model/vectorizer/scaler into a drop-in MODEL_DIR.
 
 Usage:
     python3 scripts/fit_oracle_sweep.py \
-        --traces real_benign_corpus/oracle-calibrated/text-generation-v2/traces.json \
+        --traces real_benign_corpus/oracle-calibrated/pt/traces.json \
+        --image regenbench/dynahug:latest \
         --gamma-grid 0.01 0.1 1.0 --nu-grid 0.005 0.01 0.05
     python3 scripts/fit_oracle_sweep.py --traces ... \
         --export --gamma 0.1 --nu 0.01 \
-        --export-dir real_benign_corpus/oracle-calibrated/current
+        --export-dir real_benign_corpus/oracle-calibrated/pt
 """
 
 from __future__ import annotations
@@ -36,13 +37,12 @@ import tempfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-IMAGE = "regenbench/dynahug:latest"
 
-# Executed inside the container (python3.13 + sklearn 1.7.1 + joblib 1.5.2).
-# stdin: {"train": [feature_dict...], "eval": [...], "gamma": g, "nu": n,
-#         "export": null | "/out"}
-# stdout: exactly one JSON line with scores + optional export status.
-INNER = r"""
+
+def run_in_container(payload: dict, image: str, backend: str = "podman") -> dict:
+    # The inner script is the same for both dynahug and gguf images
+    # (both have sklearn 1.7.1 + joblib 1.5.2)
+    inner = r"""
 import json, os, shutil, sys
 import numpy as np
 from sklearn.feature_extraction import DictVectorizer
@@ -95,12 +95,9 @@ print(json.dumps({
     "export_status": export_status,
 }))
 """
-
-
-def run_in_container(payload: dict, backend: str = "podman") -> dict:
     proc = subprocess.run(
         [backend, "run", "--rm", "-i", "--entrypoint", "python3.13",
-         IMAGE, "-c", INNER],
+         image, "-c", inner],
         input=json.dumps(payload), capture_output=True, text=True, timeout=300)
     if proc.returncode != 0:
         raise RuntimeError(f"container fit failed: {proc.stderr[-800:]}")
@@ -125,10 +122,10 @@ def stats(scores: list[float]) -> dict:
 
 
 def main() -> int:
-    global IMAGE
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--traces", required=True)
-    ap.add_argument("--image", default=IMAGE)
+    ap.add_argument("--image", required=True,
+                    help="oracle container image (regenbench/dynahug:latest for PT, regenbench/gguf:latest for GGUF)")
     ap.add_argument("--backend", choices=["podman", "docker"], default="podman",
                     help="container runtime for the in-image fit (docker on "
                          "hosts without podman)")
@@ -143,7 +140,7 @@ def main() -> int:
     ap.add_argument("--out", default=None, help="write sweep results JSON here")
     args = ap.parse_args()
 
-    IMAGE = args.image
+    image = args.image
     backend = args.backend
 
     traces = json.loads(Path(args.traces).read_text())
@@ -169,7 +166,7 @@ def main() -> int:
     for gamma, nu in combos:
         payload = {"train": train_feats, "eval": hold_feats,
                    "gamma": gamma, "nu": nu, "export": None}
-        r = run_in_container(payload, backend)
+        r = run_in_container(payload, image, backend)
         row = {
             "gamma": gamma, "nu": nu,
             "n_support": r["n_support"], "rho": round(r["rho"], 4),
@@ -196,6 +193,7 @@ def main() -> int:
     summary = {
         "task": "oracle-hyperparameter-sweep",
         "traces": args.traces,
+        "image": image,
         "seed": args.seed,
         "split": {"train_n": len(train_feats), "holdout_n": len(hold_feats)},
         "results": results,
@@ -216,7 +214,7 @@ def main() -> int:
                    "export": "/out"}
         cmd = [backend, "run", "--rm", "-i",
                "-v", f"{export_abs}:/out:z",
-               "--entrypoint", "python3.13", IMAGE, "-c", INNER]
+               "--entrypoint", "python3.13", image, "-c", inner]
         proc = subprocess.run(cmd, input=json.dumps(payload),
                               capture_output=True, text=True, timeout=300)
         if proc.returncode != 0:

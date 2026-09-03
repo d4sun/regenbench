@@ -47,9 +47,10 @@ from pipeline.comparator import check_bypass, check_bypass_tier
 from pipeline.fitness import compute_fitness, compute_fitness_multi, compute_fitness_oracle_aware, compute_fitness_lexicographic, compute_fitness_continuous, compute_fitness_coverage_guided, FitnessMode
 from pipeline.feedback import CoverageTracker, FeedbackController, NoveltyTracker
 from pipeline.registry import load_registry
-from pipeline.templates import FAMILIES, FAMILY_LABELS
+from pipeline.templates import FAMILIES, FAMILY_LABELS, GGUF_FAMILIES, family_format
 from pipeline.shelf_life import register_confirmed_bypass
 from pipeline.plausibility import PlausibilityOracle
+from pipeline.gguf_tools import generate_candidate_gguf
 
 import concurrent.futures
 
@@ -144,34 +145,62 @@ def parse_args() -> argparse.Namespace:
                       help="path to trained anomaly detector model")
     ap.add_argument("--anomaly-threshold", type=float, default=0.0,
                       help="anomaly score threshold for ensemble decision")
+    
+    # Dual-format arguments
+    ap.add_argument("--format", choices=["pt", "gguf", "mixed"], default="pt",
+                      help="artifact format to generate: pt (pickle/torch), gguf, or mixed")
+    ap.add_argument("--pt-corpus-dir", default="real_benign_corpus/all_pt",
+                      help="PT benign corpus directory for seed selection")
+    ap.add_argument("--gguf-corpus-dir", default="real_benign_corpus/all_gguf",
+                      help="GGUF benign corpus directory for seed selection")
+    ap.add_argument("--format-ratio", type=float, default=0.3,
+                      help="for mixed format: fraction of GGUF candidates per round (default 0.3)")
+    ap.add_argument("--gguf-families", default=",".join(GGUF_FAMILIES),
+                      help="comma-separated GGUF attack families to sample across")
     return ap.parse_args()
 
 
-def _resolve_seed_checkpoint(args: argparse.Namespace) -> str:
+def _resolve_seed_checkpoint(args: argparse.Namespace, fmt: str = "pt") -> str:
     """Resolve the campaign seed: a real corpus checkpoint when --seed-corpus-dir
     is given, otherwise the --base-checkpoint path. The real-corpus layout is
     the flat ``<cluster>__<repo>.bin`` naming produced by the crawl; the
     smallest matching file is chosen so a pilot campaign stays fast."""
-    if not args.seed_corpus_dir:
+    # For GGUF format, use the GGUF corpus directory
+    corpus_dir = args.seed_corpus_dir
+    if fmt == "gguf" and not corpus_dir:
+        corpus_dir = args.gguf_corpus_dir
+    elif fmt == "pt" and not corpus_dir:
+        corpus_dir = args.pt_corpus_dir
+    
+    if not corpus_dir:
         return os.path.abspath(args.base_checkpoint)
 
-    if not os.path.isdir(args.seed_corpus_dir):
-        print(f"[campaign] error: seed corpus dir not found: {args.seed_corpus_dir}")
+    if not os.path.isdir(corpus_dir):
+        print(f"[campaign] error: seed corpus dir not found: {corpus_dir}")
         raise SystemExit(1)
 
     candidates = []
     import zipfile
-    for name in sorted(os.listdir(args.seed_corpus_dir)):
-        if not name.endswith((".bin", ".pt", ".pth")):
-            continue
+    for name in sorted(os.listdir(corpus_dir)):
+        if fmt == "gguf":
+            if not name.endswith(".gguf"):
+                continue
+        else:
+            if not name.endswith((".bin", ".pt", ".pth")):
+                continue
         if args.seed_cluster and not name.startswith(args.seed_cluster + "__"):
             continue
-        path = os.path.join(args.seed_corpus_dir, name)
-        if os.path.isfile(path) and zipfile.is_zipfile(path):
-            candidates.append((os.path.getsize(path), path))
+        path = os.path.join(corpus_dir, name)
+        if fmt == "gguf":
+            # GGUF files are not zip files, just check they exist and have size
+            if os.path.isfile(path):
+                candidates.append((os.path.getsize(path), path))
+        else:
+            if os.path.isfile(path) and zipfile.is_zipfile(path):
+                candidates.append((os.path.getsize(path), path))
     if not candidates:
-        print(f"[campaign] error: no seed checkpoints matched in {args.seed_corpus_dir} "
-              f"(cluster={args.seed_cluster})")
+        print(f"[campaign] error: no seed checkpoints matched in {corpus_dir} "
+              f"(cluster={args.seed_cluster}, format={fmt})")
         raise SystemExit(1)
 
     _, path = min(candidates)
@@ -230,6 +259,22 @@ def _generate_candidate_worker(
     )
 
 
+def _generate_candidate_gguf_worker(
+    attack_family: str,
+    trigger_path: str,
+    rng_seed: int | None = None,
+) -> bytes:
+    """Worker function for parallel GGUF candidate generation.
+    
+    GGUF candidates are generated deterministically per family (no benign seed
+    mutation), so the only parameterization is the trigger path baked into the
+    SSTI payload.
+    """
+    if rng_seed is not None:
+        random.seed(rng_seed)
+    return generate_candidate_gguf(attack_family, trigger_path)
+
+
 def _candidate_rng_seed(base_seed: int | None, round_num: int, index: int) -> int | None:
     """Deterministic per-candidate seed for fork-safe parallel generation.
 
@@ -261,29 +306,56 @@ def run_campaign(args: argparse.Namespace) -> int:
         random.seed(args.seed)
     load_registry()
 
-    base_abs = _resolve_seed_checkpoint(args)
-    if not os.path.isfile(base_abs):
-        print(f"[campaign] error: base checkpoint not found: {base_abs}")
-        return 1
-
-    with open(base_abs, "rb") as f:
-        benign_pt_bytes = f.read()
-
-    families = [f.strip() for f in args.attack_families.split(",") if f.strip()]
-    unknown = set(families) - set(FAMILIES)
-    if unknown:
-        print(f"[campaign] error: unknown attack families {sorted(unknown)} "
+    # Parse families for both PT and GGUF
+    pt_families = [f.strip() for f in args.attack_families.split(",") if f.strip()]
+    gguf_families = [f.strip() for f in args.gguf_families.split(",") if f.strip()]
+    
+    # Validate PT families
+    unknown_pt = set(pt_families) - set(FAMILIES)
+    if unknown_pt:
+        print(f"[campaign] error: unknown PT attack families {sorted(unknown_pt)} "
               f"(valid: {FAMILIES})")
         return 1
+    
+    # Validate GGUF families
+    unknown_gguf = set(gguf_families) - set(GGUF_FAMILIES)
+    if unknown_gguf:
+        print(f"[campaign] error: unknown GGUF attack families {sorted(unknown_gguf)} "
+              f"(valid: {GGUF_FAMILIES})")
+        return 1
 
-    run_id = f"{args.mode}-r{args.replicate}"
+    # For mixed format, we need both PT and GGUF families
+    if args.format == "mixed":
+        families = pt_families + gguf_families
+    elif args.format == "gguf":
+        families = gguf_families
+    else:
+        families = pt_families
+
+    # Resolve seed checkpoints for both formats
+    base_abs_pt = _resolve_seed_checkpoint(args, "pt")
+    base_abs_gguf = _resolve_seed_checkpoint(args, "gguf")
+    
+    # Load benign PT bytes (needed for PT candidate generation)
+    if args.format != "gguf":
+        if not os.path.isfile(base_abs_pt):
+            print(f"[campaign] error: base PT checkpoint not found: {base_abs_pt}")
+            return 1
+        with open(base_abs_pt, "rb") as f:
+            benign_pt_bytes = f.read()
+    else:
+        benign_pt_bytes = b""
+
+    run_id = f"{args.mode}-{args.format}-r{args.replicate}"
     db_path = args.db
     os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
     init_db(db_path)
     total_candidates = args.rounds * args.candidates_per_round
+    # Use PT base for logging, or GGUF base if PT-only
+    log_base = base_abs_pt if args.format != "gguf" else base_abs_gguf
     log_campaign_run(
         db_path, run_id, args.mode, args.replicate,
-        base_abs, total_candidates, args.rounds,
+        log_base, total_candidates, args.rounds,
         fitness_mode=args.fitness_mode,
     )
 
@@ -450,7 +522,29 @@ def run_campaign(args: argparse.Namespace) -> int:
                             elif attack_family == "gadget":
                                 gap_chosen_callable = gap_item
 
-                    if attack_family == "gadget":
+                    # Determine format based on --format argument and --format-ratio
+                    if args.format == "gguf":
+                        is_gguf = True
+                    elif args.format == "pt":
+                        is_gguf = False
+                    else:  # mixed
+                        # Use format_ratio to determine GGUF fraction
+                        # Also respect family format if explicitly GGUF
+                        fam_fmt = family_format(attack_family)
+                        if fam_fmt == "gguf":
+                            is_gguf = True
+                        else:
+                            is_gguf = random.random() < args.format_ratio
+
+                    if is_gguf:
+                        # GGUF families don't use callables, transports, or evasion strategies
+                        chosen_callable = None
+                        cand_strategies = []
+                        cand_transport = None
+                        op_swap_prob = 0.0
+                        callable_sub_prob = 0.0
+                        arg_fuzz_prob = 0.0
+                    elif attack_family == "gadget":
                         if gap_chosen_callable is not None:
                             chosen_callable = gap_chosen_callable
                         else:
@@ -459,27 +553,59 @@ def run_campaign(args: argparse.Namespace) -> int:
                             callable_population = list(callable_weights_map.keys())
                             callable_weights = list(callable_weights_map.values())
                             chosen_callable = random.choices(callable_population, weights=callable_weights, k=1)[0]
+                        op_swap_prob = controller.op_swap_prob
+                        callable_sub_prob = controller.callable_sub_prob
+                        arg_fuzz_prob = controller.arg_fuzz_prob
                     else:
                         chosen_callable = None
+                        op_swap_prob = controller.op_swap_prob
+                        callable_sub_prob = controller.callable_sub_prob
+                        arg_fuzz_prob = controller.arg_fuzz_prob
 
                     family_counts[attack_family] += 1
-
-                    op_swap_prob = controller.op_swap_prob
-                    callable_sub_prob = controller.callable_sub_prob
-                    arg_fuzz_prob = controller.arg_fuzz_prob
                 else:
                     attack_family = random.choice(families)
                     attack_family = _quota_pick(attack_family, family_counts)
                     family_counts[attack_family] += 1
-                    if attack_family == "gadget":
+                    
+                    # Determine format based on --format argument and --format-ratio
+                    if args.format == "gguf":
+                        is_gguf = True
+                    elif args.format == "pt":
+                        is_gguf = False
+                    else:  # mixed
+                        # Use format_ratio to determine GGUF fraction
+                        # Also respect family format if explicitly GGUF
+                        fam_fmt = family_format(attack_family)
+                        if fam_fmt == "gguf":
+                            is_gguf = True
+                        else:
+                            is_gguf = random.random() < args.format_ratio
+                    
+                    if is_gguf:
+                        chosen_callable = None
+                        cand_strategies = []
+                        cand_transport = None
+                        op_swap_prob = 0.0
+                        callable_sub_prob = 0.0
+                        arg_fuzz_prob = 0.0
+                    elif attack_family == "gadget":
                         chosen_callable = random.choice(population)
+                        op_swap_prob = 0.15
+                        callable_sub_prob = 0.15
+                        arg_fuzz_prob = 0.15
                     else:
                         chosen_callable = None
-                    cand_strategies = _pick_strategies()
-                    cand_transport = "splice" if (args.evasion_mode != "off" or fixed_strategies is not None) else None
-                    op_swap_prob = 0.15
-                    callable_sub_prob = 0.15
-                    arg_fuzz_prob = 0.15
+                        op_swap_prob = 0.15
+                        callable_sub_prob = 0.15
+                        arg_fuzz_prob = 0.15
+                    
+                    if not is_gguf:
+                        cand_strategies = _pick_strategies()
+                        cand_transport = "splice" if (args.evasion_mode != "off" or fixed_strategies is not None) else None
+                    else:
+                        cand_strategies = []
+                        cand_transport = None
 
                 trigger_file = os.path.join(temp_dir, f"trigger_{r}_{i}.txt")
                 payload = f"with open('{trigger_file}', 'w') as f: f.write('1')"
@@ -496,6 +622,7 @@ def run_campaign(args: argparse.Namespace) -> int:
                     "callable_sub_prob": callable_sub_prob,
                     "arg_fuzz_prob": arg_fuzz_prob,
                     "rng_seed": _candidate_rng_seed(args.seed, r, i),
+                    "is_gguf": is_gguf,
                 })
 
             # Phase 5: Parallel generation with ProcessPoolExecutor
@@ -503,24 +630,32 @@ def run_campaign(args: argparse.Namespace) -> int:
             with concurrent.futures.ProcessPoolExecutor(max_workers=gen_workers) as executor:
                 futures = {}
                 for params in candidate_params:
-                    fut = executor.submit(
-                        _generate_candidate_worker,
-                        benign_pt_bytes,
-                        params["payload"],
-                        params["chosen_callable"],
-                        params["attack_family"],
-                        params["cand_strategies"],
-                        params["cand_transport"],
-                        True,  # mutate_meta
-                        0.15,  # mutation_prob
-                        params["op_swap_prob"],
-                        params["callable_sub_prob"],
-                        params["arg_fuzz_prob"],
-                        0.05,  # stack_prob
-                        args.differential_prob,   # Phase 3a
-                        args.family_synthesis_prob,  # Phase 3b
-                        params.get("rng_seed"),   # deterministic reseed
-                    )
+                    if params["is_gguf"]:
+                        fut = executor.submit(
+                            _generate_candidate_gguf_worker,
+                            params["attack_family"],
+                            params["trigger_file"],
+                            params.get("rng_seed"),
+                        )
+                    else:
+                        fut = executor.submit(
+                            _generate_candidate_worker,
+                            benign_pt_bytes,
+                            params["payload"],
+                            params["chosen_callable"],
+                            params["attack_family"],
+                            params["cand_strategies"],
+                            params["cand_transport"],
+                            True,  # mutate_meta
+                            0.15,  # mutation_prob
+                            params["op_swap_prob"],
+                            params["callable_sub_prob"],
+                            params["arg_fuzz_prob"],
+                            0.05,  # stack_prob
+                            args.differential_prob,   # Phase 3a
+                            args.family_synthesis_prob,  # Phase 3b
+                            params.get("rng_seed"),   # deterministic reseed
+                        )
                     futures[fut] = params
 
                 for fut in concurrent.futures.as_completed(futures):
@@ -529,46 +664,52 @@ def run_campaign(args: argparse.Namespace) -> int:
                     try:
                         cand_bytes = fut.result()
                     except ValueError as e:
-                        # Unsupported callable - resample
-                        print(f"  [skip] {params['chosen_callable']}: {e}")
-                        supported = [c for c in population if c != params["chosen_callable"]] or population
-                        new_callable = random.choice(supported)
-                        params["chosen_callable"] = new_callable
-                        # Retry once (distinct seed so the resample mutates
-                        # differently than the failed attempt)
-                        retry_seed = params.get("rng_seed")
-                        if retry_seed is not None:
-                            retry_seed = (retry_seed + 0x9E3779B9) % (2**32)
-                        fut2 = executor.submit(
-                            _generate_candidate_worker,
-                            benign_pt_bytes,
-                            params["payload"],
-                            new_callable,
-                            params["attack_family"],
-                            params["cand_strategies"],
-                            params["cand_transport"],
-                            True, 0.15,
-                            params["op_swap_prob"],
-                            params["callable_sub_prob"],
-                            params["arg_fuzz_prob"],
-                            0.05,
-                            args.differential_prob,
-                            args.family_synthesis_prob,
-                            retry_seed,
-                        )
-                        try:
-                            cand_bytes = fut2.result()
-                        except ValueError as e:
-                            # The resample also failed (e.g. plausibility
-                            # constraints reject the new callable too); drop
-                            # this candidate slot instead of aborting the
-                            # campaign. A sibling except clause cannot catch
-                            # an exception raised inside this handler, so this
-                            # must be a nested try.
-                            print(f"  [skip] {params['chosen_callable']} retry failed: {e}")
+                        # Unsupported callable - resample (pickle only)
+                        if not params["is_gguf"]:
+                            print(f"  [skip] {params['chosen_callable']}: {e}")
+                            supported = [c for c in population if c != params["chosen_callable"]] or population
+                            new_callable = random.choice(supported)
+                            params["chosen_callable"] = new_callable
+                            # Retry once (distinct seed so the resample mutates
+                            # differently than the failed attempt)
+                            retry_seed = params.get("rng_seed")
+                            if retry_seed is not None:
+                                retry_seed = (retry_seed + 0x9E3779B9) % (2**32)
+                            fut2 = executor.submit(
+                                _generate_candidate_worker,
+                                benign_pt_bytes,
+                                params["payload"],
+                                new_callable,
+                                params["attack_family"],
+                                params["cand_strategies"],
+                                params["cand_transport"],
+                                True, 0.15,
+                                params["op_swap_prob"],
+                                params["callable_sub_prob"],
+                                params["arg_fuzz_prob"],
+                                0.05,
+                                args.differential_prob,
+                                args.family_synthesis_prob,
+                                retry_seed,
+                            )
+                            try:
+                                cand_bytes = fut2.result()
+                            except ValueError as e:
+                                # The resample also failed (e.g. plausibility
+                                # constraints reject the new callable too); drop
+                                # this candidate slot instead of aborting the
+                                # campaign. A sibling except clause cannot catch
+                                # an exception raised inside this handler, so this
+                                # must be a nested try.
+                                print(f"  [skip] {params['chosen_callable']} retry failed: {e}")
+                                continue
+                        else:
+                            # GGUF generation shouldn't raise ValueError; if it does, skip
+                            print(f"  [skip] GGUF {params['attack_family']}: {e}")
                             continue
 
-                    cand_path = os.path.join(round_dir, f"candidate_{i}.pt")
+                    suffix = ".gguf" if params["is_gguf"] else ".pt"
+                    cand_path = os.path.join(round_dir, f"candidate_{i}{suffix}")
                     with open(cand_path, "wb") as f:
                         f.write(cand_bytes)
                     candidates.append((cand_path, cand_bytes, params["chosen_callable"],
@@ -605,7 +746,12 @@ def run_campaign(args: argparse.Namespace) -> int:
 
             for filepath, cand_bytes, chosen_callable, trigger_file, attack_family, cand_strategies in candidates:
                 cand_results = results_by_file.get(filepath, [])
-                is_valid = plausibility.confirm(cand_bytes, trigger_file)
+                fmt = family_format(attack_family)
+                is_gguf = (fmt == "gguf")
+                if is_gguf:
+                    is_valid = plausibility.confirm_gguf(cand_bytes)
+                else:
+                    is_valid = plausibility.confirm(cand_bytes, trigger_file)
                 cand_id = hashlib.md5(filepath.encode("utf-8")).hexdigest()
 
                 panel_verdicts = []
@@ -636,21 +782,30 @@ def run_campaign(args: argparse.Namespace) -> int:
                 # Track with family signal so family coverage is meaningful.
                 is_bypass = is_valid and check_bypass(panel_verdicts, execution_oracle_verdict)
                 tracker.track_candidate(filepath, family=attack_family, is_bypass=is_bypass)
-                new_opcodes = tracker.seen_opcodes - prev_opcodes
-                new_callables = tracker.seen_callables - prev_callables
-                coverage_delta = len(new_opcodes) + len(new_callables)
-                prev_opcodes = set(tracker.seen_opcodes)
-                prev_callables = set(tracker.seen_callables)
+                if not is_gguf:
+                    new_opcodes = tracker.seen_opcodes - prev_opcodes
+                    new_callables = tracker.seen_callables - prev_callables
+                    coverage_delta = len(new_opcodes) + len(new_callables)
+                    prev_opcodes = set(tracker.seen_opcodes)
+                    prev_callables = set(tracker.seen_callables)
+                else:
+                    # GGUF has no pickle opcode/callable coverage
+                    coverage_delta = 0
 
                 use_multi_fitness = (
                     is_valid
                     and (args.evasion_mode != "off" or fixed_strategies is not None)
                 )
-                if fitness_mode == FitnessMode.ORACLE_DOMINANT:
-                    # Lexicographic fitness: dynamic confirmation > panel > coverage > novelty
+                if is_gguf:
+                    # GGUF: no pickle signature/novelty, use family-based novelty if needed
+                    sig_ops = ()
+                    nov = 0.0
+                else:
                     sig_ops = _candidate_signature(filepath)
                     nov = novelty.score(novelty.signature(
                         sig_ops, frozenset(cand_strategies)))
+                if fitness_mode == FitnessMode.ORACLE_DOMINANT:
+                    # Lexicographic fitness: dynamic confirmation > panel > coverage > novelty
                     fit_score = compute_fitness_lexicographic(
                         scanner_verdicts=scanner_verdicts,
                         oracle_verdict=execution_oracle_verdict,
@@ -661,9 +816,6 @@ def run_campaign(args: argparse.Namespace) -> int:
                 elif fitness_mode == FitnessMode.ORACLE_AWARE:
                     # Oracle-aware: panel evasion + execution oracle multiplier + boundary + novelty
                     if use_multi_fitness:
-                        sig_ops = _candidate_signature(filepath)
-                        nov = novelty.score(novelty.signature(
-                            sig_ops, frozenset(cand_strategies)))
                         fit_score = compute_fitness_oracle_aware(
                             scanner_verdicts=scanner_verdicts,
                             oracle_verdict=execution_oracle_verdict,
@@ -684,9 +836,6 @@ def run_campaign(args: argparse.Namespace) -> int:
                 elif fitness_mode == FitnessMode.CONTINUOUS:
                     # Continuous: smooth multi-objective (evasion * oracle_mult + boundary + novelty + coverage)
                     if use_multi_fitness:
-                        sig_ops = _candidate_signature(filepath)
-                        nov = novelty.score(novelty.signature(
-                            sig_ops, frozenset(cand_strategies)))
                         fit_score = compute_fitness_continuous(
                             scanner_verdicts=scanner_verdicts,
                             execution_oracle_verdict=execution_oracle_verdict,
@@ -709,9 +858,6 @@ def run_campaign(args: argparse.Namespace) -> int:
                 elif fitness_mode == FitnessMode.COVERAGE_GUIDED:
                     # Coverage-guided: coverage delta as primary when evasion plateaus
                     if use_multi_fitness:
-                        sig_ops = _candidate_signature(filepath)
-                        nov = novelty.score(novelty.signature(
-                            sig_ops, frozenset(cand_strategies)))
                         fit_score = compute_fitness_coverage_guided(
                             scanner_verdicts=scanner_verdicts,
                             execution_oracle_verdict=execution_oracle_verdict,
@@ -734,9 +880,6 @@ def run_campaign(args: argparse.Namespace) -> int:
                 else:
                     # CURRENT: original behavior
                     if use_multi_fitness:
-                        sig_ops = _candidate_signature(filepath)
-                        nov = novelty.score(novelty.signature(
-                            sig_ops, frozenset(cand_strategies)))
                         fit_score = compute_fitness_multi(
                             scanner_verdicts=scanner_verdicts,
                             decision_score=decision_score,
@@ -800,9 +943,12 @@ def run_campaign(args: argparse.Namespace) -> int:
                     panel_verdict_summary = "none"
 
                 # Compute novelty score (already computed above for fitness)
-                sig_ops = _candidate_signature(filepath)
-                nov_score = novelty.score(novelty.signature(
-                    sig_ops, frozenset(cand_strategies)))
+                if is_gguf:
+                    nov_score = 0.0
+                else:
+                    sig_ops = _candidate_signature(filepath)
+                    nov_score = novelty.score(novelty.signature(
+                        sig_ops, frozenset(cand_strategies)))
 
                 # P2.3 consensus tier: strace proxy = execution verdict for now
                 # (when StraceOracle is wired, replace strace_verdict with its verdict)
