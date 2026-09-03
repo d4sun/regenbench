@@ -218,16 +218,21 @@ fuzzing loop and attack-primitive coverage/fitness.
 ## 9. Corpus & oracle pipeline (reproduce)
 
 ```sh
-# crawl 100 real checkpoints
-python3 scripts/crawl_benign.py --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering --limit-per-cluster 20 --max-size 134217728 --out-dir data/crawled --scan-cap 20000 --workers 8
-# link flat corpus
-mkdir -p real_benign_corpus/all && while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename "$(dirname "$(dirname "$f")")"); ln -f "$f" "real_benign_corpus/all/${cluster}__${repo}.bin" 2>/dev/null; done < <(find data/crawled -mindepth 3 -maxdepth 3 -name pytorch_model.bin)
-# oracle validation + disjoint split
-python3 scripts/validate_oracle.py real_benign_corpus/all --sample 100 --out real_benign_corpus/oracle-validation.json --backend docker
+# crawl 250 real checkpoints (125 PT + 125 GGUF, 25 per cluster per format)
+python3 scripts/crawl_benign.py --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering --limit-per-cluster 25 --max-size 134217728 --out-dir data/crawled --scan-cap 20000 --workers 8 --format both
+# link flat corpus (PT + GGUF)
+mkdir -p real_benign_corpus/all_pt real_benign_corpus/all_gguf
+while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename "$(dirname "$(dirname "$f")")"); ln -f "$f" "real_benign_corpus/all_pt/${cluster}__${repo}.bin" 2>/dev/null; done < <(find data/crawled -mindepth 3 -maxdepth 3 -name pytorch_model.bin)
+while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename "$(dirname "$(dirname "$f")")"); ln -f "$f" "real_benign_corpus/all_gguf/${cluster}__${repo}.gguf" 2>/dev/null; done < <(find data/crawled -mindepth 3 -maxdepth 3 -name "*.gguf")
+# oracle validation + disjoint split (both formats)
+python3 scripts/validate_oracle.py real_benign_corpus/all_pt --sample 100 --out real_benign_corpus/oracle-validation.json --backend docker --format both
+python3 scripts/organize_corpus.py --corpus-pt real_benign_corpus/all_pt --corpus-gguf real_benign_corpus/all_gguf --report real_benign_corpus/oracle-validation.json --out real_benign_corpus
 python3 scripts/check_oracle_disjointness.py --resplit
-# recalibrate on the train half (fit inside the dynahug image)
-python3 scripts/calibrate_oracle.py real_benign_corpus/all --split-file real_benign_corpus/oracle-split.json --split-role train --out real_benign_corpus/oracle-calibrated/current --sample 50 --backend docker --seed 1337 --traces-only
-python3 scripts/fit_oracle_sweep.py --traces real_benign_corpus/oracle-calibrated/current/traces.json --export --gamma 0.1 --nu 0.01 --export-dir real_benign_corpus/oracle-calibrated/current --backend docker
+# recalibrate on the train half (fit inside the dynahug/gguf images)
+python3 scripts/calibrate_oracle.py real_benign_corpus/all_pt --split-file real_benign_corpus/oracle-split.json --split-role train --out real_benign_corpus/oracle-calibrated/pt --sample 50 --backend docker --seed 1337 --traces-only --format pt
+python3 scripts/fit_oracle_sweep.py --traces real_benign_corpus/oracle-calibrated/pt/traces.json --export --gamma 0.1 --nu 0.01 --export-dir real_benign_corpus/oracle-calibrated/pt --backend docker --image regenbench/dynahug:latest
+python3 scripts/calibrate_oracle.py real_benign_corpus/all_gguf --split-file real_benign_corpus/oracle-split.json --split-role train --out real_benign_corpus/oracle-calibrated/gguf --sample 50 --backend docker --seed 1337 --traces-only --format gguf
+python3 scripts/fit_oracle_sweep.py --traces real_benign_corpus/oracle-calibrated/gguf/traces.json --export --gamma 0.1 --nu 0.01 --export-dir real_benign_corpus/oracle-calibrated/gguf --backend docker --image regenbench/gguf:latest
 ```
 
 ## 10. Known limitations (honest notes)

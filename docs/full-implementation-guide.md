@@ -36,74 +36,96 @@ docker images | grep regenbench         # base, picklescan, modelscan, fickling,
 
 ---
 
-## 01 — Crawl the 100-model real corpus
+## 01 — Crawl the 250-model real corpus (125 PT + 125 GGUF, 25 per cluster × 5 clusters × 2 formats)
 
 ```sh
 python3 scripts/crawl_benign.py \
   --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering \
-  --limit-per-cluster 20 --max-size 134217728 --out-dir data/crawled \
-  --scan-cap 20000 --workers 8
+  --limit-per-cluster 25 --max-size 134217728 --out-dir data/crawled \
+  --scan-cap 20000 --workers 8 --format both
 ```
-- Produces `data/crawled/<cluster>/<repo>/pytorch_model.bin` +
-  `data/crawled/seed_manifest.json`. Resumable; re-running skips existing
+- Produces `data/crawled/<cluster>/<repo>/pytorch_model.bin` (PT) and `data/crawled/<cluster>/<repo>/model.gguf` (GGUF) +
+  `data/crawled/seed_manifest.json` with `"format": "pt"` or `"format": "gguf"`. Resumable; re-running skips existing
   hashes and backfills already-present files.
 - **Verify**:
   ```sh
   python3 -c "import json; print(json.load(open('data/crawled/seed_manifest.json'))['summary'])"
-  # -> total_models: 100, 5 clusters x 20
+  # -> total_models: 250, formats: {"pt": 125, "gguf": 125}, 5 clusters x 25 each
 
-  mkdir -p real_benign_corpus/all
+  mkdir -p real_benign_corpus/all_pt real_benign_corpus/all_gguf
   while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); \
     cluster=$(basename "$(dirname "$(dirname "$f")")"); \
-    ln -f "$f" "real_benign_corpus/all/${cluster}__${repo}.bin" 2>/dev/null; \
+    ln -f "$f" "real_benign_corpus/all_pt/${cluster}__${repo}.bin" 2>/dev/null; \
     done < <(find data/crawled -mindepth 3 -maxdepth 3 -name pytorch_model.bin)
-  ls real_benign_corpus/all | wc -l        # -> 100
+  while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); \
+    cluster=$(basename "$(dirname "$(dirname "$f")")"); \
+    ln -f "$f" "real_benign_corpus/all_gguf/${cluster}__${repo}.gguf" 2>/dev/null; \
+    done < <(find data/crawled -mindepth 3 -maxdepth 3 -name "*.gguf")
+  ls real_benign_corpus/all_pt | wc -l        # -> 125
+  ls real_benign_corpus/all_gguf | wc -l       # -> 125
   ```
 - **Chart**: `python3 scripts/generate_charts.py` → `charts/01_crawl/corpus_composition.png`.
 
 ---
 
-## 02 — Oracle validation, views, disjoint split
+## 02 — Oracle validation, views, disjoint split (PT + GGUF)
 
 ```sh
-# Score every (sampled) real checkpoint with the DynaHug oracle container
-python3 scripts/validate_oracle.py real_benign_corpus/all --sample 100 \
-  --out real_benign_corpus/oracle-validation.json --backend docker
+# Score every (sampled) real checkpoint with the DynaHug (PT) and ggufref (GGUF) oracles
+python3 scripts/validate_oracle.py real_benign_corpus/all_pt --sample 100 \
+  --out real_benign_corpus/oracle-validation.json --backend docker --format both
 
-# Build seed-selection views (oracle_positive / oracle_negative)
-python3 scripts/organize_corpus.py --corpus real_benign_corpus/all \
+# Build seed-selection views (oracle_positive / oracle_negative) for both formats
+python3 scripts/organize_corpus.py --corpus-pt real_benign_corpus/all_pt \
+  --corpus-gguf real_benign_corpus/all_gguf \
   --report real_benign_corpus/oracle-validation.json --out real_benign_corpus
 
-# Deterministic cluster-stratified 50/50 train/eval split (FP study stays
+# Deterministic cluster- AND format-stratified 50/50 train/eval split (FP study stays
 # disjoint from calibration)
 python3 scripts/check_oracle_disjointness.py --resplit
 ```
-- **Verify**: `real_benign_corpus/oracle-split.json` has disjoint `train`/`eval` halves.
+- **Verify**: `real_benign_corpus/oracle-split.json` has disjoint cluster- AND format-stratified `train`/`eval` halves.
 - **Chart**: `charts/02_oracle/oracle_score_distribution.png`.
 
 ---
 
-## 03 — Recalibrate the oracle on this corpus
+## 03 — Recalibrate the oracles on this corpus (PT + GGUF)
 
 ```sh
-# Collect syscall traces on the train half only (never the eval half)
-python3 scripts/calibrate_oracle.py real_benign_corpus/all \
+# PT (DynaHug) - Collect syscall traces on the train half only (never the eval half)
+python3 scripts/calibrate_oracle.py real_benign_corpus/all_pt \
   --split-file real_benign_corpus/oracle-split.json --split-role train \
-  --out real_benign_corpus/oracle-calibrated/current \
-  --sample 50 --backend docker --seed 1337 --traces-only
+  --out real_benign_corpus/oracle-calibrated/pt \
+  --sample 50 --backend docker --seed 1337 --traces-only --format pt
 
 # Fit the OCSVM + vectorizer inside the dynahug image, export drop-in model dir
 python3 scripts/fit_oracle_sweep.py \
-  --traces real_benign_corpus/oracle-calibrated/current/traces.json \
+  --traces real_benign_corpus/oracle-calibrated/pt/traces.json \
   --export --gamma 0.1 --nu 0.01 \
-  --export-dir real_benign_corpus/oracle-calibrated/current --backend docker
+  --export-dir real_benign_corpus/oracle-calibrated/pt --backend docker --image regenbench/dynahug:latest
 
-# FP on the disjoint eval half (DynaHug stays a supplementary signal)
-python3 scripts/fp_eval_oracle.py --split real_benign_corpus/oracle-split.json \
-  --role eval --out real_benign_corpus/oracle-calibrated/current/fp-eval-eval.json \
-  --backend docker
+# GGUF (ggufref) - Collect syscall traces on the train half only
+python3 scripts/calibrate_oracle.py real_benign_corpus/all_gguf \
+  --split-file real_benign_corpus/oracle-split.json --split-role train \
+  --out real_benign_corpus/oracle-calibrated/gguf \
+  --sample 50 --backend docker --seed 1337 --traces-only --format gguf
+
+# Fit the OCSVM + vectorizer inside the gguf image, export drop-in model dir
+python3 scripts/fit_oracle_sweep.py \
+  --traces real_benign_corpus/oracle-calibrated/gguf/traces.json \
+  --export --gamma 0.1 --nu 0.01 \
+  --export-dir real_benign_corpus/oracle-calibrated/gguf --backend docker --image regenbench/gguf:latest
+
+# FP on the disjoint eval half (both formats)
+python3 scripts/fp_eval_oracle.py --format pt --model-dir real_benign_corpus/oracle-calibrated/pt \
+  --split-file real_benign_corpus/oracle-split.json --role eval \
+  --out real_benign_corpus/oracle-calibrated/pt/fp-eval-eval.json --backend docker
+
+python3 scripts/fp_eval_oracle.py --format gguf --model-dir real_benign_corpus/oracle-calibrated/gguf \
+  --split-file real_benign_corpus/oracle-split.json --role eval \
+  --out real_benign_corpus/oracle-calibrated/gguf/fp-eval-eval.json --backend docker
 ```
-- **Verify**: `real_benign_corpus/oracle-calibrated/current/` contains
+- **Verify**: `real_benign_corpus/oracle-calibrated/pt/` and `real_benign_corpus/oracle-calibrated/gguf/` each contain
   `oneclass_svm_model.pkl`, `vectorizer.pkl`, `scaler.pkl`, `syscalls.txt`,
   `fp-eval-eval.json`.
 - **Chart**: `charts/03_calibrate/calibration_fp.png`.
@@ -345,11 +367,13 @@ jupyter lab notebooks/
 ```bash
 set -e
 for d in base picklescan modelscan fickling modeltracer dynahug gguf; do containers/$d/build.sh; done
-python3 scripts/crawl_benign.py --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering --limit-per-cluster 20 --max-size 134217728 --out-dir data/crawled --scan-cap 20000 --workers 8
-mkdir -p real_benign_corpus/all && while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename "$(dirname "$(dirname "$f")")"); ln -f "$f" "real_benign_corpus/all/${cluster}__${repo}.bin" 2>/dev/null; done < <(find data/crawled -mindepth 3 -maxdepth 3 -name pytorch_model.bin)
+python3 scripts/crawl_benign.py --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering --limit-per-cluster 25 --max-size 134217728 --out-dir data/crawled --scan-cap 20000 --workers 8 --format both
+mkdir -p real_benign_corpus/all_pt real_benign_corpus/all_gguf
+while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename "$(dirname "$(dirname "$f")")); ln -f "$f" "real_benign_corpus/all_pt/${cluster}__${repo}.bin" 2>/dev/null; done < <(find data/crawled -mindepth 3 -maxdepth 3 -name pytorch_model.bin)
+while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename "$(dirname "$(dirname "$f")")); ln -f "$f" "real_benign_corpus/all_gguf/${cluster}__${repo}.gguf" 2>/dev/null; done < <(find data/crawled -mindepth 3 -maxdepth 3 -name "*.gguf")
 python3 scripts/run_shadowpickle_baseline.py --candidates-per-family 20 --backend docker
-python3 scripts/run_fuzzing_campaign.py --mode guided --rounds 25 --candidates-per-round 20 --replicate 1 --db data/regenbench_campaign.db --seed-corpus-dir real_benign_corpus/all --seed-cluster text-generation --attack-families gadget,overwritten,external,indirect_chain,pypi_injected --evasion-mode adaptive --fitness-mode oracle_aware --backend docker --seed 42
-python3 scripts/run_fuzzing_campaign.py --mode unguided --rounds 24 --candidates-per-round 20 --replicate 1 --db data/regenbench_campaign.db --seed-corpus-dir real_benign_corpus/all --seed-cluster text-generation --attack-families gadget,overwritten,external,indirect_chain,pypi_injected --evasion-mode random --fitness-mode current --backend docker --seed 42
+python3 scripts/run_fuzzing_campaign.py --mode guided --rounds 25 --candidates-per-round 20 --replicate 1 --db data/regenbench_campaign.db --seed-corpus-dir real_benign_corpus/all_pt --seed-cluster text-generation --pt-corpus-dir real_benign_corpus/all_pt --gguf-corpus-dir real_benign_corpus/all_gguf --attack-families gadget,overwritten,external,indirect_chain,pypi_injected --evasion-mode adaptive --fitness-mode oracle_aware --backend docker --seed 42 --format mixed --format-ratio 0.3
+python3 scripts/run_fuzzing_campaign.py --mode unguided --rounds 24 --candidates-per-round 20 --replicate 1 --db data/regenbench_campaign.db --seed-corpus-dir real_benign_corpus/all_pt --seed-cluster text-generation --pt-corpus-dir real_benign_corpus/all_pt --gguf-corpus-dir real_benign_corpus/all_gguf --attack-families gadget,overwritten,external,indirect_chain,pypi_injected --evasion-mode random --fitness-mode current --backend docker --seed 42 --format mixed --format-ratio 0.3
 python3 scripts/generate_evaluation_report.py
 python3 scripts/demo_task3.py --backend docker
 python3 scripts/benchmark_perf.py
@@ -358,7 +382,7 @@ python3 scripts/crawl_gguf.py
 python3 scripts/run_task3_demo.py --backend docker
 python3 scripts/insert_gguf_into_campaign.py
 python3 scripts/generate_charts.py
-python3 scripts/save_results.py --db data/regenbench_campaign.db --corpus-dir real_benign_corpus/all
+python3 scripts/save_results.py --db data/regenbench_campaign.db --corpus-dir real_benign_corpus/all_pt --gguf-corpus-dir real_benign_corpus/all_gguf
 ```
 
 ---

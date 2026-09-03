@@ -3,18 +3,17 @@
 ## One-Command Repro
 ```bash
 for d in base picklescan modelscan fickling modeltracer dynahug gguf; do containers/$d/build.sh; done
-python3 scripts/crawl_benign.py --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering --limit-per-cluster 20 --max-size 134217728 --out-dir data/crawled --scan-cap 20000 --workers 8
-mkdir -p real_benign_corpus/all && while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename "$(dirname "$(dirname "$f")")"); ln -f "$f" "real_benign_corpus/all/${cluster}__${repo}.bin" 2>/dev/null; done < <(find data/crawled -mindepth 3 -maxdepth 3 -name pytorch_model.bin)
+python3 scripts/crawl_benign.py --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering --limit-per-cluster 25 --max-size 134217728 --out-dir data/crawled --scan-cap 20000 --workers 8 --format both
+mkdir -p real_benign_corpus/all_pt real_benign_corpus/all_gguf
+while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename "$(dirname "$(dirname "$f")")"); ln -f "$f" "real_benign_corpus/all_pt/${cluster}__${repo}.bin" 2>/dev/null; done < <(find data/crawled -mindepth 3 -maxdepth 3 -name pytorch_model.bin)
+while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename "$(dirname "$(dirname "$f")")"); ln -f "$f" "real_benign_corpus/all_gguf/${cluster}__${repo}.gguf" 2>/dev/null; done < <(find data/crawled -mindepth 3 -maxdepth 3 -name "*.gguf")
 python3 scripts/run_shadowpickle_baseline.py --candidates-per-family 20 --backend docker
-python3 scripts/run_fuzzing_campaign.py --mode guided --rounds 25 --candidates-per-round 20 --attack-families gadget,overwritten,external,indirect_chain,pypi_injected --evasion-mode adaptive --fitness-mode oracle_aware --backend docker --seed 42 --db data/regenbench_campaign.db --seed-corpus-dir real_benign_corpus/all --seed-cluster text-generation
-python3 scripts/run_fuzzing_campaign.py --mode unguided --rounds 24 --candidates-per-round 20 --evasion-mode random --fitness-mode current --backend docker --seed 42 --db data/regenbench_campaign.db --seed-corpus-dir real_benign_corpus/all --seed-cluster text-generation
+python3 scripts/run_fuzzing_campaign.py --mode guided --rounds 25 --candidates-per-round 20 --attack-families gadget,overwritten,external,indirect_chain,pypi_injected --evasion-mode adaptive --fitness-mode oracle_aware --backend docker --seed 42 --db data/regenbench_campaign.db --seed-corpus-dir real_benign_corpus/all_pt --seed-cluster text-generation --pt-corpus-dir real_benign_corpus/all_pt --gguf-corpus-dir real_benign_corpus/all_gguf --format mixed --format-ratio 0.3
+python3 scripts/run_fuzzing_campaign.py --mode unguided --rounds 24 --candidates-per-round 20 --evasion-mode random --fitness-mode current --backend docker --seed 42 --db data/regenbench_campaign.db --seed-corpus-dir real_benign_corpus/all_pt --seed-cluster text-generation --pt-corpus-dir real_benign_corpus/all_pt --gguf-corpus-dir real_benign_corpus/all_gguf --format mixed --format-ratio 0.3
 python3 scripts/generate_evaluation_report.py
 python3 scripts/demo_task3.py --backend docker
 python3 scripts/benchmark_perf.py
 python3 scripts/triage_bypasses.py
-python3 scripts/crawl_gguf.py                       # -> data/gguf_benign_corpus/ (24 real GGUFs)
-python3 scripts/run_task3_demo.py --backend docker  # -> docs/task3-demo.md (GGUF matrix + FP)
-python3 scripts/insert_gguf_into_campaign.py        # bulk-insert GGUF surface as format='gguf' candidates
 tar czf regenbench-results-$(date +%Y%m%d).tar.gz data/regenbench_campaign.db data/candidates docs/*.md data/gguf_benign_corpus
 ```
 

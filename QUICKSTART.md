@@ -24,7 +24,7 @@ for d in base picklescan modelscan fickling modeltracer dynahug gguf; do contain
 ```sh
 python3 scripts/crawl_benign.py \
   --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering \
-  --limit-per-cluster 20 --max-size 134217728 --out-dir data/crawled \
+  --limit-per-cluster 25 --max-size 134217728 --out-dir data/crawled \
   --scan-cap 20000 --workers 8 --format both
 ```
 - Produces `data/crawled/<cluster>/<repo>/pytorch_model.bin` (PT) and `data/crawled/<cluster>/<repo>/model.gguf` (GGUF) +

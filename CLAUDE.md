@@ -115,8 +115,8 @@ Containers: `containers/<name>/` build skinned `regenbench/<name>` images; all s
 ```bash
 # interactive guides (thin subprocess wrappers around every script)
 jupyter nbconvert --to notebook --execute --inplace notebooks/*.ipynb   # or: jupyter lab notebooks/
-# crawl 100 real models (5 clusters x 20, resumable; backfills existing files)
-python scripts/crawl_benign.py --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering --limit-per-cluster 20 --max-size 134217728 --out-dir data/crawled --scan-cap 20000 --workers 8
+# crawl 250 real models (5 clusters x 25 x 2 formats, resumable; backfills existing files)
+python scripts/crawl_benign.py --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering --limit-per-cluster 25 --max-size 134217728 --out-dir data/crawled --scan-cap 20000 --workers 8 --format both
 # fitness ablation (guided vs unguided, 5 replicates; needs docker+images)
 bash run_fitness_ablation_experiment.sh
 # oracle-dominant validation

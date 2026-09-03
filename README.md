@@ -108,7 +108,7 @@ docker images | grep regenbench         # base, picklescan, modelscan, fickling,
 ```sh
 python3 scripts/crawl_benign.py \
   --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering \
-  --limit-per-cluster 20 --max-size 134217728 --out-dir data/crawled \
+  --limit-per-cluster 25 --max-size 134217728 --out-dir data/crawled \
   --scan-cap 20000 --workers 8 --format both
 mkdir -p real_benign_corpus/all_pt real_benign_corpus/all_gguf
 while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename "$(dirname "$(dirname "$f")")"); ln -f "$f" "real_benign_corpus/all_pt/${cluster}__${repo}.bin" 2>/dev/null; done < <(find data/crawled -mindepth 3 -maxdepth 3 -name pytorch_model.bin)

@@ -81,34 +81,42 @@ step_preconditions() {
 step_crawl() {
     python3 scripts/crawl_benign.py \
         --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering \
-        --limit-per-cluster 20 --max-size 134217728 --out-dir data/crawled \
+        --limit-per-cluster 25 --max-size 134217728 --out-dir data/crawled \
         --scan-cap 20000 --workers 8
 
-    mkdir -p real_benign_corpus/all
+    mkdir -p real_benign_corpus/all_pt real_benign_corpus/all_gguf
     while IFS= read -r f; do
         repo=$(basename "$(dirname "$f")")
         cluster=$(basename "$(dirname "$(dirname "$f")")")
-        ln -f "$f" "real_benign_corpus/all/${cluster}__${repo}.bin" 2>/dev/null
+        ln -f "$f" "real_benign_corpus/all_pt/${cluster}__${repo}.bin" 2>/dev/null
     done < <(find data/crawled -mindepth 3 -maxdepth 3 -name pytorch_model.bin)
+    while IFS= read -r f; do
+        repo=$(basename "$(dirname "$f")")
+        cluster=$(basename "$(dirname "$(dirname "$f")")")
+        ln -f "$f" "real_benign_corpus/all_gguf/${cluster}__${repo}.gguf" 2>/dev/null
+    done < <(find data/crawled -mindepth 3 -maxdepth 3 -name "*.gguf")
 }
 
 verify_crawl() {
     python3 -c "
 import json
 s = json.load(open('data/crawled/seed_manifest.json'))['summary']
-assert s.get('total_models') == 100, s
+assert s.get('total_models') == 250, s
 print('total_models:', s.get('total_models'))
+print('formats:', s.get('formats'))
 "
-    verify "flat corpus has 100 links" bash -c '[ "$(ls real_benign_corpus/all | wc -l)" -eq 100 ]'
+    verify "flat PT corpus has 125 links" bash -c '[ "$(ls real_benign_corpus/all_pt 2>/dev/null | wc -l)" -eq 125 ]'
+    verify "flat GGUF corpus has 125 links" bash -c '[ "$(ls real_benign_corpus/all_gguf 2>/dev/null | wc -l)" -eq 125 ]'
 }
 
 # ---------------------------------------------------------------------------
 # 02 — Oracle validation, seed views, disjoint train/eval split
 # ---------------------------------------------------------------------------
 step_oracle() {
-    python3 scripts/validate_oracle.py real_benign_corpus/all --sample 100 \
-        --out real_benign_corpus/oracle-validation.json --backend docker
-    python3 scripts/organize_corpus.py --corpus real_benign_corpus/all \
+    python3 scripts/validate_oracle.py real_benign_corpus/all_pt --sample 100 \
+        --out real_benign_corpus/oracle-validation.json --backend docker --format both
+    python3 scripts/organize_corpus.py --corpus-pt real_benign_corpus/all_pt \
+        --corpus-gguf real_benign_corpus/all_gguf \
         --report real_benign_corpus/oracle-validation.json --out real_benign_corpus
     python3 scripts/check_oracle_disjointness.py --resplit
 }

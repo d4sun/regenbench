@@ -538,7 +538,7 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--clusters", default="text-generation,text-classification,feature-extraction,token-classification,question-answering",
                     help="comma-separated list of task clusters to crawl")
-    ap.add_argument("--limit-per-cluster", type=int, default=20,
+    ap.add_argument("--limit-per-cluster", type=int, default=25,
                     help="maximum number of models to crawl per cluster")
     ap.add_argument("--max-size", type=int, default=134217728,
                     help="maximum size of model file in bytes (default 128MB)")
