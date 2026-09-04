@@ -91,7 +91,7 @@ Search efficiency is evidenced by **Candidate Bypass Yield**: guided 47.1% vs un
 
 ## RQ3: False Positives on Benign Corpus
 
-RQ3 evaluates false-positive rates on the 100 real HuggingFace checkpoints (5 clusters x 20). 
+RQ3 evaluates false-positive rates on the real HuggingFace checkpoints (179 PT + 125 GGUF across 5 clusters). 
 Scanner FP rates (measured via StraceOracle 0% FP on benign; DynaHug supplementary only):
 
 | Scanner | FP Detections / 100 | FP Rate |

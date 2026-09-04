@@ -1,15 +1,39 @@
 {
   "schema_version": "1.0",
   "dataset_name": "ReGenBench Seed Corpus",
-  "generated_at": "2026-08-31T11:23:42Z",
+  "generated_at": "2026-09-04T16:30:20Z",
   "summary": {
-    "total_models": 100,
+    "total_models": 304,
+    "formats": {
+      "pt": 179,
+      "gguf": 125
+    },
     "clusters": {
-      "feature-extraction": 20,
-      "question-answering": 20,
-      "text-classification": 20,
-      "text-generation": 20,
-      "token-classification": 20
+      "feature-extraction": {
+        "pt": 34,
+        "gguf": 25,
+        "total": 59
+      },
+      "question-answering": {
+        "pt": 25,
+        "gguf": 25,
+        "total": 50
+      },
+      "text-classification": {
+        "pt": 46,
+        "gguf": 25,
+        "total": 71
+      },
+      "text-generation": {
+        "pt": 49,
+        "gguf": 25,
+        "total": 74
+      },
+      "token-classification": {
+        "pt": 25,
+        "gguf": 25,
+        "total": 50
+      }
     }
   },
   "models": [
@@ -25,7 +49,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/BAAI/bge-small-en/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:44:38Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "BAAI/bge-small-en-v1.5",
@@ -39,7 +64,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/BAAI/bge-small-en-v1.5/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:36:51Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "BAAI/bge-small-zh-v1.5",
@@ -53,7 +79,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/BAAI/bge-small-zh-v1.5/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:42:25Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "Supabase/gte-small",
@@ -67,7 +94,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/Supabase/gte-small/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:43:46Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "TaylorAI/bge-micro-v2",
@@ -81,7 +109,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/TaylorAI/bge-micro-v2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:49:23Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "TaylorAI/gte-tiny",
@@ -95,7 +124,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/TaylorAI/gte-tiny/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:42:23Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "avsolatorio/GIST-small-Embedding-v0",
@@ -109,7 +139,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/avsolatorio/GIST-small-Embedding-v0/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:57:43Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "cointegrated/rubert-tiny",
@@ -123,7 +154,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/cointegrated/rubert-tiny/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:51:46Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "cointegrated/rubert-tiny2",
@@ -137,7 +169,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/cointegrated/rubert-tiny2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:39:26Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "facebook/encodec_24khz",
@@ -151,7 +184,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/facebook/encodec_24khz/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:50:22Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "facebook/encodec_48khz",
@@ -165,7 +199,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/facebook/encodec_48khz/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:55:37Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "ibm-granite/granite-embedding-small-english-r2",
@@ -179,7 +214,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/ibm-granite/granite-embedding-small-english-r2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:46:20Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "jinaai/jina-embeddings-v2-small-en",
@@ -193,7 +229,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/jinaai/jina-embeddings-v2-small-en/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:40:24Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "jinaai/jina-reranker-v1-turbo-en",
@@ -207,7 +244,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/jinaai/jina-reranker-v1-turbo-en/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:47:18Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "nreimers/MiniLM-L6-H384-uncased",
@@ -221,7 +259,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/nreimers/MiniLM-L6-H384-uncased/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:51:36Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "ntu-spml/distilhubert",
@@ -235,7 +274,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/ntu-spml/distilhubert/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:52:46Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "sentence-transformers/all-MiniLM-L12-v2",
@@ -249,7 +289,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/sentence-transformers/all-MiniLM-L12-v2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:38:14Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "sentence-transformers/all-MiniLM-L6-v2",
@@ -263,7 +304,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/sentence-transformers/all-MiniLM-L6-v2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:35:54Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "sentence-transformers/multi-qa-MiniLM-L6-cos-v1",
@@ -277,7 +319,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/sentence-transformers/multi-qa-MiniLM-L6-cos-v1/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:42:56Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "sentence-transformers/paraphrase-MiniLM-L6-v2",
@@ -291,7 +334,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/sentence-transformers/paraphrase-MiniLM-L6-v2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:40:47Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "Intel/distilbert-base-uncased-distilled-squad-int8-static-inc",
@@ -305,7 +349,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/Intel/distilbert-base-uncased-distilled-squad-int8-static-inc/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:16:18Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "LLukas22/all-MiniLM-L12-v2-qa-all",
@@ -319,7 +364,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/LLukas22/all-MiniLM-L12-v2-qa-all/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:22:23Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "LinhDuong/bloom-7b1-alpaca",
@@ -333,7 +379,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/LinhDuong/bloom-7b1-alpaca/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:15:43Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "Wikidepia/indobert-lite-squad",
@@ -347,7 +394,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/Wikidepia/indobert-lite-squad/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:15:06Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "abhilash1910/albert-squad-v2",
@@ -361,7 +409,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/abhilash1910/albert-squad-v2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:19:15Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "ag14850/Mosquito",
@@ -375,7 +424,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/ag14850/Mosquito/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:12:36Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "aware-ai/mobilebert-squadv2",
@@ -389,7 +439,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/aware-ai/mobilebert-squadv2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:19:33Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "csarron/mobilebert-uncased-squad-v2",
@@ -403,7 +454,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/csarron/mobilebert-uncased-squad-v2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:14:13Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "dccuchile/albert-base-spanish-finetuned-qa-mlqa",
@@ -417,7 +469,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/dccuchile/albert-base-spanish-finetuned-qa-mlqa/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:17:28Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "deepset/minilm-uncased-squad2",
@@ -431,7 +484,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/deepset/minilm-uncased-squad2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:12:15Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "fzmnm/TinyLili-zh-64M",
@@ -445,7 +499,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/fzmnm/TinyLili-zh-64M/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:23:42Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "monologg/koelectra-small-v2-distilled-korquad-384",
@@ -459,7 +514,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/monologg/koelectra-small-v2-distilled-korquad-384/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:14:53Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "mrm8488/bert-tiny-5-finetuned-squadv2",
@@ -473,7 +529,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/mrm8488/bert-tiny-5-finetuned-squadv2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:15:25Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "mrm8488/bert-tiny-finetuned-squadv2",
@@ -487,7 +544,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/mrm8488/bert-tiny-finetuned-squadv2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:17:06Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "mrm8488/mobilebert-uncased-finetuned-squadv2",
@@ -501,7 +559,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/mrm8488/mobilebert-uncased-finetuned-squadv2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:20:57Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "squirro/albert-base-v2-squad_v2",
@@ -515,7 +574,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/squirro/albert-base-v2-squad_v2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:18:02Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "srcocotero/tiny-bert-qa",
@@ -529,7 +589,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/srcocotero/tiny-bert-qa/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:21:15Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "twmkn9/albert-base-v2-squad2",
@@ -543,7 +604,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/twmkn9/albert-base-v2-squad2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:16:51Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "wptoux/albert-chinese-large-qa",
@@ -557,7 +619,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/wptoux/albert-chinese-large-qa/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:13:20Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "ydshieh/tiny-random-gptj-for-question-answering",
@@ -571,7 +634,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/ydshieh/tiny-random-gptj-for-question-answering/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:17:35Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "cointegrated/rubert-tiny-sentiment-balanced",
@@ -585,7 +649,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/cointegrated/rubert-tiny-sentiment-balanced/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:31:14Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "cointegrated/rubert-tiny-toxicity",
@@ -599,7 +664,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/cointegrated/rubert-tiny-toxicity/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:19:53Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "cointegrated/rubert-tiny2-cedr-emotion-detection",
@@ -613,7 +679,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/cointegrated/rubert-tiny2-cedr-emotion-detection/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:22:27Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "cross-encoder/ms-marco-MiniLM-L12-v2",
@@ -627,7 +694,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/cross-encoder/ms-marco-MiniLM-L12-v2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:10:23Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "cross-encoder/ms-marco-MiniLM-L2-v2",
@@ -641,7 +709,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/cross-encoder/ms-marco-MiniLM-L2-v2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:35:05Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "cross-encoder/ms-marco-MiniLM-L4-v2",
@@ -655,7 +724,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/cross-encoder/ms-marco-MiniLM-L4-v2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:25:49Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "cross-encoder/ms-marco-MiniLM-L6-v2",
@@ -669,7 +739,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/cross-encoder/ms-marco-MiniLM-L6-v2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:22:57Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "cross-encoder/ms-marco-TinyBERT-L2",
@@ -683,7 +754,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/cross-encoder/ms-marco-TinyBERT-L2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:30:11Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "cross-encoder/ms-marco-TinyBERT-L2-v2",
@@ -697,7 +769,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/cross-encoder/ms-marco-TinyBERT-L2-v2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:20:49Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "marieke93/MiniLM-evidence-types",
@@ -711,7 +784,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/marieke93/MiniLM-evidence-types/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:32:26Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "microsoft/MiniLM-L12-H384-uncased",
@@ -725,7 +799,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/microsoft/MiniLM-L12-H384-uncased/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:16:12Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "microsoft/xtremedistil-l12-h384-uncased",
@@ -739,7 +814,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/microsoft/xtremedistil-l12-h384-uncased/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:34:26Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "microsoft/xtremedistil-l6-h256-uncased",
@@ -753,7 +829,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/microsoft/xtremedistil-l6-h256-uncased/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:24:52Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "microsoft/xtremedistil-l6-h384-uncased",
@@ -767,7 +844,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/microsoft/xtremedistil-l6-h384-uncased/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:29:55Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "mrm8488/bert-tiny-finetuned-sms-spam-detection",
@@ -781,7 +859,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/mrm8488/bert-tiny-finetuned-sms-spam-detection/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:16:50Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "pandalla/datatager_E-Commerce_review_extraction",
@@ -795,7 +874,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/pandalla/datatager_E-Commerce_review_extraction/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:27:19Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "seara/rubert-tiny2-russian-sentiment",
@@ -809,7 +889,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/seara/rubert-tiny2-russian-sentiment/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:24:04Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "shahrukhx01/bert-mini-finetune-question-detection",
@@ -823,7 +904,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/shahrukhx01/bert-mini-finetune-question-detection/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:33:04Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "shahrukhx01/question-vs-statement-classifier",
@@ -837,7 +919,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/shahrukhx01/question-vs-statement-classifier/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:18:56Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "vineetsharma/customer-support-intent-albert",
@@ -851,7 +934,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/vineetsharma/customer-support-intent-albert/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:30:45Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "Abhishekcr448/Tiny-Hinglish-Chat-21M",
@@ -865,7 +949,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/Abhishekcr448/Tiny-Hinglish-Chat-21M/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:42:21Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "EleutherAI/pythia-14m-deduped",
@@ -879,7 +964,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/EleutherAI/pythia-14m-deduped/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:15:52Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "HuggingFaceM4/tiny-random-LlamaForCausalLM",
@@ -893,7 +979,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/HuggingFaceM4/tiny-random-LlamaForCausalLM/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:19:41Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "Maykeye/TinyLLama-v0",
@@ -907,7 +994,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/Maykeye/TinyLLama-v0/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-30T00:37:36Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "RajuKandasamy/tamillama_tiny_30m",
@@ -921,7 +1009,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/RajuKandasamy/tamillama_tiny_30m/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:36:13Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "TristanBehrens/js-fakes-4bars",
@@ -935,7 +1024,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/TristanBehrens/js-fakes-4bars/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:38:52Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "Xenova/llama2.c-stories15M",
@@ -949,7 +1039,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/Xenova/llama2.c-stories15M/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:42:56Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "ai-guru/lakhclean_mmmtrack_4bars_d-2048",
@@ -963,7 +1054,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/ai-guru/lakhclean_mmmtrack_4bars_d-2048/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:13:07Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "arman-bd/guppylm-9M",
@@ -977,7 +1069,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/arman-bd/guppylm-9M/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:34:14Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "concedo/OPT-19M-ChatSalad",
@@ -991,7 +1084,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/concedo/OPT-19M-ChatSalad/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:34:18Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "crumbly/cramp-25m",
@@ -1005,7 +1099,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/crumbly/cramp-25m/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:41:07Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "google/reformer-crime-and-punishment",
@@ -1019,7 +1114,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/google/reformer-crime-and-punishment/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:36:25Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "jploski/retnet-mini-shakespeare",
@@ -1033,7 +1129,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/jploski/retnet-mini-shakespeare/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:37:11Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "junnyu/roformer_chinese_sim_char_small",
@@ -1047,7 +1144,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/junnyu/roformer_chinese_sim_char_small/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:40:08Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "ncfrey/ChemGPT-4.7M",
@@ -1061,7 +1159,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/ncfrey/ChemGPT-4.7M/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:19:06Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "nickypro/tinyllama-15M",
@@ -1075,21 +1174,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/nickypro/tinyllama-15M/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:33:25Z"
-      }
-    },
-    {
-      "repo_id": "or4cl3ai/Aiden_t5",
-      "likes": 19,
-      "downloads": 121,
-      "size": 189,
-      "sha256": "69fa6267e5c110bc8bd630b4635b083f6d8e33d43f05dd9ab299380d9cb22868",
-      "local_path": "crawled/text-generation/or4cl3ai_Aiden_t5/pytorch_model.bin",
-      "cluster": "text-generation",
-      "provenance": {
-        "source": "Hugging Face Hub",
-        "url": "https://huggingface.co/or4cl3ai/Aiden_t5/blob/main/pytorch_model.bin",
-        "crawled_at": "2026-08-31T09:31:47Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "roneneldan/TinyStories-1M",
@@ -1103,7 +1189,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/roneneldan/TinyStories-1M/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T08:58:22Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "sshleifer/tiny-gpt2",
@@ -1117,7 +1204,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/sshleifer/tiny-gpt2/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-30T00:38:22Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "trl-internal-testing/tiny-random-LlamaForCausalLM",
@@ -1131,7 +1219,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/trl-internal-testing/tiny-random-LlamaForCausalLM/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T09:40:15Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "ArBert/albert-base-v2-finetuned-ner",
@@ -1145,7 +1234,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/ArBert/albert-base-v2-finetuned-ner/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:06:40Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "IlyaGusev/ru-word-stress-transformer",
@@ -1159,7 +1249,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/IlyaGusev/ru-word-stress-transformer/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:05:49Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "Leo97/KoELECTRA-small-v3-modu-ner",
@@ -1173,7 +1264,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/Leo97/KoELECTRA-small-v3-modu-ner/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:58:45Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "albertvillanova/autonlp-wikiann-entity_extraction-1e67664-1301123",
@@ -1187,7 +1279,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/albertvillanova/autonlp-wikiann-entity_extraction-1e67664-1301123/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:09:55Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "amoeba04/koelectra-small-v3-privacy-ner",
@@ -1201,7 +1294,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/amoeba04/koelectra-small-v3-privacy-ner/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:08:56Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "benjamin/wtp-bert-mini",
@@ -1215,7 +1309,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/benjamin/wtp-bert-mini/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:06:10Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "ckiplab/albert-base-chinese-ner",
@@ -1229,7 +1324,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/ckiplab/albert-base-chinese-ner/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T10:59:47Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "ckiplab/albert-tiny-chinese-ner",
@@ -1243,7 +1339,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/ckiplab/albert-tiny-chinese-ner/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:09:59Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "ckiplab/albert-tiny-chinese-ws",
@@ -1257,7 +1354,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/ckiplab/albert-tiny-chinese-ws/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:01:59Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "ckiplab/bert-tiny-chinese-ner",
@@ -1271,7 +1369,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/ckiplab/bert-tiny-chinese-ner/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:05:40Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "cointegrated/rubert-tiny2-sentence-compression",
@@ -1285,7 +1384,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/cointegrated/rubert-tiny2-sentence-compression/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:08:16Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "flair/chunk-english-fast",
@@ -1299,7 +1399,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/flair/chunk-english-fast/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:03:07Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "flair/pos-english-fast",
@@ -1313,7 +1414,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/flair/pos-english-fast/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:02:26Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "flair/upos-english-fast",
@@ -1327,7 +1429,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/flair/upos-english-fast/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:04:56Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "flair/upos-multi-fast",
@@ -1341,7 +1444,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/flair/upos-multi-fast/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:05:02Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "gagan3012/bert-tiny-finetuned-ner",
@@ -1355,7 +1459,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/gagan3012/bert-tiny-finetuned-ner/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:03:31Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "medical-ner-proj/albert-medical-ner-proj",
@@ -1369,7 +1474,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/medical-ner-proj/albert-medical-ner-proj/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:01:29Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "mrm8488/TinyBERT-spanish-uncased-finetuned-ner",
@@ -1383,7 +1489,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/mrm8488/TinyBERT-spanish-uncased-finetuned-ner/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:10:39Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "mrm8488/biomedtra-small-finenuned-clinical-ner",
@@ -1397,7 +1504,8 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/mrm8488/biomedtra-small-finenuned-clinical-ner/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:07:13Z"
-      }
+      },
+      "format": "pt"
     },
     {
       "repo_id": "mrm8488/mobilebert-finetuned-pos",
@@ -1411,7 +1519,3208 @@
         "source": "Hugging Face Hub",
         "url": "https://huggingface.co/mrm8488/mobilebert-finetuned-pos/blob/main/pytorch_model.bin",
         "crawled_at": "2026-08-31T11:00:53Z"
+      },
+      "format": "pt"
+    },
+    {
+      "repo_id": "deepset/roberta-base-squad2",
+      "likes": 952,
+      "downloads": 0,
+      "size": 496313727,
+      "sha256": "e0b64ccefc1bcb569b604baea27eb873e5482fdf6eb3ceff1fb5368397db5aed",
+      "local_path": "crawled/question-answering/deepset_roberta-base-squad2/pytorch_model.bin",
+      "cluster": "question-answering",
+      "format": "pt",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/deepset/roberta-base-squad2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-09-04T03:56:03Z"
       }
+    },
+    {
+      "repo_id": "deepset/tinyroberta-squad2",
+      "likes": 114,
+      "downloads": 0,
+      "size": 326162801,
+      "sha256": "20d4e188516befd95769e0e85bd84fcae68bc6b8a1888d4d19268990f66e00ac",
+      "local_path": "crawled/question-answering/deepset_tinyroberta-squad2/pytorch_model.bin",
+      "cluster": "question-answering",
+      "format": "pt",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/deepset/tinyroberta-squad2/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-09-04T04:09:23Z"
+      }
+    },
+    {
+      "repo_id": "distilbert/distilbert-base-cased-distilled-squad",
+      "likes": 271,
+      "downloads": 0,
+      "size": 260793700,
+      "sha256": "4e10bdbc83fdbb975a430fc2148c85051e55bd288334deab18db58664ef0ea13",
+      "local_path": "crawled/question-answering/distilbert_distilbert-base-cased-distilled-squad/pytorch_model.bin",
+      "cluster": "question-answering",
+      "format": "pt",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/distilbert/distilbert-base-cased-distilled-squad/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-09-04T04:13:52Z"
+      }
+    },
+    {
+      "repo_id": "distilbert/distilbert-base-uncased-distilled-squad",
+      "likes": 119,
+      "downloads": 0,
+      "size": 265481570,
+      "sha256": "22cbcd1c2d2e3190cdb7658f0fd330e4c2bc18056a1e6612a4430197b7368372",
+      "local_path": "crawled/question-answering/distilbert_distilbert-base-uncased-distilled-squad/pytorch_model.bin",
+      "cluster": "question-answering",
+      "format": "pt",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/distilbert/distilbert-base-uncased-distilled-squad/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-09-04T04:16:44Z"
+      }
+    },
+    {
+      "repo_id": "uer/roberta-base-chinese-extractive-qa",
+      "likes": 101,
+      "downloads": 0,
+      "size": 406799727,
+      "sha256": "e7d9839a537515da83c5215563131d3e2cd27bad423adb724813026754bfa5d1",
+      "local_path": "crawled/question-answering/uer_roberta-base-chinese-extractive-qa/pytorch_model.bin",
+      "cluster": "question-answering",
+      "format": "pt",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/uer/roberta-base-chinese-extractive-qa/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-09-04T04:20:48Z"
+      }
+    },
+    {
+      "repo_id": "dslim/bert-base-NER",
+      "likes": 731,
+      "downloads": 0,
+      "size": 433316646,
+      "sha256": "4c0b01790e435da1337ea519d76e747427f2d3ee9c0e49b4952caa06298021f6",
+      "local_path": "crawled/token-classification/dslim_bert-base-NER/pytorch_model.bin",
+      "cluster": "token-classification",
+      "format": "pt",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/dslim/bert-base-NER/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-09-04T04:26:39Z"
+      }
+    },
+    {
+      "repo_id": "d4data/biomedical-ner-all",
+      "likes": 194,
+      "downloads": 0,
+      "size": 265743541,
+      "sha256": "b027673a3307002bc2c34795e627691e1a0b906ee3480036fb9a5b06d269f547",
+      "local_path": "crawled/token-classification/d4data_biomedical-ner-all/pytorch_model.bin",
+      "cluster": "token-classification",
+      "format": "pt",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/d4data/biomedical-ner-all/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-09-04T04:31:32Z"
+      }
+    },
+    {
+      "repo_id": "ckiplab/bert-base-chinese-ner",
+      "likes": 133,
+      "downloads": 0,
+      "size": 407021303,
+      "sha256": "f63373ccef4de549747b36a267f81eea553ecfa3476e2726ad689e430ddff491",
+      "local_path": "crawled/token-classification/ckiplab_bert-base-chinese-ner/pytorch_model.bin",
+      "cluster": "token-classification",
+      "format": "pt",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ckiplab/bert-base-chinese-ner/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-09-04T04:46:36Z"
+      }
+    },
+    {
+      "repo_id": "Jean-Baptiste/camembert-ner",
+      "likes": 121,
+      "downloads": 0,
+      "size": 440227047,
+      "sha256": "c9f586c5bc5943992fa49fe0c0c390dace2a48288d1cec0680cd96fcd17ed037",
+      "local_path": "crawled/token-classification/Jean-Baptiste_camembert-ner/pytorch_model.bin",
+      "cluster": "token-classification",
+      "format": "pt",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Jean-Baptiste/camembert-ner/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-09-04T04:53:18Z"
+      }
+    },
+    {
+      "repo_id": "StanfordAIMI/stanford-deidentifier-base",
+      "likes": 85,
+      "downloads": 0,
+      "size": 438039735,
+      "sha256": "fa49ef069171e479f546ce2ee5ed599aa585d1d33bc7a8f54400ac57d9cd2716",
+      "local_path": "crawled/token-classification/StanfordAIMI_stanford-deidentifier-base/pytorch_model.bin",
+      "cluster": "token-classification",
+      "format": "pt",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/StanfordAIMI/stanford-deidentifier-base/blob/main/pytorch_model.bin",
+        "crawled_at": "2026-09-04T05:02:03Z"
+      }
+    },
+    {
+      "repo_id": "ggml-org/models",
+      "likes": 0,
+      "downloads": 0,
+      "size": 1185376,
+      "sha256": "270cba1bd5109f42d03350f60406024560464db173c0e387d91f0426d3bd256d",
+      "local_path": "crawled/text-generation/ggml-org_models/tinyllamas/stories260K.gguf",
+      "cluster": "text-generation",
+      "format": "gguf",
+      "gguf_filename": "tinyllamas/stories260K.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ggml-org/models/blob/main/tinyllamas/stories260K.gguf",
+        "crawled_at": "2026-09-04T05:20:59Z"
+      }
+    },
+    {
+      "repo_id": "gpustack/jina-reranker-v1-tiny-en-GGUF",
+      "likes": 0,
+      "downloads": 0,
+      "size": 67504480,
+      "sha256": "ad9f450c1053a431e2e3746d1f9f7768fb9183cf0796e046983a3449dca093c2",
+      "local_path": "crawled/text-classification/gpustack_jina-reranker-v1-tiny-en-GGUF/jina-reranker-v1-tiny-en-FP16.gguf",
+      "cluster": "text-classification",
+      "format": "gguf",
+      "gguf_filename": "jina-reranker-v1-tiny-en-FP16.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/gpustack/jina-reranker-v1-tiny-en-GGUF/blob/main/jina-reranker-v1-tiny-en-FP16.gguf",
+        "crawled_at": "2026-09-04T05:19:22Z"
+      }
+    },
+    {
+      "repo_id": "cstr/fasttext-lid176-GGUF",
+      "likes": 0,
+      "downloads": 0,
+      "size": 65909248,
+      "sha256": "58e6a90a35cb60595c2fd8d612625767f947c34182de0ff0e9890fbf37b2b79f",
+      "local_path": "crawled/text-classification/cstr_fasttext-lid176-GGUF/fasttext-lid176-f16.gguf",
+      "cluster": "text-classification",
+      "format": "gguf",
+      "gguf_filename": "fasttext-lid176-f16.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cstr/fasttext-lid176-GGUF/blob/main/fasttext-lid176-f16.gguf",
+        "crawled_at": "2026-09-04T05:20:11Z"
+      }
+    },
+    {
+      "repo_id": "cstr/cld3-GGUF",
+      "likes": 0,
+      "downloads": 0,
+      "size": 439712,
+      "sha256": "900813b635fa7f472beac213f521d57dd12378099b0623a8a36de0310b6bf892",
+      "local_path": "crawled/text-classification/cstr_cld3-GGUF/cld3-f16.gguf",
+      "cluster": "text-classification",
+      "format": "gguf",
+      "gguf_filename": "cld3-f16.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cstr/cld3-GGUF/blob/main/cld3-f16.gguf",
+        "crawled_at": "2026-09-04T05:20:15Z"
+      }
+    },
+    {
+      "repo_id": "unsloth/bge-small-en-v1.5-GGUF",
+      "likes": 0,
+      "downloads": 0,
+      "size": 67582560,
+      "sha256": "c5d2302edc429f679642433b9f96dd217799727a06e675abef3b40a79f5e1589",
+      "local_path": "crawled/feature-extraction/unsloth_bge-small-en-v1.5-GGUF/bge-small-en-v1.5-f16.gguf",
+      "cluster": "feature-extraction",
+      "format": "gguf",
+      "gguf_filename": "bge-small-en-v1.5-f16.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/unsloth/bge-small-en-v1.5-GGUF/blob/main/bge-small-en-v1.5-f16.gguf",
+        "crawled_at": "2026-09-04T05:22:17Z"
+      }
+    },
+    {
+      "repo_id": "ggml-org/bge-small-en-v1.5-Q8_0-GGUF",
+      "likes": 0,
+      "downloads": 0,
+      "size": 36685152,
+      "sha256": "f046db1dc724cf4f6f0a0c5917e922823b73eb1d27b8f9a9c2797f7866974804",
+      "local_path": "crawled/feature-extraction/ggml-org_bge-small-en-v1.5-Q8_0-GGUF/bge-small-en-v1.5-q8_0.gguf",
+      "cluster": "feature-extraction",
+      "format": "gguf",
+      "gguf_filename": "bge-small-en-v1.5-q8_0.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ggml-org/bge-small-en-v1.5-Q8_0-GGUF/blob/main/bge-small-en-v1.5-q8_0.gguf",
+        "crawled_at": "2026-09-04T05:22:40Z"
+      }
+    },
+    {
+      "repo_id": "second-state/All-MiniLM-L6-v2-Embedding-GGUF",
+      "likes": 0,
+      "downloads": 0,
+      "size": 19229632,
+      "sha256": "05276e016346f1f72d7581237745758b24df9f7770c4de90d1393494a4485acd",
+      "local_path": "crawled/feature-extraction/second-state_All-MiniLM-L6-v2-Embedding-GGUF/all-MiniLM-L6-v2-Q2_K.gguf",
+      "cluster": "feature-extraction",
+      "format": "gguf",
+      "gguf_filename": "all-MiniLM-L6-v2-Q2_K.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/second-state/All-MiniLM-L6-v2-Embedding-GGUF/blob/main/all-MiniLM-L6-v2-Q2_K.gguf",
+        "crawled_at": "2026-09-04T05:23:02Z"
+      }
+    },
+    {
+      "repo_id": "cstr/fireredpunc-GGUF",
+      "likes": 0,
+      "downloads": 0,
+      "size": 54707712,
+      "sha256": "58ec8099c1063c6cdc690448ffd585aa6f6b78b69eb10b49db93dbe50194ada7",
+      "local_path": "crawled/token-classification/cstr_fireredpunc-GGUF/fireredpunc-iq4_xs.gguf",
+      "cluster": "token-classification",
+      "format": "gguf",
+      "gguf_filename": "fireredpunc-iq4_xs.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cstr/fireredpunc-GGUF/blob/main/fireredpunc-iq4_xs.gguf",
+        "crawled_at": "2026-09-04T05:23:48Z"
+      }
+    },
+    {
+      "repo_id": "cstr/pcs-xlmr-base-GGUF",
+      "likes": 0,
+      "downloads": 0,
+      "size": 154419712,
+      "sha256": "f2cab4c93c2ea9e6ac4464f6c33b6e967e26d6edeea159a545e8ba354a281473",
+      "local_path": "crawled/token-classification/cstr_pcs-xlmr-base-GGUF/pcs-xlmr-base-iq4_xs.gguf",
+      "cluster": "token-classification",
+      "format": "gguf",
+      "gguf_filename": "pcs-xlmr-base-iq4_xs.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cstr/pcs-xlmr-base-GGUF/blob/main/pcs-xlmr-base-iq4_xs.gguf",
+        "crawled_at": "2026-09-04T05:27:11Z"
+      }
+    },
+    {
+      "repo_id": "cstr/qwen3-embed-0.6b-GGUF",
+      "likes": 0,
+      "downloads": 0,
+      "size": 405182272,
+      "sha256": "58f9186feb1c3437d40ca408d45126c038d5328ab58617e32adc04d0f0d2215a",
+      "local_path": "crawled/question-answering/cstr_qwen3-embed-0.6b-GGUF/qwen3-embed-0.6b-iq4_xs.gguf",
+      "cluster": "question-answering",
+      "format": "gguf",
+      "gguf_filename": "qwen3-embed-0.6b-iq4_xs.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cstr/qwen3-embed-0.6b-GGUF/blob/main/qwen3-embed-0.6b-iq4_xs.gguf",
+        "crawled_at": "2026-09-04T05:33:09Z"
+      }
+    },
+    {
+      "repo_id": "cstr/multilingual-e5-small-GGUF",
+      "likes": 0,
+      "downloads": 0,
+      "size": 120786944,
+      "sha256": "071b097a4de0038230005c81905d73513293d20e7dd35fd8b028a87379e06b12",
+      "local_path": "crawled/question-answering/cstr_multilingual-e5-small-GGUF/multilingual-e5-small-iq4_xs.gguf",
+      "cluster": "question-answering",
+      "format": "gguf",
+      "gguf_filename": "multilingual-e5-small-iq4_xs.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cstr/multilingual-e5-small-GGUF/blob/main/multilingual-e5-small-iq4_xs.gguf",
+        "crawled_at": "2026-09-04T05:34:25Z"
+      }
+    },
+    {
+      "repo_id": "cstr/bge-reranker-base-GGUF",
+      "likes": 0,
+      "downloads": 0,
+      "size": 257989344,
+      "sha256": "64c8120147ca2318bce77aa66a78e432d132ac806b08af3579eafda4fcfd0bf7",
+      "local_path": "crawled/question-answering/cstr_bge-reranker-base-GGUF/bge-reranker-base-iq4_xs-f7.gguf",
+      "cluster": "question-answering",
+      "format": "gguf",
+      "gguf_filename": "bge-reranker-base-iq4_xs-f7.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cstr/bge-reranker-base-GGUF/blob/main/bge-reranker-base-iq4_xs-f7.gguf",
+        "crawled_at": "2026-09-04T05:37:43Z"
+      }
+    },
+    {
+      "repo_id": "ggml-org/models",
+      "likes": 0,
+      "downloads": 0,
+      "size": 19077344,
+      "sha256": "66967fbece6dbe97886593fdbb73589584927e29119ec31f08090732d1861739",
+      "local_path": "crawled/text-generation/ggml-org_models/tinyllamas/stories15M-q4_0.gguf",
+      "cluster": "text-generation",
+      "format": "gguf",
+      "gguf_filename": "tinyllamas/stories15M-q4_0.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ggml-org/models/blob/main/tinyllamas/stories15M-q4_0.gguf",
+        "crawled_at": "2026-09-04T05:21:07Z"
+      }
+    },
+    {
+      "repo_id": "ggml-org/models",
+      "likes": 0,
+      "downloads": 0,
+      "size": 26671328,
+      "sha256": "2eda49203f2f044f3dddf29a7dd7cc861ef5a0340f518a19613d73ba6d9c06b6",
+      "local_path": "crawled/text-generation/ggml-org_models/tinyllamas/stories15M-q8_0.gguf",
+      "cluster": "text-generation",
+      "format": "gguf",
+      "gguf_filename": "tinyllamas/stories15M-q8_0.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ggml-org/models/blob/main/tinyllamas/stories15M-q8_0.gguf",
+        "crawled_at": "2026-09-04T05:21:18Z"
+      }
+    },
+    {
+      "repo_id": "cstr/fireredpunc-GGUF",
+      "likes": 0,
+      "downloads": 0,
+      "size": 57886944,
+      "sha256": "faf4a43e3135bc307a66194685af00f756e6f4c28c7d9e2dd8f3517cddca5c45",
+      "local_path": "crawled/token-classification/cstr_fireredpunc-GGUF/fireredpunc-q4_k.gguf",
+      "cluster": "token-classification",
+      "format": "gguf",
+      "gguf_filename": "fireredpunc-q4_k.gguf",
+      "provenance": {
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cstr/fireredpunc-GGUF/blob/main/fireredpunc-q4_k.gguf",
+        "crawled_at": "2026-09-04T05:24:16Z"
+      }
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "LFM2.5-230M-Q4_0.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/LiquidAI_LFM2.5-230M-GGUF/LFM2.5-230M-Q4_0.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/LiquidAI/LFM2.5-230M-GGUF/blob/main/LFM2.5-230M-Q4_0.gguf"
+      },
+      "repo_id": "LiquidAI/LFM2.5-230M-GGUF",
+      "sha256": "430fbec5b1b355e9bb12cd0638c9f2a8f21fedd6eafb4103e42c7e88887daa73",
+      "size": 149080928
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "functiongemma-270m-it-UD-IQ2_XXS.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/unsloth_functiongemma-270m-it-GGUF/functiongemma-270m-it-UD-IQ2_XXS.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/unsloth/functiongemma-270m-it-GGUF/blob/main/functiongemma-270m-it-UD-IQ2_XXS.gguf"
+      },
+      "repo_id": "unsloth/functiongemma-270m-it-GGUF",
+      "sha256": "1c8e15f445199702207e424ead4483518294d9229034ee8d35618aceab44bbef",
+      "size": 179748064
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "gemma-3-270m-it-UD-IQ2_XXS.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/unsloth_gemma-3-270m-it-GGUF/gemma-3-270m-it-UD-IQ2_XXS.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/unsloth/gemma-3-270m-it-GGUF/blob/main/gemma-3-270m-it-UD-IQ2_XXS.gguf"
+      },
+      "repo_id": "unsloth/gemma-3-270m-it-GGUF",
+      "sha256": "8da08e4459fbeafd30851c831cbd48e1a8d931c469594d4178492ea2c0a9f655",
+      "size": 180104224
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "LFM2.5-2.6B-DSpark-Q4_K_M.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/LiquidAI_LFM2.5-2.6B-DSpark-GGUF/LFM2.5-2.6B-DSpark-Q4_K_M.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/LiquidAI/LFM2.5-2.6B-DSpark-GGUF/blob/main/LFM2.5-2.6B-DSpark-Q4_K_M.gguf"
+      },
+      "repo_id": "LiquidAI/LFM2.5-2.6B-DSpark-GGUF",
+      "sha256": "63786b768e43562591a934625a66539eab39beb09e6e3d38e17509e34b79a3cd",
+      "size": 199680512
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Qwen3-0.6B-UD-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/unsloth_Qwen3-0.6B-GGUF/Qwen3-0.6B-UD-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/blob/main/Qwen3-0.6B-UD-IQ1_S.gguf"
+      },
+      "repo_id": "unsloth/Qwen3-0.6B-GGUF",
+      "sha256": "fcb165efedaee2cfbdefe02bd3bbf22c80cfdb728915fbbe54fa809a8556710a",
+      "size": 214643392
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "LFM2-350M-Q4_0.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/LiquidAI_LFM2-350M-GGUF/LFM2-350M-Q4_0.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/LiquidAI/LFM2-350M-GGUF/blob/main/LFM2-350M-Q4_0.gguf"
+      },
+      "repo_id": "LiquidAI/LFM2-350M-GGUF",
+      "sha256": "8e3ebc1c608dc8683adf8c3b3e6a40e2f4eab22aa33b908bff2ac03a1c16d796",
+      "size": 219306944
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "LFM2.5-350M-Q4_0.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/LiquidAI_LFM2.5-350M-GGUF/LFM2.5-350M-Q4_0.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/LiquidAI/LFM2.5-350M-GGUF/blob/main/LFM2.5-350M-Q4_0.gguf"
+      },
+      "repo_id": "LiquidAI/LFM2.5-350M-GGUF",
+      "sha256": "85e32858daafad55b7bcd6b97a1343ee0661188e8036f9862d14d6b563142f50",
+      "size": 219309792
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Bonsai-1.7B-Q1_0.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/prism-ml_Bonsai-1.7B-gguf/Bonsai-1.7B-Q1_0.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/prism-ml/Bonsai-1.7B-gguf/blob/main/Bonsai-1.7B-Q1_0.gguf"
+      },
+      "repo_id": "prism-ml/Bonsai-1.7B-gguf",
+      "sha256": "3d7c6c90dd98717a203adb22d5eacd2581850e40aa5327e144b97766cae5f7e3",
+      "size": 248302272
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "qwen2-0_5b-instruct-q2_k.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/Qwen_Qwen2-0.5B-Instruct-GGUF/qwen2-0_5b-instruct-q2_k.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Qwen/Qwen2-0.5B-Instruct-GGUF/blob/main/qwen2-0_5b-instruct-q2_k.gguf"
+      },
+      "repo_id": "Qwen/Qwen2-0.5B-Instruct-GGUF",
+      "sha256": "12f42f2362052e4811b25bf251185be0a753ff382d83460c15064696df52f206",
+      "size": 338604736
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Qwen3.5-0.8B.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/Jackrong_Qwen3.5-0.8B-Claude-4.6-Opus-Reasoning-Distilled-GGUF/Qwen3.5-0.8B.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Jackrong/Qwen3.5-0.8B-Claude-4.6-Opus-Reasoning-Distilled-GGUF/blob/main/Qwen3.5-0.8B.Q2_K.gguf"
+      },
+      "repo_id": "Jackrong/Qwen3.5-0.8B-Claude-4.6-Opus-Reasoning-Distilled-GGUF",
+      "sha256": "3c572f4d75e380403e4d4a3ab4d8de13ea932cb278d26c1098a62cf4540edd14",
+      "size": 395781056
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "qwen2.5-0.5b-instruct-q2_k.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/Qwen_Qwen2.5-0.5B-Instruct-GGUF/qwen2.5-0.5b-instruct-q2_k.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/blob/main/qwen2.5-0.5b-instruct-q2_k.gguf"
+      },
+      "repo_id": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+      "sha256": "9ee36184e616dfc76df4f5dd66f908dbde6979524ae36e6cefb67f532f798cb8",
+      "size": 415182688
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Llama-3.2-1B-Instruct-UD-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/unsloth_Llama-3.2-1B-Instruct-GGUF/Llama-3.2-1B-Instruct-UD-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/unsloth/Llama-3.2-1B-Instruct-GGUF/blob/main/Llama-3.2-1B-Instruct-UD-IQ1_S.gguf"
+      },
+      "repo_id": "unsloth/Llama-3.2-1B-Instruct-GGUF",
+      "sha256": "60f05b86eb901189dabd946cff4206656395316fcf85aa111d35545e21b0bc65",
+      "size": 421617696
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "LFM2-700M-Q4_0.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/LiquidAI_LFM2-700M-GGUF/LFM2-700M-Q4_0.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/LiquidAI/LFM2-700M-GGUF/blob/main/LFM2-700M-Q4_0.gguf"
+      },
+      "repo_id": "LiquidAI/LFM2-700M-GGUF",
+      "sha256": "bf9c70678aff2a6ee2152b6fef4b2993892eae6449d056cf77cc1e34072424b3",
+      "size": 446321600
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Falcon-H1R-7B-IQ2_M.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/tiiuae_Falcon-H1R-7B-GGUF/Falcon-H1R-7B-IQ2_M.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/tiiuae/Falcon-H1R-7B-GGUF/blob/main/Falcon-H1R-7B-IQ2_M.gguf"
+      },
+      "repo_id": "tiiuae/Falcon-H1R-7B-GGUF",
+      "sha256": "30326fc91bcbcccca6170bbcf2a531e7cb035e9cee580e36f5502022a6dc5ba0",
+      "size": 452062880
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Ternary-Bonsai-1.7B-PQ2_0.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/prism-ml_Ternary-Bonsai-1.7B-gguf/Ternary-Bonsai-1.7B-PQ2_0.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/prism-ml/Ternary-Bonsai-1.7B-gguf/blob/main/Ternary-Bonsai-1.7B-PQ2_0.gguf"
+      },
+      "repo_id": "prism-ml/Ternary-Bonsai-1.7B-gguf",
+      "sha256": "de68ba48a8dacb21979915991e7741b917869d71410a370df951c0c3a237ae50",
+      "size": 463290464
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "LFM2.5-1.2B-Instruct-Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/unsloth_LFM2.5-1.2B-Instruct-GGUF/LFM2.5-1.2B-Instruct-Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/unsloth/LFM2.5-1.2B-Instruct-GGUF/blob/main/LFM2.5-1.2B-Instruct-Q2_K.gguf"
+      },
+      "repo_id": "unsloth/LFM2.5-1.2B-Instruct-GGUF",
+      "sha256": "b5b392f0e4dc6d66d1d17ae43a956ed1edd46f2decd11ae87aa3fdaff668f8f6",
+      "size": 483398880
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Qwen3-1.7B-UD-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/unsloth_Qwen3-1.7B-GGUF/Qwen3-1.7B-UD-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/blob/main/Qwen3-1.7B-UD-IQ1_S.gguf"
+      },
+      "repo_id": "unsloth/Qwen3-1.7B-GGUF",
+      "sha256": "762cff2d202b1f0af82ba840ba4a66b16b6268d10d72b7ef5bfabda080051ad3",
+      "size": 537829952
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "gemma-3-1b-it-UD-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/unsloth_gemma-3-1b-it-GGUF/gemma-3-1b-it-UD-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/unsloth/gemma-3-1b-it-GGUF/blob/main/gemma-3-1b-it-UD-IQ1_S.gguf"
+      },
+      "repo_id": "unsloth/gemma-3-1b-it-GGUF",
+      "sha256": "a0b4a33ed15ce95d96919378cf35b396149c6611e16cd84353486cb50ca32a6f",
+      "size": 557014304
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "L3-Dark-Planet-8B-D_AU-Q6_k.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/DavidAU_L3-Dark-Planet-8B-GGUF/L3-Dark-Planet-8B-D_AU-Q6_k.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/DavidAU/L3-Dark-Planet-8B-GGUF/blob/main/L3-Dark-Planet-8B-D_AU-Q6_k.gguf"
+      },
+      "repo_id": "DavidAU/L3-Dark-Planet-8B-GGUF",
+      "sha256": "d62b6ebdf862d49652da561a6a42af3044f919f78dd97ed7aa0025ba6b1f02b6",
+      "size": 566022144
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Bonsai-4B-Q1_0.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/prism-ml_Bonsai-4B-gguf/Bonsai-4B-Q1_0.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/prism-ml/Bonsai-4B-gguf/blob/main/Bonsai-4B-Q1_0.gguf"
+      },
+      "repo_id": "prism-ml/Bonsai-4B-gguf",
+      "sha256": "4524b3f997f0f06444e568d1f26e2efd69effa3218c7ad3047432fb171e42168",
+      "size": 572270624
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Qwen3-0.6B-Q8_0.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/Qwen_Qwen3-0.6B-GGUF/Qwen3-0.6B-Q8_0.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/blob/main/Qwen3-0.6B-Q8_0.gguf"
+      },
+      "repo_id": "Qwen/Qwen3-0.6B-GGUF",
+      "sha256": "9465e63a22add5354d9bb4b99e90117043c7124007664907259bd16d043bb031",
+      "size": 639446688
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Llama-3.2-1B-Instruct-IQ3_M.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-generation/bartowski_Llama-3.2-1B-Instruct-GGUF/Llama-3.2-1B-Instruct-IQ3_M.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/bartowski/Llama-3.2-1B-Instruct-GGUF/blob/main/Llama-3.2-1B-Instruct-IQ3_M.gguf"
+      },
+      "repo_id": "bartowski/Llama-3.2-1B-Instruct-GGUF",
+      "sha256": "c80cc062a721c267ec50fee83fe6b55d36fc7abe708392dbe22e16fbd42687e8",
+      "size": 657289344
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Bert-Tinny.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_Bert-Tinny-GGUF/Bert-Tinny.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/Bert-Tinny-GGUF/blob/main/Bert-Tinny.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/Bert-Tinny-GGUF",
+      "sha256": "21056f4a2979fa580ef043e7d0a7514258a8bd2f3ef31f263b3bf841491e93d0",
+      "size": 5262656
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "bert-tiny-amd.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_bert-tiny-amd-GGUF/bert-tiny-amd.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/bert-tiny-amd-GGUF/blob/main/bert-tiny-amd.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/bert-tiny-amd-GGUF",
+      "sha256": "65c70157e2be7a0d6dddce52cf48e0ab34001297bcc111f8ee50393e9754cc67",
+      "size": 5263648
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "reranker-bert-tiny-gooaq-bce-tanh-v4.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_reranker-bert-tiny-gooaq-bce-tanh-v4-GGUF/reranker-bert-tiny-gooaq-bce-tanh-v4.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/reranker-bert-tiny-gooaq-bce-tanh-v4-GGUF/blob/main/reranker-bert-tiny-gooaq-bce-tanh-v4.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/reranker-bert-tiny-gooaq-bce-tanh-v4-GGUF",
+      "sha256": "4ce6d95deec11b34678c9aa038f10c6503638a7ff70743161f464aa8c07a9b00",
+      "size": 5263744
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "spam-classifier-liquid-q8_0.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/VoltageVagabond_spam-classifier-liquid-Q8_0-GGUF/spam-classifier-liquid-q8_0.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/VoltageVagabond/spam-classifier-liquid-Q8_0-GGUF/blob/main/spam-classifier-liquid-q8_0.gguf"
+      },
+      "repo_id": "VoltageVagabond/spam-classifier-liquid-Q8_0-GGUF",
+      "sha256": "9128ce36a2d079251086ba6b55f769b6ca8e7335f636880a315c81a9049e2ded",
+      "size": 8971552
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "primary-school-math-question.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_primary-school-math-question-i1-GGUF/primary-school-math-question.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/primary-school-math-question-i1-GGUF/blob/main/primary-school-math-question.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/primary-school-math-question-i1-GGUF",
+      "sha256": "234c925e0b81a3688e503827703a99825947b660ac700577ce02e02883f7e079",
+      "size": 18672576
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "medicalcode-classifier-v1.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_medicalcode-classifier-v1-i1-GGUF/medicalcode-classifier-v1.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/medicalcode-classifier-v1-i1-GGUF/blob/main/medicalcode-classifier-v1.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/medicalcode-classifier-v1-i1-GGUF",
+      "sha256": "114d9a257bc8230d03c30a465cf76b19cf557716808184eca6c2df712dddfbbb",
+      "size": 18672608
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "primary-school-math-question.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_primary-school-math-question-GGUF/primary-school-math-question.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/primary-school-math-question-GGUF/blob/main/primary-school-math-question.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/primary-school-math-question-GGUF",
+      "sha256": "90afc24de7c54998c2eaaed92f9072f48262c78743a42c37cfde00ce907f37f4",
+      "size": 19501760
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "medicalcode-classifier-v1.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_medicalcode-classifier-v1-GGUF/medicalcode-classifier-v1.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/medicalcode-classifier-v1-GGUF/blob/main/medicalcode-classifier-v1.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/medicalcode-classifier-v1-GGUF",
+      "sha256": "dd43fea4aa54fa25c6b9ffe2d7edf82b1fd7344e81a448ae78f6c112d718acb7",
+      "size": 19501824
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "COAL_INVOICE_ZEON.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_COAL_INVOICE_ZEON-i1-GGUF/COAL_INVOICE_ZEON.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/COAL_INVOICE_ZEON-i1-GGUF/blob/main/COAL_INVOICE_ZEON.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/COAL_INVOICE_ZEON-i1-GGUF",
+      "sha256": "79716c14baebb513b56f531e7ea0d3dba8f4d01124efb02b123c1eb9529b0f68",
+      "size": 23548544
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "CASH_AND_BANK_INVOICE.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_CASH_AND_BANK_INVOICE-i1-GGUF/CASH_AND_BANK_INVOICE.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/CASH_AND_BANK_INVOICE-i1-GGUF/blob/main/CASH_AND_BANK_INVOICE.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/CASH_AND_BANK_INVOICE-i1-GGUF",
+      "sha256": "ed3c7474d84290ee9201d23bc7f94405c2f3398467206f5c12ad83ae3961c4d4",
+      "size": 23548576
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "COAL_INVOICE_ZEON.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_COAL_INVOICE_ZEON-GGUF/COAL_INVOICE_ZEON.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/COAL_INVOICE_ZEON-GGUF/blob/main/COAL_INVOICE_ZEON.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/COAL_INVOICE_ZEON-GGUF",
+      "sha256": "687e1e7f6212b7fc99d5fd6df139cf452e872be0d66b673d80ac657870b27c17",
+      "size": 25128864
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "CASH_AND_BANK_INVOICE.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_CASH_AND_BANK_INVOICE-GGUF/CASH_AND_BANK_INVOICE.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/CASH_AND_BANK_INVOICE-GGUF/blob/main/CASH_AND_BANK_INVOICE.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/CASH_AND_BANK_INVOICE-GGUF",
+      "sha256": "425891b1a0fd0ed349a4e71516b936b7672ab3086cc45574405dd8791780631e",
+      "size": 25128864
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "NanoTitan-NLI.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_NanoTitan-NLI-GGUF/NanoTitan-NLI.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/NanoTitan-NLI-GGUF/blob/main/NanoTitan-NLI.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/NanoTitan-NLI-GGUF",
+      "sha256": "f2aa0b42d291d7785158931ba8ee78cd5a99fbecde80f0b6bb65a4e166be655d",
+      "size": 25134336
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "jina-reranker-v1-turbo-en-Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/gpustack_jina-reranker-v1-turbo-en-GGUF/jina-reranker-v1-turbo-en-Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/gpustack/jina-reranker-v1-turbo-en-GGUF/blob/main/jina-reranker-v1-turbo-en-Q2_K.gguf"
+      },
+      "repo_id": "gpustack/jina-reranker-v1-turbo-en-GGUF",
+      "sha256": "02380e18328a4346a24962aa3268383890a4abc7b80156898a5119a62252ec4d",
+      "size": 34172064
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "NuSentiment.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_NuSentiment-i1-GGUF/NuSentiment.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/NuSentiment-i1-GGUF/blob/main/NuSentiment.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/NuSentiment-i1-GGUF",
+      "sha256": "9a693de27b9b4296e4aab1ed17ff8074c03c9a54b4b9f5b569ecf8cfd9f10e37",
+      "size": 37104640
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "ai-text-detector-hc3.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_ai-text-detector-hc3-GGUF/ai-text-detector-hc3.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/ai-text-detector-hc3-GGUF/blob/main/ai-text-detector-hc3.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/ai-text-detector-hc3-GGUF",
+      "sha256": "a474dd3b7fba03ebc4eb4f3fd7e3a849278cb14804cd1adbe8ad7b171841f61e",
+      "size": 37970272
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "malicious-url-detector.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_malicious-url-detector-GGUF/malicious-url-detector.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/malicious-url-detector-GGUF/blob/main/malicious-url-detector.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/malicious-url-detector-GGUF",
+      "sha256": "6e32b34e3c6c4b6e3bd26c41c8c5aa72f42f4b7f1af6b5caf6c0f22ac13b1329",
+      "size": 37970464
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "political-bias-classifier.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_political-bias-classifier-GGUF/political-bias-classifier.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/political-bias-classifier-GGUF/blob/main/political-bias-classifier.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/political-bias-classifier-GGUF",
+      "sha256": "fa781b085ef3223b7627739c924f4f92440d7e1966848fa71607b4d4e3851c3e",
+      "size": 37970464
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "safe-space-spam-detector.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_safe-space-spam-detector-GGUF/safe-space-spam-detector.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/safe-space-spam-detector-GGUF/blob/main/safe-space-spam-detector.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/safe-space-spam-detector-GGUF",
+      "sha256": "3576fb868a54c62f9bcda7fca484ef197a2788394cc1edc76cf1343931c6787b",
+      "size": 37970528
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Mental-Health-Analysis.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_Mental-Health-Analysis-GGUF/Mental-Health-Analysis.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/Mental-Health-Analysis-GGUF/blob/main/Mental-Health-Analysis.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/Mental-Health-Analysis-GGUF",
+      "sha256": "3b5db4fb55ba257c5fd27d9cb3b411184bc527c69f2a47dbb4dd596ac20f8f5a",
+      "size": 37970848
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "gibberish-detector.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_gibberish-detector-GGUF/gibberish-detector.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/gibberish-detector-GGUF/blob/main/gibberish-detector.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/gibberish-detector-GGUF",
+      "sha256": "a84716b725fa6ce810a01bab5ef4e709177a4104a272418ee02e7c1f40fab2c5",
+      "size": 37970976
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Nanoclass-bbc.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mradermacher_Nanoclass-bbc-GGUF/Nanoclass-bbc.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/Nanoclass-bbc-GGUF/blob/main/Nanoclass-bbc.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/Nanoclass-bbc-GGUF",
+      "sha256": "5281bf1873b155a6f4d82ef1597382d67bfc4bb812f9793310e1cc5809fa36d5",
+      "size": 37973760
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "cupidon-tiny-ro.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_cupidon-tiny-ro-i1-GGUF/cupidon-tiny-ro.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/cupidon-tiny-ro-i1-GGUF/blob/main/cupidon-tiny-ro.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/cupidon-tiny-ro-i1-GGUF",
+      "sha256": "99be210bed53e3dfcb36c9c87ab01e8826419ec21ff1774ab9ca12eaae8f0241",
+      "size": 5232928
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "cupidon-tiny-ro.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_cupidon-tiny-ro-GGUF/cupidon-tiny-ro.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/cupidon-tiny-ro-GGUF/blob/main/cupidon-tiny-ro.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/cupidon-tiny-ro-GGUF",
+      "sha256": "0375917973217b6b0d4f8e189d84499481f4470d44aaf28da18e6a878165ae44",
+      "size": 5263392
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "sface-q4_k.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/cstr_sface-GGUF/sface-q4_k.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cstr/sface-GGUF/blob/main/sface-q4_k.gguf"
+      },
+      "repo_id": "cstr/sface-GGUF",
+      "sha256": "9c2dc9b3aac38ee3146624f43b55a9e71fbab34c50238ea9bea08d2bdcb6bb0e",
+      "size": 5672032
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Venusaur.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_Venusaur-GGUF/Venusaur.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/Venusaur-GGUF/blob/main/Venusaur.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/Venusaur-GGUF",
+      "sha256": "f7fe767cf63a95902c821b40ffb4c59c796a85d7a5c2b05df384536de17d7060",
+      "size": 15750432
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "bge-micro-v2.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_bge-micro-v2-i1-GGUF/bge-micro-v2.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/bge-micro-v2-i1-GGUF/blob/main/bge-micro-v2.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/bge-micro-v2-i1-GGUF",
+      "sha256": "967c56c1e5386b72595146f7d394f448ce44dbad1f8e5b3151ec4c10ba97709f",
+      "size": 16273376
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "bge-micro-v2.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_bge-micro-v2-GGUF/bge-micro-v2.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/bge-micro-v2-GGUF/blob/main/bge-micro-v2.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/bge-micro-v2-GGUF",
+      "sha256": "5b0189fd9c45443b18c8641b37ed294445fe055510e9823befa9ed20b19b987b",
+      "size": 16687872
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Bulbasaur.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_Bulbasaur-GGUF/Bulbasaur.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/Bulbasaur-GGUF/blob/main/Bulbasaur.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/Bulbasaur-GGUF",
+      "sha256": "34d19ad99386252baf839bffae6f777b077a4af6b00651b6f5a7942dcdd099ee",
+      "size": 16688032
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "gte-tiny.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_gte-tiny-i1-GGUF/gte-tiny.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/gte-tiny-i1-GGUF/blob/main/gte-tiny.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/gte-tiny-i1-GGUF",
+      "sha256": "233f72545cd04be34a7f7547ddaf3c2b0cbf958f49f722b3802c9f18af3793dc",
+      "size": 18672096
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "msmarco-MiniLM-L6-v3.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_msmarco-MiniLM-L6-v3-i1-GGUF/msmarco-MiniLM-L6-v3.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/msmarco-MiniLM-L6-v3-i1-GGUF/blob/main/msmarco-MiniLM-L6-v3.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/msmarco-MiniLM-L6-v3-i1-GGUF",
+      "sha256": "cc95cc260b695be86ce58f75e6a6f304e7518b2bbbd2dcde8e0f58d30a612185",
+      "size": 18672288
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "paraphrase-MiniLM-L6-v2.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_paraphrase-MiniLM-L6-v2-i1-GGUF/paraphrase-MiniLM-L6-v2.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/paraphrase-MiniLM-L6-v2-i1-GGUF/blob/main/paraphrase-MiniLM-L6-v2.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/paraphrase-MiniLM-L6-v2-i1-GGUF",
+      "sha256": "eb948fd7afccf7c98a9737b3c3cad799efbdcfdaa5098dcf82dc962d54835d21",
+      "size": 18672320
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "msmarco-MiniLM-L6-cos-v5.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_msmarco-MiniLM-L6-cos-v5-i1-GGUF/msmarco-MiniLM-L6-cos-v5.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/msmarco-MiniLM-L6-cos-v5-i1-GGUF/blob/main/msmarco-MiniLM-L6-cos-v5.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/msmarco-MiniLM-L6-cos-v5-i1-GGUF",
+      "sha256": "be238d14bba660080b0986563dbfc68f258674c40cbe1f92022aefd4e6f4c171",
+      "size": 18672320
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "all-MiniLM-L6-v1.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_all-MiniLM-L6-v1-i1-GGUF/all-MiniLM-L6-v1.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/all-MiniLM-L6-v1-i1-GGUF/blob/main/all-MiniLM-L6-v1.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/all-MiniLM-L6-v1-i1-GGUF",
+      "sha256": "be1bdcb764415e9e9ea52a799f5d2572f3347449be8ee5240983303d48ac4500",
+      "size": 18672384
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "mass-academy-faq-embedder.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_mass-academy-faq-embedder-i1-GGUF/mass-academy-faq-embedder.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/mass-academy-faq-embedder-i1-GGUF/blob/main/mass-academy-faq-embedder.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/mass-academy-faq-embedder-i1-GGUF",
+      "sha256": "44ee9f60fd3b716d1bbf83b7123ea9915f36d148e606126bc60af27e75ee8bf7",
+      "size": 18672608
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "medical-term-similarity.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_medical-term-similarity-i1-GGUF/medical-term-similarity.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/medical-term-similarity-i1-GGUF/blob/main/medical-term-similarity.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/medical-term-similarity-i1-GGUF",
+      "sha256": "4120cfaaccedc584946473200ce21b1326ae884e4912424cedca3dab272bf0ea",
+      "size": 18672640
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "medical_discharge_embeddings.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_medical_discharge_embeddings-i1-GGUF/medical_discharge_embeddings.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/medical_discharge_embeddings-i1-GGUF/blob/main/medical_discharge_embeddings.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/medical_discharge_embeddings-i1-GGUF",
+      "sha256": "a2ba46d9f6fe10caad7ceef06877bead44f5c7e27ab6fb2d7e983b568052cce9",
+      "size": 18672704
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "cupidon-mini-ro.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_cupidon-mini-ro-i1-GGUF/cupidon-mini-ro.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/cupidon-mini-ro-i1-GGUF/blob/main/cupidon-mini-ro.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/cupidon-mini-ro-i1-GGUF",
+      "sha256": "9b55e1b34c4b0c5859b3073ba6702bbc7b2bd142c69269fb78ce46d80a5a4d0a",
+      "size": 18672992
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "multi-qa-MiniLM-L6-cos-v1.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_multi-qa-MiniLM-L6-cos-v1-i1-GGUF/multi-qa-MiniLM-L6-cos-v1.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/multi-qa-MiniLM-L6-cos-v1-i1-GGUF/blob/main/multi-qa-MiniLM-L6-cos-v1.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/multi-qa-MiniLM-L6-cos-v1-i1-GGUF",
+      "sha256": "06df43fd958f3012a4c75a8a4913d1539fb1755c140f5e0650bdf7d351463cf4",
+      "size": 18673856
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Multilingual-Text-Semantic-Search-Siamese-BERT-V1.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_Multilingual-Text-Semantic-Search-Siamese-BERT-V1-i1-GGUF/Multilingual-Text-Semantic-Search-Siamese-BERT-V1.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/Multilingual-Text-Semantic-Search-Siamese-BERT-V1-i1-GGUF/blob/main/Multilingual-Text-Semantic-Search-Siamese-BERT-V1.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/Multilingual-Text-Semantic-Search-Siamese-BERT-V1-i1-GGUF",
+      "sha256": "a4d302609f2cbc1004d2646479c57181c5c5bacdf4c78228b3d6bcd1f7656b2c",
+      "size": 18673888
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "msmarco-MiniLM-L6-v3.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_msmarco-MiniLM-L6-v3-GGUF/msmarco-MiniLM-L6-v3.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/msmarco-MiniLM-L6-v3-GGUF/blob/main/msmarco-MiniLM-L6-v3.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/msmarco-MiniLM-L6-v3-GGUF",
+      "sha256": "6366506d3774d7c79502703f8ca86dda81ab5cb896c41b7d2fbd6f6f3b28f6e7",
+      "size": 19501504
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "paraphrase-MiniLM-L6-v2.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_paraphrase-MiniLM-L6-v2-GGUF/paraphrase-MiniLM-L6-v2.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/paraphrase-MiniLM-L6-v2-GGUF/blob/main/paraphrase-MiniLM-L6-v2.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/paraphrase-MiniLM-L6-v2-GGUF",
+      "sha256": "f24f2d444174f4a01ba21df03a6fd6e5d8e5b589edd605511d3a6dd6239a2634",
+      "size": 19501504
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "msmarco-MiniLM-L6-cos-v5.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_msmarco-MiniLM-L6-cos-v5-GGUF/msmarco-MiniLM-L6-cos-v5.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/msmarco-MiniLM-L6-cos-v5-GGUF/blob/main/msmarco-MiniLM-L6-cos-v5.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/msmarco-MiniLM-L6-cos-v5-GGUF",
+      "sha256": "5ee4ec6811996bfbb7fd3cc4b2b2719acddece27c4b6552adfa4ba40a5a3399d",
+      "size": 19501504
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "GIST-all-MiniLM-L6-v2.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/mradermacher_GIST-all-MiniLM-L6-v2-GGUF/GIST-all-MiniLM-L6-v2.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/GIST-all-MiniLM-L6-v2-GGUF/blob/main/GIST-all-MiniLM-L6-v2.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/GIST-all-MiniLM-L6-v2-GGUF",
+      "sha256": "73e0bee47d2f01249d7e105d4e7193c1668a1b1657a5e8d0ba84bd143855777e",
+      "size": 19501568
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "NuNER-BERT-v1.0.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/mradermacher_NuNER-BERT-v1.0-GGUF/NuNER-BERT-v1.0.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/NuNER-BERT-v1.0-GGUF/blob/main/NuNER-BERT-v1.0.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/NuNER-BERT-v1.0-GGUF",
+      "sha256": "789117cef4f147942fbebe16f2af51b73d18ad0473ec6a82e99c819cd41ff1bc",
+      "size": 54115488
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "bert-base-ner-iq4_xs.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/cstr_bert-base-NER-GGUF/bert-base-ner-iq4_xs.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cstr/bert-base-NER-GGUF/blob/main/bert-base-ner-iq4_xs.gguf"
+      },
+      "repo_id": "cstr/bert-base-NER-GGUF",
+      "sha256": "03ce7c45181e1254901905eb5699553d64906ea95a39fb0022e4bb2984d84b88",
+      "size": 70294240
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "lilt-funsd-iq4_xs.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/cstr_lilt-funsd-GGUF/lilt-funsd-iq4_xs.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cstr/lilt-funsd-GGUF/blob/main/lilt-funsd-iq4_xs.gguf"
+      },
+      "repo_id": "cstr/lilt-funsd-GGUF",
+      "sha256": "8f73075846059d22a4e44297c1c7311291fa13719083bb17efb987efecc5873c",
+      "size": 91624000
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "pulpie-orange-small-Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/Mike0021_pulpie-orange-small-gguf/pulpie-orange-small-Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Mike0021/pulpie-orange-small-gguf/blob/main/pulpie-orange-small-Q2_K.gguf"
+      },
+      "repo_id": "Mike0021/pulpie-orange-small-gguf",
+      "sha256": "856e391807d5534cf6ca2347a77aed9d34ee4096dbfdffa6a66dace43448f12d",
+      "size": 130177056
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "punctuate-all-orig-q4_k.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/cstr_punctuate-all-GGUF/punctuate-all-orig-q4_k.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cstr/punctuate-all-GGUF/blob/main/punctuate-all-orig-q4_k.gguf"
+      },
+      "repo_id": "cstr/punctuate-all-GGUF",
+      "sha256": "4efdbecf646036aa45e5c9d4bbde1ee1dc0cdae52cd8e5ded94a7fe2ba8e08c0",
+      "size": 161089152
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "LFM2-350M-PII-Extract-JP.IQ4_XS.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/mradermacher_LFM2-350M-PII-Extract-JP-GGUF/LFM2-350M-PII-Extract-JP.IQ4_XS.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/LFM2-350M-PII-Extract-JP-GGUF/blob/main/LFM2-350M-PII-Extract-JP.IQ4_XS.gguf"
+      },
+      "repo_id": "mradermacher/LFM2-350M-PII-Extract-JP-GGUF",
+      "sha256": "5b69fe68f5ebf7e9fa555423d665f955418f639ebfd88dcaf6907079e7d5123d",
+      "size": 211805216
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "gemma-3-270m-it.Q4_K_M.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/cagrigungor_pii-guard-turkish-270m-gguf/gemma-3-270m-it.Q4_K_M.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cagrigungor/pii-guard-turkish-270m-gguf/blob/main/gemma-3-270m-it.Q4_K_M.gguf"
+      },
+      "repo_id": "cagrigungor/pii-guard-turkish-270m-gguf",
+      "sha256": "00ea5eb5694bdd0159529353ff5535ec51aae7412abe12106182c21f837d8858",
+      "size": 253114848
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Aster-Vietnamese-NER-MiniLM-F16.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/Keithsel_Aster-Vietnamese-NER-MiniLM-GGUF/Aster-Vietnamese-NER-MiniLM-F16.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Keithsel/Aster-Vietnamese-NER-MiniLM-GGUF/blob/main/Aster-Vietnamese-NER-MiniLM-F16.gguf"
+      },
+      "repo_id": "Keithsel/Aster-Vietnamese-NER-MiniLM-GGUF",
+      "sha256": "660cfffe2c9cc571335d1a543c064610d3bd0893e7902d21376a2fb85cc7cf30",
+      "size": 242373632
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "xlmr-ner-hrl-iq4_xs.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/cstr_xlmr-ner-hrl-GGUF/xlmr-ner-hrl-iq4_xs.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cstr/xlmr-ner-hrl-GGUF/blob/main/xlmr-ner-hrl-iq4_xs.gguf"
+      },
+      "repo_id": "cstr/xlmr-ner-hrl-GGUF",
+      "sha256": "9d25be201210d8a82eb2f13aaf073d98311e6109e43b9808724b36137c65d571",
+      "size": 255628512
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "PII_DETECTION_MODEL.IQ4_XS.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/mradermacher_PII_DETECTION_MODEL-GGUF/PII_DETECTION_MODEL.IQ4_XS.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/PII_DETECTION_MODEL-GGUF/blob/main/PII_DETECTION_MODEL.IQ4_XS.gguf"
+      },
+      "repo_id": "mradermacher/PII_DETECTION_MODEL-GGUF",
+      "sha256": "ce72a792a7b412652b6114100b23028e8c13812c2daa2c506b368952dfd347eb",
+      "size": 351442944
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Nero1-0.5B.IQ4_XS.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/mradermacher_Nero1-0.5B-GGUF/Nero1-0.5B.IQ4_XS.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/Nero1-0.5B-GGUF/blob/main/Nero1-0.5B.IQ4_XS.gguf"
+      },
+      "repo_id": "mradermacher/Nero1-0.5B-GGUF",
+      "sha256": "32260a0fec490344f5e67cc624bb7d0c91f2e3cb6ebe27169be67c3347ca23d1",
+      "size": 351445632
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "qwen3-0.6b-pii-detector.IQ4_XS.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/mradermacher_qwen3-0.6b-pii-detector-GGUF/qwen3-0.6b-pii-detector.IQ4_XS.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/qwen3-0.6b-pii-detector-GGUF/blob/main/qwen3-0.6b-pii-detector.IQ4_XS.gguf"
+      },
+      "repo_id": "mradermacher/qwen3-0.6b-pii-detector-GGUF",
+      "sha256": "0d93ca568cfa5c404a377e166c80c9ac568b7a4ab5d98af0713ce882408e0cf2",
+      "size": 369277120
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "unsloth.Q4_K_M.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/anish12_model_gguf_ner/unsloth.Q4_K_M.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/anish12/model_gguf_ner/blob/main/unsloth.Q4_K_M.gguf"
+      },
+      "repo_id": "anish12/model_gguf_ner",
+      "sha256": "f3f4814bdf64a338edd0ed512887913ed94d4823bc079a015bc2d65b5901a14d",
+      "size": 396705248
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "unsloth.Q4_K_M.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/anish12_model_gguf_ner_0.6_e_1/unsloth.Q4_K_M.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/anish12/model_gguf_ner_0.6_e_1/blob/main/unsloth.Q4_K_M.gguf"
+      },
+      "repo_id": "anish12/model_gguf_ner_0.6_e_1",
+      "sha256": "1b41b89e39ddd3faafbbbf300796b6c80a02757b6e98a6ecda0da1b76edeac41",
+      "size": 396705248
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "detect-pii-0.8b-v2.IQ4_XS.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/mradermacher_detect-pii-0.8b-v2-GGUF/detect-pii-0.8b-v2.IQ4_XS.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/detect-pii-0.8b-v2-GGUF/blob/main/detect-pii-0.8b-v2.IQ4_XS.gguf"
+      },
+      "repo_id": "mradermacher/detect-pii-0.8b-v2-GGUF",
+      "sha256": "f30db484034e86f080f06e13029db532591ddc739159357ae3ac6903e74471d4",
+      "size": 505808864
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "model.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/distil-labs_Distil-PII-SmolLM2-135M-Instruct-gguf/model.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/distil-labs/Distil-PII-SmolLM2-135M-Instruct-gguf/blob/main/model.gguf"
+      },
+      "repo_id": "distil-labs/Distil-PII-SmolLM2-135M-Instruct-gguf",
+      "sha256": "a612bd6b34be6c5b81947e7bb531e1866d3b4741faadcc80d83d722fc11ce0ab",
+      "size": 539845120
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "gemma-3-270m-it.F16.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/jakobhuss_pii-extractor-gemma-3-270m-it-GGUF/gemma-3-270m-it.F16.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/jakobhuss/pii-extractor-gemma-3-270m-it-GGUF/blob/main/gemma-3-270m-it.F16.gguf"
+      },
+      "repo_id": "jakobhuss/pii-extractor-gemma-3-270m-it-GGUF",
+      "sha256": "22090c907124d941c871222c8bf248efa3cd4c3aa78e5628ea8097887c8c63d7",
+      "size": 542833792
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "xlm-roberta-ner-japanese-f16.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/fffonion_xlm-roberta-ner-japanese-gguf/xlm-roberta-ner-japanese-f16.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/fffonion/xlm-roberta-ner-japanese-gguf/blob/main/xlm-roberta-ner-japanese-f16.gguf"
+      },
+      "repo_id": "fffonion/xlm-roberta-ner-japanese-gguf",
+      "sha256": "018efdd4fcb813667a59a385f44480d71af2e5b479246d5340175a8c9df35156",
+      "size": 561541568
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "fullstop-punc-q4_k.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/cstr_fullstop-punc-multilang-GGUF/fullstop-punc-q4_k.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cstr/fullstop-punc-multilang-GGUF/blob/main/fullstop-punc-q4_k.gguf"
+      },
+      "repo_id": "cstr/fullstop-punc-multilang-GGUF",
+      "sha256": "0fb4711ec0b9b7a59aa4b64f493d81cca85c171e8ebdfc42b88851c05b44af69",
+      "size": 321063584
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "GRPO-NER-Lora-V0.IQ4_XS.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/mradermacher_GRPO-NER-Lora-V0-GGUF/GRPO-NER-Lora-V0.IQ4_XS.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/GRPO-NER-Lora-V0-GGUF/blob/main/GRPO-NER-Lora-V0.IQ4_XS.gguf"
+      },
+      "repo_id": "mradermacher/GRPO-NER-Lora-V0-GGUF",
+      "sha256": "b9458e645bf2164b5e86aaef6d056828709e4bbd4fec6f839596d17d4130a5f5",
+      "size": 902182944
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Nero-Qwen2.5-1.5B-Surgical.IQ4_XS.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/mradermacher_Nero-Qwen2.5-1.5B-Surgical-GGUF/Nero-Qwen2.5-1.5B-Surgical.IQ4_XS.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/Nero-Qwen2.5-1.5B-Surgical-GGUF/blob/main/Nero-Qwen2.5-1.5B-Surgical.IQ4_XS.gguf"
+      },
+      "repo_id": "mradermacher/Nero-Qwen2.5-1.5B-Surgical-GGUF",
+      "sha256": "1c512e1bbc30126a9862ae002d465802e0915e988ef61bdd742f1eb61c638835",
+      "size": 902183360
+    },
+    {
+      "cluster": "token-classification",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "AF-NER-I.IQ4_XS.gguf",
+      "likes": 0,
+      "local_path": "crawled/token-classification/mradermacher_AF-NER-I-GGUF/AF-NER-I.IQ4_XS.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/AF-NER-I-GGUF/blob/main/AF-NER-I.IQ4_XS.gguf"
+      },
+      "repo_id": "mradermacher/AF-NER-I-GGUF",
+      "sha256": "ac2d9d5317fe31820c2450abd3ef6bfaed6c821f5c8e0cc955cb4c633159906e",
+      "size": 1016281184
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Mistral-7b-Lora-Medical-ChatSupport-q8_0.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/RakshitAralimatti_Mistral-7b-Lora-Medical-ChatSupport-Q8_0-GGUF/Mistral-7b-Lora-Medical-ChatSupport-q8_0.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/RakshitAralimatti/Mistral-7b-Lora-Medical-ChatSupport-Q8_0-GGUF/blob/main/Mistral-7b-Lora-Medical-ChatSupport-q8_0.gguf"
+      },
+      "repo_id": "RakshitAralimatti/Mistral-7b-Lora-Medical-ChatSupport-Q8_0-GGUF",
+      "sha256": "469c3968c03565e056abe23a6b3bbb835f9ec43977025f0b80f3f70544b30a5b",
+      "size": 27272480
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "qwen3-1.7b-cogs-ask-adapter-f16.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/lewisdog_qwen3-1.7b-cogs-ask-GGUF/qwen3-1.7b-cogs-ask-adapter-f16.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/lewisdog/qwen3-1.7b-cogs-ask-GGUF/blob/main/qwen3-1.7b-cogs-ask-adapter-f16.gguf"
+      },
+      "repo_id": "lewisdog/qwen3-1.7b-cogs-ask-GGUF",
+      "sha256": "466cbd26a58ed482847834d57009a8d787bb853c07aef54cb5922b5fff5b66c9",
+      "size": 69757728
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Llama2-Chinese-7b-Chat-LoRA-f16.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/wenhui1127_Llama2-Chinese-7b-Chat-LoRA-F16-GGUF/Llama2-Chinese-7b-Chat-LoRA-f16.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/wenhui1127/Llama2-Chinese-7b-Chat-LoRA-F16-GGUF/blob/main/Llama2-Chinese-7b-Chat-LoRA-f16.gguf"
+      },
+      "repo_id": "wenhui1127/Llama2-Chinese-7b-Chat-LoRA-F16-GGUF",
+      "sha256": "689deee69a1f951302e6dc12cb3315d0c1fa56d15bc6fe3df7bb07e730fb84fd",
+      "size": 79984960
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Finetuned-DeepSeek-R1-Distill-Llama-8B-CoT-Financial-Analyst-f16.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/geasadfg_Finetuned-DeepSeek-R1-Distill-Llama-8B-CoT-Financial-Analyst-F16-GGUF/Finetuned-DeepSeek-R1-Distill-Llama-8B-CoT-Financial-Analyst-f16.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/geasadfg/Finetuned-DeepSeek-R1-Distill-Llama-8B-CoT-Financial-Analyst-F16-GGUF/blob/main/Finetuned-DeepSeek-R1-Distill-Llama-8B-CoT-Financial-Analyst-f16.gguf"
+      },
+      "repo_id": "geasadfg/Finetuned-DeepSeek-R1-Distill-Llama-8B-CoT-Financial-Analyst-F16-GGUF",
+      "sha256": "6ed39c24981f993423728fda851e23466a87383cd63e51237b24a01f4ce0bfc2",
+      "size": 83917856
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Mistral-7B-Business-f16.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/rafaelldietrich_Mistral-7B-Business-F16-GGUF/Mistral-7B-Business-f16.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/rafaelldietrich/Mistral-7B-Business-F16-GGUF/blob/main/Mistral-7B-Business-f16.gguf"
+      },
+      "repo_id": "rafaelldietrich/Mistral-7B-Business-F16-GGUF",
+      "sha256": "d26d60a62749b329201421e1a994ae8fd2f991165c0395b3ba89f423b641956e",
+      "size": 109061664
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Legal-SLM-f32.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/Savyasaachin_Legal-SLM-F32-GGUF/Legal-SLM-f32.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Savyasaachin/Legal-SLM-F32-GGUF/blob/main/Legal-SLM-f32.gguf"
+      },
+      "repo_id": "Savyasaachin/Legal-SLM-F32-GGUF",
+      "sha256": "13075f40709806792d6ba7dc55cfc27b65702a33f61a8752adc1e83be7dd76e2",
+      "size": 140795136
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "HYZ-01-0.6B.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/mradermacher_HYZ-01-0.6B-i1-GGUF/HYZ-01-0.6B.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/HYZ-01-0.6B-i1-GGUF/blob/main/HYZ-01-0.6B.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/HYZ-01-0.6B-i1-GGUF",
+      "sha256": "6a3b78f67a933bd1d60e090766b2637b57e32f1babb5a309cdf81f9ef699b605",
+      "size": 207833792
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "next-270m.Q3_K_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/mradermacher_next-270m-GGUF/next-270m.Q3_K_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/next-270m-GGUF/blob/main/next-270m.Q3_K_S.gguf"
+      },
+      "repo_id": "mradermacher/next-270m-GGUF",
+      "sha256": "97f806286127420eb34980eaf01233cd9f38970717d3ecbbb7246ff817e6673a",
+      "size": 236714848
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Llama-encoder-1.0B.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/mradermacher_Llama-encoder-1.0B-i1-GGUF/Llama-encoder-1.0B.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/Llama-encoder-1.0B-i1-GGUF/blob/main/Llama-encoder-1.0B.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/Llama-encoder-1.0B-i1-GGUF",
+      "sha256": "b528fa2399844966b925cc9303fc91a500fc173e3d3b7f1fe5a650987d7c2a88",
+      "size": 269967264
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "HYZ-01-0.6B.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/mradermacher_HYZ-01-0.6B-GGUF/HYZ-01-0.6B.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/HYZ-01-0.6B-GGUF/blob/main/HYZ-01-0.6B.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/HYZ-01-0.6B-GGUF",
+      "sha256": "a6101ce7eb865878a2cb592262bd3b1a0ce5b4cac43b614358d34a2fcef01bc9",
+      "size": 296022464
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Qwen-encoder-0.5B.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/mradermacher_Qwen-encoder-0.5B-i1-GGUF/Qwen-encoder-0.5B.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/Qwen-encoder-0.5B-i1-GGUF/blob/main/Qwen-encoder-0.5B.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/Qwen-encoder-0.5B-i1-GGUF",
+      "sha256": "96578eb45747c35551e849996345bb31316abd3d19515c0dfeeb973607c2ae33",
+      "size": 315827680
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "ECE-PRYMMAL-0.5B-FT-V4-MUSR-Mathis.Q3_K_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/mradermacher_ECE-PRYMMAL-0.5B-FT-V4-MUSR-Mathis-GGUF/ECE-PRYMMAL-0.5B-FT-V4-MUSR-Mathis.Q3_K_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/ECE-PRYMMAL-0.5B-FT-V4-MUSR-Mathis-GGUF/blob/main/ECE-PRYMMAL-0.5B-FT-V4-MUSR-Mathis.Q3_K_S.gguf"
+      },
+      "repo_id": "mradermacher/ECE-PRYMMAL-0.5B-FT-V4-MUSR-Mathis-GGUF",
+      "sha256": "d3f89f0e4f84e9b1f6694174207f87dac0decc66a6f4542586074adfc1743917",
+      "size": 338261152
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Qwen-encoder-0.5B.Q3_K_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/mradermacher_Qwen-encoder-0.5B-GGUF/Qwen-encoder-0.5B.Q3_K_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/Qwen-encoder-0.5B-GGUF/blob/main/Qwen-encoder-0.5B.Q3_K_S.gguf"
+      },
+      "repo_id": "mradermacher/Qwen-encoder-0.5B-GGUF",
+      "sha256": "f9c98b8e9a6020347a6b3ce4e8195f412b79d94c80599342596c9114a840fd57",
+      "size": 338261472
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Qwen-encoder-0.5B-Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/tensorblock_Qwen-encoder-0.5B-GGUF/Qwen-encoder-0.5B-Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/tensorblock/Qwen-encoder-0.5B-GGUF/blob/main/Qwen-encoder-0.5B-Q2_K.gguf"
+      },
+      "repo_id": "tensorblock/Qwen-encoder-0.5B-GGUF",
+      "sha256": "0998fc264ab2c3c9c434f8320bb1fe4e348b4c521e733da72c26c35745821b87",
+      "size": 338604960
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "bioxp-0.5b-medmcqa-q4_k_m.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/surya-ravindra_BioXP-0.5B-MedMCQA-Q4_K_M-GGUF/bioxp-0.5b-medmcqa-q4_k_m.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/surya-ravindra/BioXP-0.5B-MedMCQA-Q4_K_M-GGUF/blob/main/bioxp-0.5b-medmcqa-q4_k_m.gguf"
+      },
+      "repo_id": "surya-ravindra/BioXP-0.5B-MedMCQA-Q4_K_M-GGUF",
+      "sha256": "ff29141fe6a4bdc364a74a0ad9b24c637126ce4ce7949321d674d619d298c6b4",
+      "size": 397808192
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "inferencevision-pythia-1B.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/mradermacher_inferencevision-pythia-1B-GGUF/inferencevision-pythia-1B.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/inferencevision-pythia-1B-GGUF/blob/main/inferencevision-pythia-1B.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/inferencevision-pythia-1B-GGUF",
+      "sha256": "857e54f6b1155675d1697652680de30bb342ff1517314a518478534ea9a3ba46",
+      "size": 420136032
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Llama-encoder-1.0B-Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/tensorblock_Llama-encoder-1.0B-GGUF/Llama-encoder-1.0B-Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/tensorblock/Llama-encoder-1.0B-GGUF/blob/main/Llama-encoder-1.0B-Q2_K.gguf"
+      },
+      "repo_id": "tensorblock/Llama-encoder-1.0B-GGUF",
+      "sha256": "65aa4afe30637105533a545c8663196f3387800304617b2d9c92534800fd0da7",
+      "size": 432131136
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Qwen-encoder-1.5B.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/mradermacher_Qwen-encoder-1.5B-i1-GGUF/Qwen-encoder-1.5B.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/Qwen-encoder-1.5B-i1-GGUF/blob/main/Qwen-encoder-1.5B.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/Qwen-encoder-1.5B-i1-GGUF",
+      "sha256": "9fec678496558eb9afc9c5a07178248a5d3640b647359c6dd053efec2ec59e3c",
+      "size": 436525984
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "GeoScholar-QA-1.2B.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/mradermacher_GeoScholar-QA-1.2B-GGUF/GeoScholar-QA-1.2B.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/GeoScholar-QA-1.2B-GGUF/blob/main/GeoScholar-QA-1.2B.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/GeoScholar-QA-1.2B-GGUF",
+      "sha256": "5f5caf4eda776a0aba1aa144186f43d78023faeff889822a25bafcf5d182f5af",
+      "size": 483397536
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "llama3.2_1b_finetuned_SQL_multitableJidouka-Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/tensorblock_llama3.2_1b_finetuned_SQL_multitableJidouka-GGUF/llama3.2_1b_finetuned_SQL_multitableJidouka-Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/tensorblock/llama3.2_1b_finetuned_SQL_multitableJidouka-GGUF/blob/main/llama3.2_1b_finetuned_SQL_multitableJidouka-Q2_K.gguf"
+      },
+      "repo_id": "tensorblock/llama3.2_1b_finetuned_SQL_multitableJidouka-GGUF",
+      "sha256": "ca4512cca9affb05c0ea675bb4e8946434430ad227e037bee12df3843d5f456e",
+      "size": 580874624
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "Prototype-Virus-1B.i1-IQ1_S.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/mradermacher_Prototype-Virus-1B-i1-GGUF/Prototype-Virus-1B.i1-IQ1_S.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/Prototype-Virus-1B-i1-GGUF/blob/main/Prototype-Virus-1B.i1-IQ1_S.gguf"
+      },
+      "repo_id": "mradermacher/Prototype-Virus-1B-i1-GGUF",
+      "sha256": "bcc2b667646e6f5a817c75118a2903afd30937d9d57fcf4c5a0fba827ea20242",
+      "size": 639198560
+    },
+    {
+      "cluster": "question-answering",
+      "downloads": 0,
+      "format": "gguf",
+      "gguf_filename": "tinyllama-medical.Q2_K.gguf",
+      "likes": 0,
+      "local_path": "crawled/question-answering/mradermacher_tinyllama-medical-GGUF/tinyllama-medical.Q2_K.gguf",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:11:33Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mradermacher/tinyllama-medical-GGUF/blob/main/tinyllama-medical.Q2_K.gguf"
+      },
+      "repo_id": "mradermacher/tinyllama-medical-GGUF",
+      "sha256": "fae1619ed006646b017cbf653e9d2486f18fa9899bf634d8887d10079a4326e3",
+      "size": 432132704
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/BAAI_bge-small-zh/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/BAAI/bge-small-zh/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "BAAI/bge-small-zh",
+      "sha256": "5cc750eb4f5412313aba1482e53aeccd1ed0b97bc213f2962e0c80e6c8809319",
+      "size": 95842633
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/TaylorAI_bge-micro/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/TaylorAI/bge-micro/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "TaylorAI/bge-micro",
+      "sha256": "384c6c57ad28f99d44d331740f30729e196404b6816af25390e1bafc009632cf",
+      "size": 34797782
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/Vsevolod_company-names-similarity-sentence-transformer/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Vsevolod/company-names-similarity-sentence-transformer/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "Vsevolod/company-names-similarity-sentence-transformer",
+      "sha256": "0a3c3e91d161afe446411f86753e946234f06c640daed0670e368a92d27e004c",
+      "size": 90888945
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/edbeeching_decision-transformer-gym-hopper-expert/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/edbeeching/decision-transformer-gym-hopper-expert/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "edbeeching/decision-transformer-gym-hopper-expert",
+      "sha256": "4c16a90bfc8bcca09a015021250df79d6d1450e85ac01b7ca5ac549318695893",
+      "size": 6600494
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/ibm-granite_granite-embedding-30m-english/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ibm-granite/granite-embedding-30m-english/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "ibm-granite/granite-embedding-30m-english",
+      "sha256": "75c8fffb9eed339923271999acc56019c9382db20234fa4a0e9c41c417c2c17b",
+      "size": 60630897
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/inkoziev_sbert_pq/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/inkoziev/sbert_pq/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "inkoziev/sbert_pq",
+      "sha256": "bf69095a3176f508166be9dbeb0dd20e1d7645d0ab0aefc64364c35c714e876b",
+      "size": 116808317
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/jinaai_jina-embedding-t-en-v1/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/jinaai/jina-embedding-t-en-v1/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "jinaai/jina-embedding-t-en-v1",
+      "sha256": "5267d3b3054ea9f8e47622af29a666bd056cae5e392f77ae368b79970e50cc65",
+      "size": 57427846
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/jinaai_jina-reranker-v1-tiny-en/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/jinaai/jina-reranker-v1-tiny-en/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "jinaai/jina-reranker-v1-tiny-en",
+      "sha256": "77bbb3421aa3dca1886e8adcd0731bc1ca529a233266a4183278e43dffcaced8",
+      "size": 66106938
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/magic-leap-community_superpoint/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/magic-leap-community/superpoint/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "magic-leap-community/superpoint",
+      "sha256": "ee46dc3eaf52d1f65d15a4953f30573526e34031a4c26268fa3867614ef1b65c",
+      "size": 5211510
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/monsoon-nlp_hindi-bert/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/monsoon-nlp/hindi-bert/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "monsoon-nlp/hindi-bert",
+      "sha256": "9be6a376264fabb70ff8e17d8ddae4d8072c9c86a0e63bb4d8dc9b1c0efe9521",
+      "size": 58908041
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/nghuyong_ernie-3.0-nano-zh/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/nghuyong/ernie-3.0-nano-zh/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "nghuyong/ernie-3.0-nano-zh",
+      "sha256": "513bc520119d9d9f7fbecced215b618691e4dff3ec65b83658024f5018cacd50",
+      "size": 71279123
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/sentence-transformers_msmarco-MiniLM-L12-v3/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/sentence-transformers/msmarco-MiniLM-L12-v3/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "sentence-transformers/msmarco-MiniLM-L12-v3",
+      "sha256": "b17442e1b4a5db687084be01f47d35f683f35ffadbfe26ca42622fec51d013a8",
+      "size": 133518577
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/sentence-transformers_multi-qa-MiniLM-L6-dot-v1/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/sentence-transformers/multi-qa-MiniLM-L6-dot-v1/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "sentence-transformers/multi-qa-MiniLM-L6-dot-v1",
+      "sha256": "22e95efafbb3f10b927a619a54ba41603f7e8dc40c1ea54739b80b9a7592d8e5",
+      "size": 90888945
+    },
+    {
+      "cluster": "feature-extraction",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/feature-extraction/sentence-transformers_paraphrase-MiniLM-L3-v2/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/sentence-transformers/paraphrase-MiniLM-L3-v2/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "sentence-transformers/paraphrase-MiniLM-L3-v2",
+      "sha256": "6b0a1c48c2490f85381505b1d7c7327d0c4dc31c285880f37715a71514f5dd6c",
+      "size": 69583549
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/Aniemore_rubert-tiny2-russian-emotion-detection/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Aniemore/rubert-tiny2-russian-emotion-detection/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "Aniemore/rubert-tiny2-russian-emotion-detection",
+      "sha256": "c4dd562e8e2b5e6e4f22ef8d8c819de2fb94ca9ba9c9233b5dd3c34aa0f82618",
+      "size": 116817911
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/Djacon_rubert-tiny2-russian-emotion-detection/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Djacon/rubert-tiny2-russian-emotion-detection/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "Djacon/rubert-tiny2-russian-emotion-detection",
+      "sha256": "5d8f3bf465322538b595ebf8c62847602d32921655b608305c42f502fc76dfcb",
+      "size": 116822239
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/Intel_distilbert-base-uncased-finetuned-sst-2-english-int8-static-inc/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Intel/distilbert-base-uncased-finetuned-sst-2-english-int8-static-inc/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "Intel/distilbert-base-uncased-finetuned-sst-2-english-int8-static-inc",
+      "sha256": "92efc824e8ec5d2c95c2c862e06ad93a465e0a23c55207d0905d27a5a2c0d7d1",
+      "size": 68199393
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/JanSt_albert-base-v2_mbti-classification/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/JanSt/albert-base-v2_mbti-classification/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "JanSt/albert-base-v2_mbti-classification",
+      "sha256": "b1e92435cfefc360a88297fd6232aae1014995dbd85fed81e1ac79b69b8ed977",
+      "size": 46797739
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/MoritzLaurer_xtremedistil-l6-h256-zeroshot-v1.1-all-33/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/MoritzLaurer/xtremedistil-l6-h256-zeroshot-v1.1-all-33/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "MoritzLaurer/xtremedistil-l6-h256-zeroshot-v1.1-all-33",
+      "sha256": "98b31cbc8fabf656af6c1e2225527a024a5ffa62e0e8796184d0091870d935a2",
+      "size": 25537070
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/Recognai_zeroshot_selectra_small/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Recognai/zeroshot_selectra_small/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "Recognai/zeroshot_selectra_small",
+      "sha256": "729c69f558d1cec52ded9976a0f27c1fb024ab1786cb825e7b334db5a7041737",
+      "size": 89993673
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/Titeiiko_OTIS-Official-Spam-Model/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Titeiiko/OTIS-Official-Spam-Model/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "Titeiiko/OTIS-Official-Spam-Model",
+      "sha256": "834c4b5dbc4a8aa3cbe5b56e380932c0e152e43ceeaf219a36ae98d66fbbfacb",
+      "size": 17560937
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/amedvedev_bert-tiny-cognitive-bias/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/amedvedev/bert-tiny-cognitive-bias/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "amedvedev/bert-tiny-cognitive-bias",
+      "sha256": "fce267317649e8f40bf3952094cecada2c178d6bf1c3c79401ced957c15923bc",
+      "size": 17565103
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/bergum_xtremedistil-l6-h384-go-emotion/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/bergum/xtremedistil-l6-h384-go-emotion/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "bergum/xtremedistil-l6-h384-go-emotion",
+      "sha256": "eae90d975c0243e7be4ab1783285613639fc86a11d077ad09924b8a0069ced42",
+      "size": 90939949
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/bhadresh-savani_albert-base-v2-emotion/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/bhadresh-savani/albert-base-v2-emotion/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "bhadresh-savani/albert-base-v2-emotion",
+      "sha256": "73b6468798f9155ca1710fe47331a04d7dbb6452d5a9f134327fffc154f1516e",
+      "size": 46769003
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/cointegrated_rubert-tiny-bilingual-nli/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cointegrated/rubert-tiny-bilingual-nli/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "cointegrated/rubert-tiny-bilingual-nli",
+      "sha256": "48b1f5e89858ef1025c0be4324a47e0853b5efb6b96e51b4a2a2aa4f116d9e02",
+      "size": 47164791
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/cross-encoder_stsb-TinyBERT-L4/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cross-encoder/stsb-TinyBERT-L4/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "cross-encoder/stsb-TinyBERT-L4",
+      "sha256": "c81276416deab713ab841b7d4afa2484270d5d23d735d1baa27a7bc1501080e2",
+      "size": 57436041
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/cssupport_mobilebert-sql-injection-detect/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/cssupport/mobilebert-sql-injection-detect/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "cssupport/mobilebert-sql-injection-detect",
+      "sha256": "142583dea56c196ffb62420bb358f39a1dfd67fcc7a971dabdc8bc694bea5306",
+      "size": 98801535
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/daekeun-ml_koelectra-small-v3-nsmc/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/daekeun-ml/koelectra-small-v3-nsmc/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "daekeun-ml/koelectra-small-v3-nsmc",
+      "sha256": "756dde30d2f35d35766d9c856f43fb669ba00d22df858349b30e6ab9f8cce62d",
+      "size": 56578459
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/lordtt13_emo-mobilebert/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/lordtt13/emo-mobilebert/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "lordtt13/emo-mobilebert",
+      "sha256": "46a9db2063f45d273056c74d1b685dcb75c669b483c75db788cd92ab539fc566",
+      "size": 85085771
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mrm8488_bert-mini-finetuned-age_news-classification/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mrm8488/bert-mini-finetuned-age_news-classification/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "mrm8488/bert-mini-finetuned-age_news-classification",
+      "sha256": "1a5001bf5af86af84a07a2e7a986062643cf47297a8c632195483e3d4bde31ce",
+      "size": 44720779
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mrm8488_bert-tiny-finetuned-enron-spam-detection/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mrm8488/bert-tiny-finetuned-enron-spam-detection/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "mrm8488/bert-tiny-finetuned-enron-spam-detection",
+      "sha256": "fbdd7442a8ca1f3b855d58633c81a3fe4e3fd05ca85230923ea886b93cc4232b",
+      "size": 17561831
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mrm8488_electricidad-small-finetuned-restaurant-sentiment-analysis/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mrm8488/electricidad-small-finetuned-restaurant-sentiment-analysis/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "mrm8488/electricidad-small-finetuned-restaurant-sentiment-analysis",
+      "sha256": "fea6ae240aaa6aeb27e73785de3c28c5fb478601c74930336ace019248535ee6",
+      "size": 54534299
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/mrsinghania_asr-question-detection/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/mrsinghania/asr-question-detection/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "mrsinghania/asr-question-detection",
+      "sha256": "59649b62c063971e8e2461149154c53d2d25d68596a5c0eca13dc4679104a691",
+      "size": 44718345
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/ptaszynski_yacis-electra-small-japanese-cyberbullying/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ptaszynski/yacis-electra-small-japanese-cyberbullying/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "ptaszynski/yacis-electra-small-japanese-cyberbullying",
+      "sha256": "f62d289864b9c2a4481bb0b54e0404eafaca3b5d72ec02b01d6fe50af1f1e681",
+      "size": 55040041
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/seara_rubert-tiny2-russian-emotion-detection-ru-go-emotions/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/seara/rubert-tiny2-russian-emotion-detection-ru-go-emotions/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "seara/rubert-tiny2-russian-emotion-detection-ru-go-emotions",
+      "sha256": "d372dd6a9c7e5a4cd745e65c36ca0a2ca9c78f529b00b0294e4c518a48153bdb",
+      "size": 116844767
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/shahrukhx01_bert-multitask-query-classifiers/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/shahrukhx01/bert-multitask-query-classifiers/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "shahrukhx01/bert-multitask-query-classifiers",
+      "sha256": "ed8aea328e22296918b975bca90304798accaf3be889199675cef0782d09652d",
+      "size": 44718721
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/somosnlp-hackathon-2022_electricidad-small-discriminator-finetuned-clasificacion-comentarios-suicidas/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/somosnlp-hackathon-2022/electricidad-small-discriminator-finetuned-clasificacion-comentarios-suicidas/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "somosnlp-hackathon-2022/electricidad-small-discriminator-finetuned-clasificacion-comentarios-suicidas",
+      "sha256": "575dbc65509b7a571891f2219fa562b45af587548bc2dc67c2044df0bfad2775",
+      "size": 54530025
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/ssary_XLM-RoBERTa-German-sentiment/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ssary/XLM-RoBERTa-German-sentiment/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "ssary/XLM-RoBERTa-German-sentiment",
+      "sha256": "9205dca5d9f3cfb1fa8b069ac865767021c3ed8b4be14aa21ceb947ee2112ef1",
+      "size": 4600
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/tomaarsen_setfit-all-MiniLM-L6-v2-sst2-32-shot/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/tomaarsen/setfit-all-MiniLM-L6-v2-sst2-32-shot/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "tomaarsen/setfit-all-MiniLM-L6-v2-sst2-32-shot",
+      "sha256": "28307aa11df3ffd2adec2a1e787390c05ef12f7841f998f08923adf587c1ee49",
+      "size": 90891565
+    },
+    {
+      "cluster": "text-classification",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-classification/typeform_mobilebert-uncased-mnli/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/typeform/mobilebert-uncased-mnli/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "typeform/mobilebert-uncased-mnli",
+      "sha256": "23665b8297e7dd121f8a6380566c9214b3c9705f25c00c34c9972c4b9f9ea961",
+      "size": 98820249
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/EleutherAI_gpt-neo-125m/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/EleutherAI/gpt-neo-125m/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "EleutherAI/gpt-neo-125m",
+      "sha256": "9b38c2b2761e95b7bbd736e49a7ba553b8015bd3c0036b749043e1cebee464ed",
+      "size": 526017373
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/EleutherAI_pythia-14m/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/EleutherAI/pythia-14m/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "EleutherAI/pythia-14m",
+      "sha256": "81876076d0fed0edd03954452becbe9e488a0977abc01d30188fc399ead4d7fd",
+      "size": 28160018
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/EleutherAI_pythia-31m-deduped/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/EleutherAI/pythia-31m-deduped/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "EleutherAI/pythia-31m-deduped",
+      "sha256": "62caf9a0036f40c7bf234f61f3b9af1295ea1dfbd5d14c5b431f587a1aecd2eb",
+      "size": 86185866
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/FredZhang7_anime-anything-promptgen-v2/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/FredZhang7/anime-anything-promptgen-v2/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "FredZhang7/anime-anything-promptgen-v2",
+      "sha256": "061e5bd556a86320d4364b00da9da3e16eab22983880164e16d167d1ab818c75",
+      "size": 333969117
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/FredZhang7_distilgpt2-stable-diffusion-v2/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/FredZhang7/distilgpt2-stable-diffusion-v2/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "FredZhang7/distilgpt2-stable-diffusion-v2",
+      "sha256": "2f54520576e1012e0b9f620631732e32c7cf827e020bae142e886c1f9500e371",
+      "size": 333969117
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/Gustavosta_MagicPrompt-Stable-Diffusion/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/Gustavosta/MagicPrompt-Stable-Diffusion/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "Gustavosta/MagicPrompt-Stable-Diffusion",
+      "sha256": "749116704f061992e879013cb4433f9e093f385dd5a807b20ac7d226c5f53926",
+      "size": 510396521
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/bigscience_bigscience-small-testing/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/bigscience/bigscience-small-testing/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "bigscience/bigscience-small-testing",
+      "sha256": "0e22bceb559a5fcdc3dbb0f9ea622210cbe6b2a56d459ad7693284a1e99569c8",
+      "size": 32322126
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/calum_tinystories-gpt2-3M/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/calum/tinystories-gpt2-3M/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "calum/tinystories-gpt2-3M",
+      "sha256": "49899a9743c1c887f28aa5dce3b38be8ae2f7f8bf299e094375e0a7a70a49ee0",
+      "size": 14759965
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/ckiplab_gpt2-tiny-chinese/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ckiplab/gpt2-tiny-chinese/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "ckiplab/gpt2-tiny-chinese",
+      "sha256": "ef4109d34df76aabd608c5137a7fdba2a61065728aff9bf5093bc5a027d4eaff",
+      "size": 50619595
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/concedo_koboldcpp/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/concedo/koboldcpp/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "concedo/koboldcpp",
+      "sha256": "1dd66d3420643487a066ac46a0e0b9dc6a66834001f0a17b741cb8d16204da6a",
+      "size": 425321
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/distilbert_distilgpt2/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/distilbert/distilgpt2/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "distilbert/distilgpt2",
+      "sha256": "ecbb4e22dd2b9dcc43b2622e1b87ebb9361fb31e496b98ea01a38785c1dbaa01",
+      "size": 352833716
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/dphn_dolphin-2.6-mistral-7b/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/dphn/dolphin-2.6-mistral-7b/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "dphn/dolphin-2.6-mistral-7b",
+      "sha256": "0e3cd494e2af75e68a1354ab7164ed16c06f8ffc9cbfbff79076d610542a1dbe",
+      "size": 269049433
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/facebook_opt-125m/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/facebook/opt-125m/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "facebook/opt-125m",
+      "sha256": "2d74da6615135c58cf3cf9ad4cb11e7c613ff9e55fe658a47ab83b6c8d1174a9",
+      "size": 250540281
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/floriangardin_musiclang/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/floriangardin/musiclang/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "floriangardin/musiclang",
+      "sha256": "e938715c07d07eb3eaf306c3fe0d633fada098502c4bbc30ae829243e4f277e9",
+      "size": 89361085
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/i3-lab_i3-tiny/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/i3-lab/i3-tiny/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "i3-lab/i3-tiny",
+      "sha256": "fcbb955cae0ba40989b3fabbf6ee923c67e0e67fe6dfb39dae986f5afb0d00c8",
+      "size": 2906835
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/jploski_falcon-mini-shakespeare/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/jploski/falcon-mini-shakespeare/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "jploski/falcon-mini-shakespeare",
+      "sha256": "65201c8be4a370c39b1eb7e59d8e608ef6c600e868c897d37b53334e15fce1c3",
+      "size": 38823498
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/jploski_falcon40b-mini-shakespeare/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/jploski/falcon40b-mini-shakespeare/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "jploski/falcon40b-mini-shakespeare",
+      "sha256": "77f19487bc962d86301bb22002788bbe2d8d053f7984003b9d817ce972730944",
+      "size": 78148762
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/microsoft_DialoGPT-small/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/microsoft/DialoGPT-small/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "microsoft/DialoGPT-small",
+      "sha256": "e6e2be6d12f77bf925a89f2381c6c685f4739752289039d590622d37d48a153d",
+      "size": 351265583
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/microsoft_Promptist/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/microsoft/Promptist/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "microsoft/Promptist",
+      "sha256": "7991fb65b10e22a33fb2455dc2311ae922f5ba2e442fa33f1fcb9e0d351c5b28",
+      "size": 510395581
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/minimaxir_magic-the-gathering/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/minimaxir/magic-the-gathering/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "minimaxir/magic-the-gathering",
+      "sha256": "7639b9f5af63fbc123255c318b07fae8dd143ed7cadf848f73960111abd27140",
+      "size": 7299843
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/ncfrey_ChemGPT-19M/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/ncfrey/ChemGPT-19M/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "ncfrey/ChemGPT-19M",
+      "sha256": "a8b724133b6e72ada3cc90e17214c78c37986efb2c708e26c6cbb415aaf546b5",
+      "size": 128983489
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/nisten_Biggie-SmoLlm-0.15B-Base/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/nisten/Biggie-SmoLlm-0.15B-Base/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "nisten/Biggie-SmoLlm-0.15B-Base",
+      "sha256": "8868a6657a83f51c2b8d5d88cf48f96cdf0631feed5582a152cbcc77cfae4299",
+      "size": 269149770
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/openai-community_openai-gpt/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/openai-community/openai-gpt/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "openai-community/openai-gpt",
+      "sha256": "16e27229889ec4dc473665eb83c9cc3441b3b67be77e0e306d1bbb653b40e0fc",
+      "size": 478750579
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/roneneldan_TinyStories-33M/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/roneneldan/TinyStories-33M/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "roneneldan/TinyStories-33M",
+      "sha256": "41316d3bad3cf7766cbc36443a71c5ef05321a1c4fa14855df537998c6dad302",
+      "size": 290854321
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/roneneldan_TinyStories-3M/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/roneneldan/TinyStories-3M/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "roneneldan/TinyStories-3M",
+      "sha256": "0e4f93a86407a3f685520e48481a236c7b5e3a4f8e4fc8d1e58f3a748d97a37c",
+      "size": 66708541
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/roneneldan_TinyStories-8M/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/roneneldan/TinyStories-8M/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "roneneldan/TinyStories-8M",
+      "sha256": "22c355bfabebc1f6c861b3f5d7a801e96c7f6da4af4bb0f7780096ab82ea6716",
+      "size": 112405309
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/roneneldan_TinyStories-Instruct-1M/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/roneneldan/TinyStories-Instruct-1M/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "roneneldan/TinyStories-Instruct-1M",
+      "sha256": "1424eb5d86382f74a80bb41f0b61eebbaff614a51c615bd51e51272467b54e3b",
+      "size": 48578813
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/shibing624_macbert4csc-base-chinese/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/shibing624/macbert4csc-base-chinese/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "shibing624/macbert4csc-base-chinese",
+      "sha256": "37a03fe0f103b25664f46fb65dbe520ffc63cc99c06ad679211102dbb7b5c9ed",
+      "size": 409232875
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/uer_gpt2-chinese-cluecorpussmall/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/uer/gpt2-chinese-cluecorpussmall/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "uer/gpt2-chinese-cluecorpussmall",
+      "sha256": "5478b950f53650c82f7f7e91010787c870813a76adeabe23c8571b01af1379b4",
+      "size": 420921295
+    },
+    {
+      "cluster": "text-generation",
+      "downloads": 0,
+      "format": "pt",
+      "likes": 0,
+      "local_path": "crawled/text-generation/xlnet_xlnet-base-cased/pytorch_model.bin",
+      "provenance": {
+        "crawled_at": "2026-09-04T16:29:04Z",
+        "source": "Hugging Face Hub",
+        "url": "https://huggingface.co/xlnet/xlnet-base-cased/blob/main/pytorch_model.bin"
+      },
+      "repo_id": "xlnet/xlnet-base-cased",
+      "sha256": "b13dc2d3664a385b92d087229d5410d9e3020ede976e7ff4c62c9c85cd969a42",
+      "size": 467042463
     }
   ]
 }

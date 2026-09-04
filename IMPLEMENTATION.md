@@ -11,10 +11,11 @@ the implementation reference; for the measured outcomes see
 
 ### 1.1 Corpus & seed
 
-- **Corpus**: 100 real benign HuggingFace `pytorch_model.bin` checkpoints,
-  5 task clusters × 20, crawled by `scripts/crawl_benign.py` into
-  `data/crawled/` and linked flat into `real_benign_corpus/all/` as
-  `<cluster>__<repo>.bin`. SHA-256 dedup; provenance in `seed_manifest.json`.
+- **Corpus**: 304 real benign HuggingFace checkpoints (179 PT `pytorch_model.bin` + 125 GGUF),
+  5 task clusters, crawled by `scripts/crawl_benign.py` and
+  `scripts/download_gguf_models.py` into `data/crawled/` and linked flat into
+  `real_benign_corpus/all_pt/` and `real_benign_corpus/all_gguf/`. SHA-256 dedup;
+  provenance in `seed_manifest.json`.
   The crawl is resumable, backfills already-downloaded files into the manifest,
   excludes HF-flagged `danger`/`blocked` artifacts (HF stamps every pickle with
   `caution`, so caution is allowed), and runs in parallel (`--workers`).

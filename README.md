@@ -23,7 +23,7 @@ whole pipeline is reproducible on any host with `docker`.
 
 ```
   real benign corpus                malicious candidates              verdicts & feedback
-  (100 PT + 100 GGUF)               (.pt + .gguf bytes)               (SQLite + reports)
+  (179 PT + 125 GGUF)               (.pt + .gguf bytes)               (SQLite + reports)
         │                                   │                                 ▲
         ▼                                   ▼                                 │
   CandidateGenerator ───────────►  Runner.run (ThreadPool fan-out) ────────────┘
@@ -44,8 +44,8 @@ coverage → feed the results back into the sampler for the next round.
 
 ## What it does
 
-- **Crawls 200 real benign checkpoints** from Hugging Face Hub (5 task clusters
-  × 20 × 2 formats: 100 PT `pytorch_model.bin` + 100 GGUF `model.gguf` for
+- **Crawls 304 real benign checkpoints** from Hugging Face Hub (5 task clusters:
+  179 PT `pytorch_model.bin` + 125 GGUF across
   text-generation, text-classification, feature-extraction,
   token-classification, question-answering), SHA-256-deduplicated, with
   provenance in `data/crawled/seed_manifest.json`. **No synthetic models.**
@@ -103,7 +103,7 @@ docker images | grep regenbench         # base, picklescan, modelscan, fickling,
 ./scripts/verify_host.sh                # docker, SELinux :ro,z mount, concurrency gate
 ```
 
-### Step 1 — Crawl the 200-model real corpus (100 PT + 100 GGUF)
+### Step 1 — Crawl the real corpus (179 PT + 125 GGUF = 304 total)
 
 ```sh
 python3 scripts/crawl_benign.py \

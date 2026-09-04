@@ -36,7 +36,7 @@ docker images | grep regenbench         # base, picklescan, modelscan, fickling,
 
 ---
 
-## 01 — Crawl the 250-model real corpus (125 PT + 125 GGUF, 25 per cluster × 5 clusters × 2 formats)
+## 01 — Crawl the real corpus (304 total: 179 PT + 125 GGUF)
 
 ```sh
 python3 scripts/crawl_benign.py \
@@ -50,7 +50,7 @@ python3 scripts/crawl_benign.py \
 - **Verify**:
   ```sh
   python3 -c "import json; print(json.load(open('data/crawled/seed_manifest.json'))['summary'])"
-  # -> total_models: 250, formats: {"pt": 125, "gguf": 125}, 5 clusters x 25 each
+  # -> total_models: 304, formats: {"pt": 179, "gguf": 125}
 
   mkdir -p real_benign_corpus/all_pt real_benign_corpus/all_gguf
   while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); \
@@ -61,7 +61,7 @@ python3 scripts/crawl_benign.py \
     cluster=$(basename "$(dirname "$(dirname "$f")")"); \
     ln -f "$f" "real_benign_corpus/all_gguf/${cluster}__${repo}.gguf" 2>/dev/null; \
     done < <(find data/crawled -mindepth 3 -maxdepth 3 -name "*.gguf")
-  ls real_benign_corpus/all_pt | wc -l        # -> 125
+  ls real_benign_corpus/all_pt | wc -l        # -> 179
   ls real_benign_corpus/all_gguf | wc -l       # -> 125
   ```
 - **Chart**: `python3 scripts/generate_charts.py` → `charts/01_crawl/corpus_composition.png`.
@@ -391,7 +391,7 @@ python3 scripts/save_results.py --db data/regenbench_campaign.db --corpus-dir re
 
 | Artifact | Check |
 |----------|-------|
-| `data/crawled/seed_manifest.json` | `total_models: 100`, 5 clusters × 20 |
+| `data/crawled/seed_manifest.json` | `total_models: 304`, formats: pt=179, gguf=125 |
 | `real_benign_corpus/all/` | 100 hard links |
 | `real_benign_corpus/oracle-split.json` | disjoint train/eval halves |
 | `real_benign_corpus/oracle-calibrated/current/` | model + vectorizer + scaler + fp-eval |

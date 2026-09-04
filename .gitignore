@@ -23,6 +23,8 @@ data/malhug/*
 
 # Crawled real-model corpus (large downloaded checkpoints)
 real_benign_corpus/all/
+real_benign_corpus/all_pt/
+real_benign_corpus/all_gguf/
 real_benign_corpus/oracle_positive/
 real_benign_corpus/oracle_negative/
 
@@ -34,6 +36,7 @@ data/campaign_results.db
 data/crawl_progress.log
 # Experiment run logs (regenerable)
 data/*.log
+logs/
 
 # Persisted campaign candidates (large, regenerable artifacts)
 data/candidates/

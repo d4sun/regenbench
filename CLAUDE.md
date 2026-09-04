@@ -19,9 +19,13 @@ Campaign loop lives in `scripts/run_fuzzing_campaign.py`; per-candidate verdicts
 
 ## Corpus state (2026-08-31 clean-slate pass)
 
-- **100 real models** crawled from Hugging Face Hub into `data/crawled/` (5 clusters × 20:
-  text-generation, text-classification, feature-extraction, token-classification, question-answering),
-  linked flat into `real_benign_corpus/all/` as `<cluster>__<repo>.bin`. **No synthetic models.**
+- **304 real models** crawled from Hugging Face Hub into `data/crawled/seed_manifest.json`:
+  179 PT (`pytorch_model.bin`) + 125 GGUF across 5 clusters. Per-cluster totals:
+  text-generation 74 (49 PT + 25 GGUF), text-classification 71 (46 PT + 25 GGUF),
+  feature-extraction 59 (34 PT + 25 GGUF), token-classification 50 (25 PT + 25 GGUF),
+  question-answering 50 (25 PT + 25 GGUF). Two invalid files excluded from manifest:
+  `or4cl3ai_Aiden_t5` (189B Python snippet) and `papahawk_keya-560m` (135B Git LFS pointer).
+  Linked flat into `real_benign_corpus/all/` as `<cluster>__<repo>.bin`. **No synthetic models.**
   `real_benign_corpus_v2/` (17 real + 83 synthetic) was deleted.
 - Crawl **fixes** in `scripts/crawl_benign.py`: resume now backfills already-downloaded files into
   `seed_manifest.json` (was under-reporting: manifest 6 vs disk 17); the security filter is live and
@@ -32,7 +36,7 @@ Campaign loop lives in `scripts/run_fuzzing_campaign.py`; per-candidate verdicts
   reset. Kept: `data/crawled/` models + manifest, `data/malhug/manifest.json`, `reference/`,
   committed `oracle-calibrated/` (fallback), all source.
 - Oracle model dir default is now `real_benign_corpus/oracle-calibrated/current` (fresh
-  recalibration on the 100-model corpus; committed v1–v5 kept as fallback).
+  recalibration on the 304-model corpus; committed v1–v5 kept as fallback).
 - Interactive guides: `notebooks/` (thin subprocess wrappers around every script),
   `QUICKSTART.md`, and the doc index in `README.md` (Docs table).
 
@@ -44,7 +48,7 @@ Campaign loop lives in `scripts/run_fuzzing_campaign.py`; per-candidate verdicts
 | **H2** | **Valid negative result** | Uncorroborated == confirmed (297); the static panel already detects all non-executing candidates, so the dual-oracle adds no precision — dynamic validation's value is confirming payload execution (trigger polling), not filtering false evasions |
 | **H3** | **Supported** | 99.3–100% retention of 297 bypasses across 6 historical scanner versions (picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10); 2 pypi_injected/splice bypasses caught by old picklescan/modelscan rules |
 
-Fresh run (2026-08-31, this host, docker, 100 real HF corpus): guided 223/473 valid bypasses (47.1%), unguided 74/401 (18.5%), Fisher p=0, z=8.92; Q_first guided [4], unguided [3]. Full details in `docs/evaluation-report.md` (regenerate with `scripts/run_evaluation_suite.py`).
+Fresh run (2026-08-31, this host, docker, 304 real HF corpus): guided 223/473 valid bypasses (47.1%), unguided 74/401 (18.5%), Fisher p=0, z=8.92; Q_first guided [4], unguided [3]. Full details in `docs/evaluation-report.md` (regenerate with `scripts/run_evaluation_suite.py`).
 
 **Peer-review fixes (2026-08-30)**: reachable-space coverage (was 0.5% opcode / 0.8% callable against theoretical max; now 45.6% opcode / 60-80% callable reachable + family entropy + family bypass coverage, see `docs/evaluation-report.md` Coverage Growth), per-round family quotas (≤40% per family, ≥1 per family, entropy target 1.5), payload-level callable diversification for template families (5→12 sinks), `StraceOracle` (0% FP strace-based syscall oracle replacing DynaHug 63.5% FP), GGUF re-scoped as format-complexity demo (synthetic `benign_gguf()` default, real `data/gguf_benign_corpus/` optional), repair triage (30% escapes are `indirect_chain`/`runstring` quarantined, not sanitized).
 
@@ -140,5 +144,5 @@ for d in base picklescan modelscan fickling modeltracer dynahug gguf; do contain
 1. Edit the code.
 2. `python -m pytest tests/ -x -q` (fast, host-only).
 3. `python scripts/run_pilot_campaign.py --quick --attack-families gadget,overwritten,external,indirect_chain,pypi_injected` for a small end-to-end check.
-4. Follow `docs/QUICKSTART.md` / `notebooks/` for the full pipeline (crawl 100 → oracle → campaigns → eval → shelf-life).
+4. Follow `docs/QUICKSTART.md` / `notebooks/` for the full pipeline (crawl 304 → oracle → campaigns → eval → shelf-life).
 5. Full ablation only when the quick run behaves: `bash run_fitness_ablation_experiment.sh`, then triage with `scripts/analyze_fitness_ablation.py --db data/regenbench_campaign.db`.

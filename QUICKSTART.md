@@ -19,7 +19,7 @@ for d in base picklescan modelscan fickling modeltracer dynahug gguf; do contain
 ./scripts/verify_host.sh                        # host gate (docker, SELinux :ro,z mount, concurrency)
 ```
 
-## 1. Crawl 100 real benign PT + 100 real benign GGUF models (5 clusters × 20 each)
+## 1. Crawl real benign PT + GGUF models (304 total: 179 PT + 125 GGUF)
 
 ```sh
 python3 scripts/crawl_benign.py \
@@ -31,7 +31,7 @@ python3 scripts/crawl_benign.py \
   `data/crawled/seed_manifest.json` with `"format": "pt"` or `"format": "gguf"`. Resumable; re-running skips existing
   hashes and backfills already-present files.
 - **Verify**: `python3 -c "import json; print(json.load(open('data/crawled/seed_manifest.json'))['summary'])"`
-  → `total_models: 200`, `formats: {"pt": 100, "gguf": 100}`, 5 clusters × 20 each.
+  → `total_models: 304`, `formats: {"pt": 179, "gguf": 125}`, 5 clusters with 25 GGUF each + variable PT per cluster.
 
 Link the flat corpus (hard links, no copy):
 
@@ -40,7 +40,7 @@ mkdir -p real_benign_corpus/all_pt real_benign_corpus/all_gguf
 while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename "$(dirname "$(dirname "$f")")"); ln -f "$f" "real_benign_corpus/all_pt/${cluster}__${repo}.bin" 2>/dev/null; done < <(find data/crawled -mindepth 3 -maxdepth 3 -name pytorch_model.bin)
 while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename "$(dirname "$(dirname "$f")")"); ln -f "$f" "real_benign_corpus/all_gguf/${cluster}__${repo}.gguf" 2>/dev/null; done < <(find data/crawled -mindepth 3 -maxdepth 3 -name "*.gguf")
 ```
-- **Verify**: `ls real_benign_corpus/all_pt | wc -l` → `100`; `ls real_benign_corpus/all_gguf | wc -l` → `100`.
+- **Verify**: `ls real_benign_corpus/all_pt | wc -l` → `179`; `ls real_benign_corpus/all_gguf | wc -l` → `125`.
 
 ## 2. Oracle validation, views, disjoint split (PT + GGUF)
 

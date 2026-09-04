@@ -1,7 +1,7 @@
 # ReGenBench — Campaign Results
 
 Fresh run, 2026-08-31, on this host (docker), seeded from the **100 real
-HuggingFace checkpoints** (5 clusters × 20; no synthetic models). All figures
+HuggingFace checkpoints** (5 clusters × 20; historical corpus, now expanded to 304). All figures
 are measured from `data/regenbench_campaign.db` (and `data/shelf_life.db` for
 H3); the per-scanner/bootstrap details are in the regenerable
 `docs/evaluation-report.md`.
@@ -113,7 +113,7 @@ Retention is reported for the format-native pickle panel (picklescan +
 modelscan). Fickling's historical 300/300 rows are omitted: it cannot parse
 torch-zip, so its rescans are vacuous (a format gap, not patch resilience).
 
-## Benign false positives (100 real checkpoints)
+## Benign false positives (100 real checkpoints, historical corpus)
 
 | Scanner | FP Detections / 100 | FP Rate |
 | :--- | :---: | :---: |
