@@ -48,8 +48,8 @@ campaign:
   # ("benign Hugging Face models, one task cluster"). The runner's
   # --seed-corpus-dir mode (used by the scaled campaigns) auto-picks the
   # smallest matching file, so this path is only the pilot default.
-  # Lives in real_benign_corpus/all/; re-crawl or link if missing.
-  base_checkpoint: "real_benign_corpus/all/text-generation__Maykeye_TinyLLama-v0.bin"
+  # Lives in real_benign_corpus/all_pt/; re-crawl or link if missing.
+  base_checkpoint: "real_benign_corpus/all_pt/text-generation__Maykeye_TinyLLama-v0.bin"
   rounds: 5
   candidates_per_round: 20
   backend: "docker"

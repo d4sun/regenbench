@@ -96,6 +96,18 @@ def build_features(counts: dict) -> dict:
     return fd
 
 
+def score_matrix(samples: list[dict], model, vectorizer, scaler) -> list[float]:
+    """Compute decision_function scores for a list of trace samples."""
+    import numpy as np
+    X_counts = vectorizer.transform([s["features"] for s in samples])
+    fnames = vectorizer.get_feature_names_out()
+    freq_idx = [i for i, n in enumerate(fnames) if n.startswith("frequency_")]
+    X_scaled = X_counts.copy()
+    if freq_idx:
+        X_scaled[:, freq_idx] = scaler.transform(X_counts[:, freq_idx])
+    return [float(model.decision_function(X_scaled[i:i+1])[0]) for i in range(len(samples))]
+
+
 def collect_trace(backend: str, image_full: str, path: str,
                   timeout: int, format: str = "pt") -> dict | None:
     """Run the oracle container on `path` and return (counts, details) or None."""

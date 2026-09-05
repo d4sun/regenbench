@@ -65,20 +65,18 @@ def build_views(corpus_pt: str, corpus_gguf: str, report_path: str, out_dir: str
             dest_dir = pos_dir if score > 0 else neg_dir
             ext = ".bin"
         else:
-            # GGUF uses ggufref: load_ok = positive, else negative
-            # ggufref returns verdict in summary.load_ok / summary.strace_executed
-            # We'll treat any non-error verdict with load_ok as positive
-            load_ok = False
-            # Check if the result has a summary with load_ok
-            if rec.get("verdict") == "benign" and rec.get("decision_score") is not None:
-                # ggufref returns decision_score as float, but we need to check the raw output
-                # For now, use the verdict: benign = load_ok
-                load_ok = True
-            elif rec.get("verdict") == "malicious":
-                load_ok = False
-            else:
-                n_err += 1
-                continue
+            # GGUF uses ggufref: load_ok = positive, else negative. Reports from
+            # the current validate_oracle carry load_ok directly; fall back to
+            # the verdict heuristic for legacy reports.
+            load_ok = rec.get("load_ok")
+            if load_ok is None:
+                if rec.get("verdict") == "benign":
+                    load_ok = True
+                elif rec.get("verdict") == "malicious":
+                    load_ok = False
+                else:
+                    n_err += 1
+                    continue
             dest_dir = pos_dir if load_ok else neg_dir
             ext = ".gguf"
         

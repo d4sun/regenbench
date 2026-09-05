@@ -6,9 +6,17 @@ real HuggingFace checkpoints and records verdict + decision_score per model.
 This is a *formal gate*: before any fuzzing campaign, we must establish that
 the oracles produce meaningful decision-score distributions.
 
+The flat corpus lives in two format-specific trees:
+    real_benign_corpus/all_pt/   179 PT checkpoints
+    real_benign_corpus/all_gguf/ 125 GGUF checkpoints
+(rebuilt from data/crawled/seed_manifest.json, 304 models total). A manifest
+index (keyed by sha256) maps each sampled artifact back to its canonical
+repo_id/cluster, so reports carry real repo ids (e.g. ``BAAI/bge-small-en``)
+instead of flat-view stem guesses.
+
 Metrics recorded per model:
-    repo_id, sha256, size_bytes, cluster, format, verdict, decision_score, exit_code,
-    duration
+    repo_id, sha256, size_bytes, cluster, format, verdict, decision_score,
+    exit_code, load_ok (GGUF), duration
 
 Summary diagnostics written to the report:
     positive/negative rate, decision-score distribution (min/median/max, std),
@@ -19,9 +27,10 @@ and reported, so oracle false positives on benign models are visible.
 
 Usage:
     PYTHONPATH=.:.pip_deps python3 scripts/validate_oracle.py \
-        real_benign_corpus/all --sample 60 --format both \
+        real_benign_corpus/all_pt --sample 100 --format both \
         --out real_benign_corpus/oracle-validation.json \
-        --backend podman
+        --backend docker
+    (GGUF artifacts are drawn from --corpus-gguf; defaults to all_gguf.)
 """
 
 from __future__ import annotations
@@ -39,6 +48,10 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")
 
 from pipeline.scanners import full_image, run_scan
 
+REPO_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+DEFAULT_CORPUS_PT = os.path.join(REPO_ROOT, "real_benign_corpus", "all_pt")
+DEFAULT_CORPUS_GGUF = os.path.join(REPO_ROOT, "real_benign_corpus", "all_gguf")
+DEFAULT_MANIFEST = os.path.join(REPO_ROOT, "data", "crawled", "seed_manifest.json")
 DEFAULT_IMAGE_PT = "regenbench/dynahug"
 DEFAULT_IMAGE_GGUF = "regenbench/gguf"
 ORACLE_EXTS_PT = (".pt", ".pth", ".bin")
@@ -65,11 +78,13 @@ def size_bucket(size: int) -> str:
         return "50-100MB"
     if mb < 500:
         return "100-500MB"
-    return ">500MB"
+    if mb < 1024:
+        return "500MB-1GB"
+    return ">1GB"
 
 
 def arch_family(repo_id: str) -> str:
-    low = repo_id.lower()
+    low = (repo_id or "").lower()
     for fam in ("gpt", "bert", "roberta", "llama", "t5", "distilbert",
                 "albert", "electra", "bart", "deberta", "mistral", "qwen"):
         if fam in low:
@@ -77,50 +92,84 @@ def arch_family(repo_id: str) -> str:
     return "other"
 
 
-def find_checkpoints(root: str, sample: int, format: str = "both") -> list[dict]:
+def load_manifest_index(manifest_path: str) -> dict[str, dict]:
+    """sha256 -> manifest entry, for canonical repo_id/cluster lookup."""
+    try:
+        with open(manifest_path) as f:
+            m = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    models = m.get("models") if isinstance(m, dict) else m
+    if isinstance(models, dict):
+        models = list(models.values())
+    return {e["sha256"]: e for e in models if e.get("sha256")}
+
+
+def flat_identity(path: str, fmt: str) -> tuple[str, str]:
+    """Flat layout <cluster>__<repo>.<ext> -> (cluster, repo). Failure-tolerant."""
+    name = os.path.basename(path)
+    exts = ORACLE_EXTS_PT if fmt == "pt" else ORACLE_EXTS_GGUF
+    stem = name
+    for ext in exts:
+        if stem.endswith(ext):
+            stem = stem[: -len(ext)]
+            break
+    if "__" in stem:
+        cluster, repo = stem.split("__", 1)
+        return cluster, repo
+    return os.path.basename(os.path.dirname(path)), stem
+
+
+def _cp_record(path: str, fmt: str) -> dict:
+    cluster, repo = flat_identity(path, fmt)
+    return {"path": path, "cluster": cluster, "repo_id": repo, "format": fmt}
+
+
+def _collect(root: str, fmt: str) -> list[dict]:
     files = []
-    if format in ("pt", "both"):
-        for dirpath, _dirs, names in os.walk(root):
-            for n in names:
-                if n.endswith(ORACLE_EXTS_PT):
-                    p = os.path.join(dirpath, n)
-                    base = n[: -(len(".bin"))] if n.endswith(".bin") else n
-                    if "__" in base:
-                        cluster, repo = base.split("__", 1)
-                        repo_id = repo
-                    else:
-                        cluster = os.path.basename(os.path.dirname(dirpath))
-                        repo_id = os.path.basename(os.path.dirname(p))
-                    files.append({"path": p, "cluster": cluster, "repo_id": repo_id, "format": "pt"})
-    if format in ("gguf", "both"):
-        for dirpath, _dirs, names in os.walk(root):
-            for n in names:
-                if n.endswith(ORACLE_EXTS_GGUF):
-                    p = os.path.join(dirpath, n)
-                    base = n[:-5]  # remove .gguf
-                    if "__" in base:
-                        cluster, repo = base.split("__", 1)
-                        repo_id = repo
-                    else:
-                        cluster = os.path.basename(os.path.dirname(dirpath))
-                        repo_id = os.path.basename(os.path.dirname(p))
-                    files.append({"path": p, "cluster": cluster, "repo_id": repo_id, "format": "gguf"})
-    if len(files) > sample:
-        files = random.sample(files, sample)
+    for dirpath, _dirs, names in os.walk(root):
+        for n in names:
+            exts = ORACLE_EXTS_PT if fmt == "pt" else ORACLE_EXTS_GGUF
+            if n.endswith(exts):
+                files.append(_cp_record(os.path.join(dirpath, n), fmt))
     return files
 
 
-def run_oracle(backend: str, image: str, path: str, timeout: int, gguf_ref: bool = False) -> dict:
+def find_checkpoints(pt_root: str, gguf_root: str, sample: int,
+                     format: str = "both") -> list[dict]:
+    """Enumerate the PT + GGUF flat corpora; sample ``sample`` per format.
+
+    ``--format both`` therefore scans up to 2*sample checkpoints -- the sample
+    budget applies to each format independently so one corpus never starves the
+    other.
+    """
+    files = []
+    if format in ("pt", "both") and os.path.isdir(pt_root):
+        pt = _collect(pt_root, "pt")
+        files.extend(random.sample(pt, sample) if len(pt) > sample else pt)
+    if format in ("gguf", "both") and os.path.isdir(gguf_root):
+        gg = _collect(gguf_root, "gguf")
+        files.extend(random.sample(gg, sample) if len(gg) > sample else gg)
+    return files
+
+
+def run_oracle(backend: str, image: str, path: str, timeout: int,
+               gguf_ref: bool = False, oracle_model_dir: str | None = None) -> dict:
     t0 = time.time()
-    out, err = run_scan(backend, image, path, timeout=timeout, gguf_ref=gguf_ref)
+    out, err = run_scan(backend, image, path, timeout=timeout, gguf_ref=gguf_ref,
+                        oracle_model_dir=oracle_model_dir)
     dur = time.time() - t0
-    if err:
+    if err or out is None:
         return {"verdict": "error", "decision_score": None, "exit_code": None,
+                "load_ok": None, "strace_executed": None,
                 "error": err, "duration": round(dur, 3)}
+    summary = out.get("summary") or {}
     return {
         "verdict": out.get("verdict"),
         "decision_score": out.get("decision_score"),
         "exit_code": out.get("exit_code"),
+        "load_ok": summary.get("load_ok"),
+        "strace_executed": summary.get("strace_executed"),
         "error": None,
         "duration": round(dur, 3),
     }
@@ -200,7 +249,14 @@ def summarize(results: list[dict]) -> dict:
 
 def main() -> int:
     ap = argparse.ArgumentParser(prog="validate_oracle", description=__doc__)
-    ap.add_argument("corpus_dir", help="directory of real benign checkpoints")
+    ap.add_argument("corpus_dir", default=DEFAULT_CORPUS_PT, nargs="?",
+                    help=f"directory of real benign PT checkpoints "
+                         f"(default {DEFAULT_CORPUS_PT})")
+    ap.add_argument("--corpus-gguf", default=DEFAULT_CORPUS_GGUF,
+                    help=f"directory of real benign GGUF checkpoints "
+                         f"(default {DEFAULT_CORPUS_GGUF})")
+    ap.add_argument("--manifest", default=DEFAULT_MANIFEST,
+                    help="seed manifest for canonical repo_id/cluster lookup by sha256")
     ap.add_argument("--sample", type=int, default=60,
                     help="number of checkpoints to scan (default 60)")
     ap.add_argument("--seed", type=int, default=1337, help="random sampling seed")
@@ -208,6 +264,8 @@ def main() -> int:
                     help="which formats to validate: pt (dynahug), gguf (ggufref), or both")
     ap.add_argument("--image-pt", default=DEFAULT_IMAGE_PT, help="PT oracle image (dynahug)")
     ap.add_argument("--image-gguf", default=DEFAULT_IMAGE_GGUF, help="GGUF oracle image (ggufref)")
+    ap.add_argument("--oracle-model-dir", default=None,
+                    help="recalibrated DynaHug model dir (mounts into container, sets DYNAHUG_MODEL_DIR)")
     ap.add_argument("--tag", default=":latest")
     ap.add_argument("--backend", choices=["podman", "docker"], default="podman")
     ap.add_argument("--timeout", type=int, default=180)
@@ -219,26 +277,39 @@ def main() -> int:
         return 1
 
     random.seed(args.seed)
-    checkpoints = find_checkpoints(args.corpus_dir, args.sample, args.format)
+    manifest_index = load_manifest_index(args.manifest)
+    checkpoints = find_checkpoints(args.corpus_dir, args.corpus_gguf,
+                                   args.sample, args.format)
     if not checkpoints:
-        print(f"[oracle-validation] no artifacts found under {args.corpus_dir} for format={args.format}")
+        print(f"[oracle-validation] no artifacts found for format={args.format} "
+              f"(pt={args.corpus_dir}, gguf={args.corpus_gguf})")
         return 1
+    n_pt = sum(1 for c in checkpoints if c["format"] == "pt")
+    n_gguf = len(checkpoints) - n_pt
 
     image_pt = full_image(args.image_pt, args.tag)
     image_gguf = full_image(args.image_gguf, args.tag)
     print(f"[oracle-validation] scanning {len(checkpoints)} real checkpoints "
-          f"(format={args.format}) through PT={image_pt}, GGUF={image_gguf} (backend={args.backend})")
+          f"(format={args.format}, pt={n_pt}, gguf={n_gguf}, sample={args.sample}/format) "
+          f"through PT={image_pt}, GGUF={image_gguf} (backend={args.backend})")
 
     results = []
     for i, cp in enumerate(checkpoints, 1):
         repo_id = cp.get("repo_id") or os.path.basename(os.path.dirname(cp["path"]))
         size = os.path.getsize(cp["path"])
         sha = sha256_of(cp["path"])
+        entry = manifest_index.get(sha)
+        if entry:
+            repo_id = entry.get("repo_id") or repo_id
+            cp["cluster"] = entry.get("cluster") or cp["cluster"]
+            cp["repo_id"] = repo_id
         fmt = cp.get("format", "pt")
         if fmt == "pt":
-            res = run_oracle(args.backend, image_pt, cp["path"], args.timeout, gguf_ref=False)
+            res = run_oracle(args.backend, image_pt, cp["path"], args.timeout,
+                             gguf_ref=False, oracle_model_dir=args.oracle_model_dir)
         else:
-            res = run_oracle(args.backend, image_gguf, cp["path"], args.timeout, gguf_ref=True)
+            res = run_oracle(args.backend, image_gguf, cp["path"], args.timeout,
+                             gguf_ref=True, oracle_model_dir=args.oracle_model_dir)
         rec = {
             "index": i,
             "repo_id": repo_id,

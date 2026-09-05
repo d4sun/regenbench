@@ -64,6 +64,9 @@ DEFAULT_MODEL_DIR = os.path.join(
 # Overridable so a locally-recalibrated OCSVM (fit on this environment's
 # strace profiles) can be used without rebuilding the image.
 MODEL_DIR = os.environ.get("DYNAHUG_MODEL_DIR", DEFAULT_MODEL_DIR)
+# Optional blank baseline for differential trace subtraction (P2.2 Option A).
+# Mounted at /opt/dynahug/recalibrated/blank_baseline.json by run_scan.
+BLANK_BASELINE_FILE = os.path.join(MODEL_DIR, "blank_baseline.json")
 LOADER = "/usr/local/bin/dynahug-loader"
 WORKDIR = "/tmp/dynahug"
 
@@ -154,6 +157,25 @@ def run_oracle(target):
     syscall_counts = parse_strace_count(count_log)
     if not syscall_counts:
         return "error", 2, None, {**details, "load_failure": "empty strace count summary"}
+
+    # Differential trace: subtract blank baseline (Python/torch startup noise)
+    # to match the feature space the recalibrated OCSVM was trained on.
+    if os.path.exists(BLANK_BASELINE_FILE):
+        try:
+            with open(BLANK_BASELINE_FILE, "r") as f:
+                blank_counts = json.load(f)
+            diff_counts = {}
+            for sc, cnt in syscall_counts.items():
+                base = blank_counts.get(sc, 0)
+                diff = cnt - base
+                diff_counts[sc] = max(0, diff)
+            # Also include syscalls only in blank (should be 0 diff)
+            syscall_counts = diff_counts
+            details["differential"] = True
+        except Exception:  # noqa: BLE001
+            details["differential"] = False
+    else:
+        details["differential"] = False
 
     # 2/3. Load OCSVM artifacts + build features.
     try:
