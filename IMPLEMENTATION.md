@@ -72,12 +72,14 @@ Replaces DynaHug as the deterministic execution signal.
 DynaHug produces a `decision_score` used as a supplementary signal. The
 upstream pretrained OCSVM collapses in this container environment (every input
 scores ≈ −rho). We recalibrate on this corpus' syscall traces
-(`scripts/calibrate_oracle.py` + `scripts/fit_oracle_sweep.py` inside the
-dynahug image). Even calibrated, DynaHug retains a high FP rate on benign
-traces (~94% on the 100-model corpus) because benign loads are dominated by the
-loader's Python/torch startup baseline. This is why bypass confirmation is execution-gated (never gated on the
-DynaHug decision score): the statistical oracle's boundary is unreliable on
-this environment's benign traces.
+(`scripts/calibrate_oracle.py` — now handles traces + OCSVM fit in one pass)
+on the **disjoint train half** of the 50/50 split (`scripts/check_oracle_disjointness.py`).
+Differential baseline subtraction (P2.2 Option A: subtract blank `torch.load`
+syscalls) is applied at both training and inference time (`blank_baseline.json`
+mounted into the container). The recalibrated OCSVM achieves spread=0.07,
+74% benign rate on the 100-model validation sample (vs 0% with pretrained).
+Even calibrated, DynaHug is supplementary; bypass confirmation is execution-gated
+(trigger polling / StraceOracle, 0% FP), never gated on the decision score.
 
 ## 3. Runner, scanners, verdict schema
 
@@ -219,27 +221,25 @@ fuzzing loop and attack-primitive coverage/fitness.
 ## 9. Corpus & oracle pipeline (reproduce)
 
 ```sh
-# crawl 250 real checkpoints (125 PT + 125 GGUF, 25 per cluster per format)
+# crawl 304 real checkpoints (179 PT + 125 GGUF, 25 per cluster per format)
 python3 scripts/crawl_benign.py --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering --limit-per-cluster 25 --max-size 134217728 --out-dir data/crawled --scan-cap 20000 --workers 8 --format both
 # link flat corpus (PT + GGUF)
 mkdir -p real_benign_corpus/all_pt real_benign_corpus/all_gguf
 while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename "$(dirname "$(dirname "$f")")"); ln -f "$f" "real_benign_corpus/all_pt/${cluster}__${repo}.bin" 2>/dev/null; done < <(find data/crawled -mindepth 3 -maxdepth 3 -name pytorch_model.bin)
 while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename "$(dirname "$(dirname "$f")")"); ln -f "$f" "real_benign_corpus/all_gguf/${cluster}__${repo}.gguf" 2>/dev/null; done < <(find data/crawled -mindepth 3 -maxdepth 3 -name "*.gguf")
-# oracle validation + disjoint split (both formats)
-python3 scripts/validate_oracle.py real_benign_corpus/all_pt --sample 100 --out real_benign_corpus/oracle-validation.json --backend docker --format both
+# oracle validation + disjoint split (PT format)
+python3 scripts/validate_oracle.py real_benign_corpus/all_pt --sample 100 --out real_benign_corpus/oracle-validation.json --backend docker --format pt --oracle-model-dir real_benign_corpus/oracle-calibrated/pt
 python3 scripts/organize_corpus.py --corpus-pt real_benign_corpus/all_pt --corpus-gguf real_benign_corpus/all_gguf --report real_benign_corpus/oracle-validation.json --out real_benign_corpus
 python3 scripts/check_oracle_disjointness.py --resplit
-# recalibrate on the train half (fit inside the dynahug/gguf images)
-python3 scripts/calibrate_oracle.py real_benign_corpus/all_pt --split-file real_benign_corpus/oracle-split.json --split-role train --out real_benign_corpus/oracle-calibrated/pt --sample 50 --backend docker --seed 1337 --traces-only --format pt
-python3 scripts/fit_oracle_sweep.py --traces real_benign_corpus/oracle-calibrated/pt/traces.json --export --gamma 0.1 --nu 0.01 --export-dir real_benign_corpus/oracle-calibrated/pt --backend docker --image regenbench/dynahug:latest
-python3 scripts/calibrate_oracle.py real_benign_corpus/all_gguf --split-file real_benign_corpus/oracle-split.json --split-role train --out real_benign_corpus/oracle-calibrated/gguf --sample 50 --backend docker --seed 1337 --traces-only --format gguf
-python3 scripts/fit_oracle_sweep.py --traces real_benign_corpus/oracle-calibrated/gguf/traces.json --export --gamma 0.1 --nu 0.01 --export-dir real_benign_corpus/oracle-calibrated/gguf --backend docker --image regenbench/gguf:latest
+# recalibrate on the train half (traces + OCSVM fit + blank baseline in one call)
+python3 scripts/calibrate_oracle.py real_benign_corpus/all_pt --split-file real_benign_corpus/oracle-split.json --split-role train --out real_benign_corpus/oracle-calibrated/pt --sample 50 --backend docker --seed 1337 --format pt
+# GGUF (ggufref) does not use OCSVM - no calibration needed
 ```
 
 ## 10. Known limitations (honest notes)
 
 - **Fickling 7% FP** on the 100-model torch corpus (allowlist limitation).
-- **DynaHug ~94% FP** on benign traces (supplementary signal only).
+- **DynaHug**: recalibrated OCSVM achieves 74% benign on 100-model validation (spread=0.07); supplementary `decision_score` only, never gates confirmation.
 - **H1** is measured as relative improvement over the ShadowPickle baseline,
   not an absolute threshold.
 - **Repair**: ~30% of escapes are `indirect_chain`/`runstring` and are

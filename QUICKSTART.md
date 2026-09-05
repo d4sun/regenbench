@@ -46,7 +46,8 @@ while IFS= read -r f; do repo=$(basename "$(dirname "$f")"); cluster=$(basename 
 
 ```sh
 python3 scripts/validate_oracle.py real_benign_corpus/all_pt --sample 100 \
-  --out real_benign_corpus/oracle-validation.json --backend docker --format both
+  --out real_benign_corpus/oracle-validation.json --backend docker --format pt \
+  --oracle-model-dir real_benign_corpus/oracle-calibrated/pt
 python3 scripts/organize_corpus.py --corpus-pt real_benign_corpus/all_pt \
   --corpus-gguf real_benign_corpus/all_gguf \
   --report real_benign_corpus/oracle-validation.json --out real_benign_corpus
@@ -58,28 +59,18 @@ python3 scripts/check_oracle_disjointness.py --resplit
 ## 3. Recalibrate the oracles on this corpus (PT + GGUF)
 
 ```sh
-# PT (DynaHug)
+# PT (DynaHug) - full pipeline in one call (traces + OCSVM fit + blank baseline)
 python3 scripts/calibrate_oracle.py real_benign_corpus/all_pt \
   --split-file real_benign_corpus/oracle-split.json --split-role train \
   --out real_benign_corpus/oracle-calibrated/pt \
-  --sample 50 --backend docker --seed 1337 --traces-only --format pt
-python3 scripts/fit_oracle_sweep.py \
-  --traces real_benign_corpus/oracle-calibrated/pt/traces.json \
-  --export --gamma 0.1 --nu 0.01 \
-  --export-dir real_benign_corpus/oracle-calibrated/pt --backend docker --image regenbench/dynahug:latest
+  --sample 50 --backend docker --seed 1337 --format pt
 
-# GGUF (ggufref)
-python3 scripts/calibrate_oracle.py real_benign_corpus/all_gguf \
-  --split-file real_benign_corpus/oracle-split.json --split-role train \
-  --out real_benign_corpus/oracle-calibrated/gguf \
-  --sample 50 --backend docker --seed 1337 --traces-only --format gguf
-python3 scripts/fit_oracle_sweep.py \
-  --traces real_benign_corpus/oracle-calibrated/gguf/traces.json \
-  --export --gamma 0.1 --nu 0.01 \
-  --export-dir real_benign_corpus/oracle-calibrated/gguf --backend docker --image regenbench/gguf:latest
+# GGUF (ggufref) does not use OCSVM - static reference reader + SSTI detection
+# No calibration needed for GGUF; oracle is deterministic
 ```
-- **Verify**: `real_benign_corpus/oracle-calibrated/pt/` and `real_benign_corpus/oracle-calibrated/gguf/` each contain
-  `oneclass_svm_model.pkl`, `vectorizer.pkl`, `scaler.pkl`, `syscalls.txt`.
+- **Verify**: `real_benign_corpus/oracle-calibrated/pt/` contains
+  `oneclass_svm_model.pkl`, `vectorizer.pkl`, `scaler.pkl`, `syscalls.txt`,
+  `blank_baseline.json`.
   DynaHug stays supplementary; bypass confirmation is execution-gated.
 
 ## 4. Campaigns (dual-format)

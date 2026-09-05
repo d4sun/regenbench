@@ -34,9 +34,9 @@ Campaign loop lives in `scripts/run_fuzzing_campaign.py`; per-candidate verdicts
 - Regenerable experiment artifacts (campaign DB, shelf-life DB, shadowpickle DB, logs, candidates,
   results, stale pre-fix reports, `real_benign_corpus/text-generation-only/` broken symlinks) were
   reset. Kept: `data/crawled/` models + manifest, `data/malhug/manifest.json`, `reference/`,
-  committed `oracle-calibrated/` (fallback), all source.
-- Oracle model dir default is now `real_benign_corpus/oracle-calibrated/current` (fresh
-  recalibration on the 304-model corpus; committed v1–v5 kept as fallback).
+  committed `oracle-calibrated/pt/` (fallback), all source.
+- Oracle model dir default is now `real_benign_corpus/oracle-calibrated/pt` (fresh
+  recalibration on the 304-model corpus with disjoint train/eval split; committed v1–v5 kept as fallback).
 - Interactive guides: `notebooks/` (thin subprocess wrappers around every script),
   `QUICKSTART.md`, and the doc index in `README.md` (Docs table).
 
@@ -94,7 +94,7 @@ Containers: `containers/<name>/` build skinned `regenbench/<name>` images; all s
 - `EnsembleOracle.validate_torch` (`pipeline/oracle_ensemble.py`) is **deprecated**: the old AND-gate (`dynahug and anomaly and executed`) suppresses true positives. Bypass confirmation is trigger-execution only; DynaHug is a supplementary `decision_score` signal. The module imports sklearn at top; do not import where sklearn is absent.
 - `pre_filter` downgrades non-admitted artifacts to a benign oracle verdict (runner.py) — intended fail-open for malformed bytes, but it can blunt confirmation for obfuscated candidates; treat as an open question (plan Phase 2 note).
 - Baseline environment: no `podman` (only `docker`), Python 3.14.7, no `sklearn`/`torch` on host. Container campaigns must run on the lab machine; unit tests here avoid those module paths.
-- DynaHug calibrated oracle shows a ~94% FP rate on the 100-model benign corpus (63.5% on the earlier 17-model subset); that is why validity/plausibility (not DynaHug) gates confirmation.
+- DynaHug recalibrated oracle shows a 74% benign rate on 100-model validation (spread=0.07, std=0.01); the pre-trained OCSVM collapsed to -1.3489 constant. Recalibration on disjoint train split (148/156) with differential baseline subtraction fixed this. That is why validity/plausibility (not DynaHug) gates confirmation.
 - `PickleMutator.mutate` can produce structurally invalid pickles via random mutations; campaigns should add validation/retry or reduce mutation probabilities (current defaults: op_swap=0.05, arg_fuzz=0.05, callable_sub=0.0).
 - **Fixed (2026-08-29)**: `IndirectChain` (strategy + template) now resolves dotted modules via `__import__(mod, None, None, [name])` (`leaf_import_chain` in `evasion.py`) — pypi/external sinks no longer die with `AttributeError: module 'IPython' has no attribute 'system'`. Strategy selection caps sets at `{0,1}` (`select_strategies` + guided adaptive) and per-family defaults exclude `nested_loads_wrap`/`payload_obfuscation`/`indirect_chain` stacks that reintroduce denylisted globals. `pypi_injected` is now included in all experiment configs (ShadowPickle baseline, oracle-dominant validation, parallel ablation).
 - **Fixed (2026-08-29, live-run blockers)**: `run_scan` no longer passes podman-only `--timeout` to docker (host is docker-only); `bypass_records` has an idempotent `dynahug_verdict` migration; `platform.popen` (removed in py3.3) is `NON_ARMABLE`; combo exploration scales with uncovered-family share so `pypi_injected` is never starved.
@@ -102,6 +102,7 @@ Containers: `containers/<name>/` build skinned `regenbench/<name>` images; all s
 - **Fixed (2026-08-29, H3 empirical)**: scanner container builds are parameterized (`build.sh [VERSION] [SCANNER_COMMIT]`, Dockerfile `SCANNER_COMMIT` ARG) so historical scanner versions are buildable. Built picklescan 1.0.4/1.0.3, modelscan 0.8.7/0.8.6, fickling 0.1.11/0.1.10. `register_bypasses_from_campaign_db` bulk-registers confirmed bypasses into the shelf DB; picklescan wrapper falls back to the non-strict scan API for old releases. Empirical rescans over 514 bypasses × 6 versions: **100% retention → H3 supported** (`data/shelf_life.db`).
 - **Reframed (2026-08-29, proposal wording)**: H1 is measured as fuzzing vs ShadowPickle baseline (relative improvement), not an absolute 70% threshold — Supported (51.9% vs 25%). H2 is a valid negative result: the dual-oracle adds no precision because the panel already detects all non-executing candidates; dynamic validation confirms execution. DynaHug is a supplementary `decision_score` only.
 - **Updated (2026-08-30)**: `docs/evaluation-report.md` regenerated from live `data/regenbench_campaign.db` (990 valid, 514 bypasses) with reachable-space coverage (48.5% opcode / 80% callable), family entropy, and `docs/demo-report.md` baseline synced (51.9%). `config/campaign_config.yaml` base seed fixed to `Maykeye_TinyLLama-v0.bin`; `pipeline/feedback.py` deduped; GGUF demo now `docs/demo-report.md#5` (synthetic benign, real corpus optional).
+- **Fixed (2026-09-05, oracle collapse)**: DynaHug pre-trained OCSVM returned constant -1.3489 for all inputs (env traces 10-100x upstream). Recalibrated on disjoint train/eval split (148/156) with differential baseline subtraction (blank torch.load). New OCSVM: rho=0.1363, spread=0.07, 74% benign rate. Updated wrapper to subtract blank baseline at inference; `validate_oracle.py` mounts recalibrated model dir via `--oracle-model-dir`. `check_oracle_disjointness.py` now compares against eval split. Pilot campaign validates: opcode coverage 51.7%→55.2%.
 
 ## Reusable patterns
 
@@ -119,7 +120,7 @@ Containers: `containers/<name>/` build skinned `regenbench/<name>` images; all s
 ```bash
 # interactive guides (thin subprocess wrappers around every script)
 jupyter nbconvert --to notebook --execute --inplace notebooks/*.ipynb   # or: jupyter lab notebooks/
-# crawl 250 real models (5 clusters x 25 x 2 formats, resumable; backfills existing files)
+# crawl 304 real models (5 clusters x 25 x 2 formats, resumable; backfills existing files)
 python scripts/crawl_benign.py --clusters text-generation,text-classification,feature-extraction,token-classification,question-answering --limit-per-cluster 25 --max-size 134217728 --out-dir data/crawled --scan-cap 20000 --workers 8 --format both
 # fitness ablation (guided vs unguided, 5 replicates; needs docker+images)
 bash run_fitness_ablation_experiment.sh

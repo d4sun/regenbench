@@ -71,9 +71,11 @@ python3 scripts/crawl_benign.py \
 ## 02 — Oracle validation, views, disjoint split (PT + GGUF)
 
 ```sh
-# Score every (sampled) real checkpoint with the DynaHug (PT) and ggufref (GGUF) oracles
+# Score every (sampled) real checkpoint with the DynaHug oracle (PT)
+# Uses recalibrated model dir (--oracle-model-dir) and blank baseline for differential traces
 python3 scripts/validate_oracle.py real_benign_corpus/all_pt --sample 100 \
-  --out real_benign_corpus/oracle-validation.json --backend docker --format both
+  --out real_benign_corpus/oracle-validation.json --backend docker --format pt \
+  --oracle-model-dir real_benign_corpus/oracle-calibrated/pt
 
 # Build seed-selection views (oracle_positive / oracle_negative) for both formats
 python3 scripts/organize_corpus.py --corpus-pt real_benign_corpus/all_pt \
@@ -93,41 +95,26 @@ python3 scripts/check_oracle_disjointness.py --resplit
 
 ```sh
 # PT (DynaHug) - Collect syscall traces on the train half only (never the eval half)
+# Includes differential baseline subtraction (blank torch.load) for P2.2 Option A
 python3 scripts/calibrate_oracle.py real_benign_corpus/all_pt \
   --split-file real_benign_corpus/oracle-split.json --split-role train \
   --out real_benign_corpus/oracle-calibrated/pt \
-  --sample 50 --backend docker --seed 1337 --traces-only --format pt
+  --sample 50 --backend docker --seed 1337 --format pt
 
-# Fit the OCSVM + vectorizer inside the dynahug image, export drop-in model dir
-python3 scripts/fit_oracle_sweep.py \
-  --traces real_benign_corpus/oracle-calibrated/pt/traces.json \
-  --export --gamma 0.1 --nu 0.01 \
-  --export-dir real_benign_corpus/oracle-calibrated/pt --backend docker --image regenbench/dynahug:latest
+# The above fits OCSVM + vectorizer + scaler + writes blank_baseline.json in one pass
+# (fit_oracle_sweep.py is deprecated; calibrate_oracle.py now handles the full pipeline)
 
-# GGUF (ggufref) - Collect syscall traces on the train half only
-python3 scripts/calibrate_oracle.py real_benign_corpus/all_gguf \
-  --split-file real_benign_corpus/oracle-split.json --split-role train \
-  --out real_benign_corpus/oracle-calibrated/gguf \
-  --sample 50 --backend docker --seed 1337 --traces-only --format gguf
+# GGUF (ggufref) does not use OCSVM - it's a static reference reader + SSTI detection
+# No calibration needed for GGUF; the oracle is deterministic
 
-# Fit the OCSVM + vectorizer inside the gguf image, export drop-in model dir
-python3 scripts/fit_oracle_sweep.py \
-  --traces real_benign_corpus/oracle-calibrated/gguf/traces.json \
-  --export --gamma 0.1 --nu 0.01 \
-  --export-dir real_benign_corpus/oracle-calibrated/gguf --backend docker --image regenbench/gguf:latest
-
-# FP on the disjoint eval half (both formats)
+# FP on the disjoint eval half (PT only)
 python3 scripts/fp_eval_oracle.py --format pt --model-dir real_benign_corpus/oracle-calibrated/pt \
   --split-file real_benign_corpus/oracle-split.json --role eval \
   --out real_benign_corpus/oracle-calibrated/pt/fp-eval-eval.json --backend docker
-
-python3 scripts/fp_eval_oracle.py --format gguf --model-dir real_benign_corpus/oracle-calibrated/gguf \
-  --split-file real_benign_corpus/oracle-split.json --role eval \
-  --out real_benign_corpus/oracle-calibrated/gguf/fp-eval-eval.json --backend docker
 ```
-- **Verify**: `real_benign_corpus/oracle-calibrated/pt/` and `real_benign_corpus/oracle-calibrated/gguf/` each contain
+- **Verify**: `real_benign_corpus/oracle-calibrated/pt/` contains
   `oneclass_svm_model.pkl`, `vectorizer.pkl`, `scaler.pkl`, `syscalls.txt`,
-  `fp-eval-eval.json`.
+  `blank_baseline.json`, `fp-eval-eval.json`.
 - **Chart**: `charts/03_calibrate/calibration_fp.png`.
 
 ---
@@ -394,7 +381,7 @@ python3 scripts/save_results.py --db data/regenbench_campaign.db --corpus-dir re
 | `data/crawled/seed_manifest.json` | `total_models: 304`, formats: pt=179, gguf=125 |
 | `real_benign_corpus/all/` | 100 hard links |
 | `real_benign_corpus/oracle-split.json` | disjoint train/eval halves |
-| `real_benign_corpus/oracle-calibrated/current/` | model + vectorizer + scaler + fp-eval |
+| `real_benign_corpus/oracle-calibrated/pt/` | model + vectorizer + scaler + blank_baseline + fp-eval |
 | `data/regenbench_shadowpickle.db` | 80 valid, 20 bypasses (25.0%) |
 | `data/regenbench_campaign.db` | guided-r1 (500/473/223) + unguided-r1 (473/401/74) + gguf-demo |
 | `docs/evaluation-report.md` | H1 supported, H2 valid negative, H3 supported |
