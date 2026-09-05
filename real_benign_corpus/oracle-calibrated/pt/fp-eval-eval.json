@@ -1,0 +1,569 @@
+{
+  "task": "oracle-fp-eval-disjoint",
+  "format": "pt",
+  "model_dir": "real_benign_corpus/oracle-calibrated/pt",
+  "role": "eval",
+  "n": 91,
+  "false_positives": 6,
+  "errors": 5,
+  "fp_rate": 0.0659,
+  "score_stats": {
+    "n": 86,
+    "min": -0.0184,
+    "median": 0.0038,
+    "max": 0.0122,
+    "mean": 0.0038,
+    "std": 0.0039,
+    "spread": 0.0305,
+    "positive_rate": 0.9302
+  },
+  "duration_s": 333.6,
+  "results": [
+    {
+      "artifact": "text-generation__Abhishekcr448_Tiny-Hinglish-Chat-21M.bin",
+      "verdict": "benign",
+      "decision_score": 0.00700733746427884,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__Aniemore_rubert-tiny2-russian-emotion-detection.bin",
+      "verdict": "benign",
+      "decision_score": 0.00311930858340273,
+      "exit_code": 0
+    },
+    {
+      "artifact": "token-classification__ArBert_albert-base-v2-finetuned-ner.bin",
+      "verdict": "benign",
+      "decision_score": 0.002699249864382497,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__BAAI_bge-small-en.bin",
+      "verdict": "benign",
+      "decision_score": 0.008815142149603827,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__BAAI_bge-small-zh-v1.5.bin",
+      "verdict": "benign",
+      "decision_score": 0.004508253306714838,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__Djacon_rubert-tiny2-russian-emotion-detection.bin",
+      "verdict": "benign",
+      "decision_score": 0.0028229756556960722,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__EleutherAI_pythia-31m-deduped.bin",
+      "verdict": "benign",
+      "decision_score": 0.006511749605519979,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__FredZhang7_anime-anything-promptgen-v2.bin",
+      "verdict": "benign",
+      "decision_score": 0.004477356114017977,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__HuggingFaceM4_tiny-random-LlamaForCausalLM.bin",
+      "verdict": "benign",
+      "decision_score": 0.0004022593032568106,
+      "exit_code": 0
+    },
+    {
+      "artifact": "token-classification__IlyaGusev_ru-word-stress-transformer.bin",
+      "verdict": "benign",
+      "decision_score": 0.005035057647542293,
+      "exit_code": 0
+    },
+    {
+      "artifact": "question-answering__Intel_distilbert-base-uncased-distilled-squad-int8-static-inc.bin",
+      "verdict": "error",
+      "decision_score": null,
+      "exit_code": 2
+    },
+    {
+      "artifact": "text-classification__Intel_distilbert-base-uncased-finetuned-sst-2-english-int8-static-inc.bin",
+      "verdict": "error",
+      "decision_score": null,
+      "exit_code": 2
+    },
+    {
+      "artifact": "text-generation__Maykeye_TinyLLama-v0.bin",
+      "verdict": "benign",
+      "decision_score": 0.0027110077970899787,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__MoritzLaurer_xtremedistil-l6-h256-zeroshot-v1.1-all-33.bin",
+      "verdict": "benign",
+      "decision_score": 0.00413963300611965,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__RajuKandasamy_tamillama_tiny_30m.bin",
+      "verdict": "benign",
+      "decision_score": 0.0014063379865731501,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__Recognai_zeroshot_selectra_small.bin",
+      "verdict": "benign",
+      "decision_score": 0.009282814631639366,
+      "exit_code": 0
+    },
+    {
+      "artifact": "token-classification__StanfordAIMI_stanford-deidentifier-base.bin",
+      "verdict": "benign",
+      "decision_score": 0.001708181725336308,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__Supabase_gte-small.bin",
+      "verdict": "malicious",
+      "decision_score": -0.00018468534829613192,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__TaylorAI_bge-micro.bin",
+      "verdict": "benign",
+      "decision_score": 0.004260830562876461,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__TaylorAI_bge-micro-v2.bin",
+      "verdict": "benign",
+      "decision_score": 0.004260830562876461,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__Vsevolod_company-names-similarity-sentence-transformer.bin",
+      "verdict": "benign",
+      "decision_score": 0.0072080206085744225,
+      "exit_code": 0
+    },
+    {
+      "artifact": "question-answering__abhilash1910_albert-squad-v2.bin",
+      "verdict": "benign",
+      "decision_score": 0.002935567370743311,
+      "exit_code": 0
+    },
+    {
+      "artifact": "question-answering__ag14850_Mosquito.bin",
+      "verdict": "benign",
+      "decision_score": 0.0069056201170441395,
+      "exit_code": 0
+    },
+    {
+      "artifact": "token-classification__albertvillanova_autonlp-wikiann-entity_extraction-1e67664-1301123.bin",
+      "verdict": "benign",
+      "decision_score": 0.0031891526449215613,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__amedvedev_bert-tiny-cognitive-bias.bin",
+      "verdict": "benign",
+      "decision_score": 0.001685260923141571,
+      "exit_code": 0
+    },
+    {
+      "artifact": "question-answering__aware-ai_mobilebert-squadv2.bin",
+      "verdict": "benign",
+      "decision_score": 0.0003489849821111113,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__calum_tinystories-gpt2-3M.bin",
+      "verdict": "benign",
+      "decision_score": 0.002465257870028534,
+      "exit_code": 0
+    },
+    {
+      "artifact": "token-classification__ckiplab_albert-base-chinese-ner.bin",
+      "verdict": "benign",
+      "decision_score": 0.002951946727332122,
+      "exit_code": 0
+    },
+    {
+      "artifact": "token-classification__ckiplab_bert-base-chinese-ner.bin",
+      "verdict": "benign",
+      "decision_score": 0.0010011660730276234,
+      "exit_code": 0
+    },
+    {
+      "artifact": "token-classification__ckiplab_bert-tiny-chinese-ner.bin",
+      "verdict": "benign",
+      "decision_score": 0.005437890819033481,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__cointegrated_rubert-tiny-bilingual-nli.bin",
+      "verdict": "benign",
+      "decision_score": 0.0026310143803928016,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__cointegrated_rubert-tiny2-cedr-emotion-detection.bin",
+      "verdict": "benign",
+      "decision_score": 0.0029888532187379163,
+      "exit_code": 0
+    },
+    {
+      "artifact": "token-classification__cointegrated_rubert-tiny2-sentence-compression.bin",
+      "verdict": "benign",
+      "decision_score": 0.0026234388918746493,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__concedo_OPT-19M-ChatSalad.bin",
+      "verdict": "benign",
+      "decision_score": 0.00486693764464291,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__cross-encoder_ms-marco-MiniLM-L12-v2.bin",
+      "verdict": "benign",
+      "decision_score": 0.009402474177216638,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__cross-encoder_ms-marco-MiniLM-L4-v2.bin",
+      "verdict": "benign",
+      "decision_score": 0.006090757065443611,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__cross-encoder_ms-marco-TinyBERT-L2.bin",
+      "verdict": "benign",
+      "decision_score": 0.0018533330509536566,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__cross-encoder_ms-marco-TinyBERT-L2-v2.bin",
+      "verdict": "benign",
+      "decision_score": 0.0019129683948310439,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__cross-encoder_stsb-TinyBERT-L4.bin",
+      "verdict": "benign",
+      "decision_score": 0.005999210462284604,
+      "exit_code": 0
+    },
+    {
+      "artifact": "question-answering__deepset_minilm-uncased-squad2.bin",
+      "verdict": "benign",
+      "decision_score": 0.003045416642669052,
+      "exit_code": 0
+    },
+    {
+      "artifact": "question-answering__distilbert_distilbert-base-uncased-distilled-squad.bin",
+      "verdict": "benign",
+      "decision_score": 0.005228244102217061,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__distilbert_distilgpt2.bin",
+      "verdict": "benign",
+      "decision_score": 0.005382116694232525,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__edbeeching_decision-transformer-gym-hopper-expert.bin",
+      "verdict": "benign",
+      "decision_score": 0.00241537700937014,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__facebook_encodec_48khz.bin",
+      "verdict": "benign",
+      "decision_score": 0.009179464612927013,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__facebook_opt-125m.bin",
+      "verdict": "benign",
+      "decision_score": 0.0001852626562893478,
+      "exit_code": 0
+    },
+    {
+      "artifact": "token-classification__flair_chunk-english-fast.bin",
+      "verdict": "error",
+      "decision_score": null,
+      "exit_code": 2
+    },
+    {
+      "artifact": "token-classification__flair_upos-multi-fast.bin",
+      "verdict": "error",
+      "decision_score": null,
+      "exit_code": 2
+    },
+    {
+      "artifact": "question-answering__fzmnm_TinyLili-zh-64M.bin",
+      "verdict": "benign",
+      "decision_score": 0.0027478918875669944,
+      "exit_code": 0
+    },
+    {
+      "artifact": "token-classification__gagan3012_bert-tiny-finetuned-ner.bin",
+      "verdict": "benign",
+      "decision_score": 0.0014610291453075602,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__google_reformer-crime-and-punishment.bin",
+      "verdict": "malicious",
+      "decision_score": -0.003173273670567897,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__ibm-granite_granite-embedding-30m-english.bin",
+      "verdict": "benign",
+      "decision_score": 0.006992797004707757,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__ibm-granite_granite-embedding-small-english-r2.bin",
+      "verdict": "malicious",
+      "decision_score": -7.625761945108389e-05,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__jinaai_jina-embedding-t-en-v1.bin",
+      "verdict": "benign",
+      "decision_score": 0.005450400242472633,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__jploski_falcon40b-mini-shakespeare.bin",
+      "verdict": "benign",
+      "decision_score": 0.004082474145249038,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__jploski_retnet-mini-shakespeare.bin",
+      "verdict": "benign",
+      "decision_score": 0.004071251804556877,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__marieke93_MiniLM-evidence-types.bin",
+      "verdict": "benign",
+      "decision_score": 0.008913551589789737,
+      "exit_code": 0
+    },
+    {
+      "artifact": "token-classification__medical-ner-proj_albert-medical-ner-proj.bin",
+      "verdict": "benign",
+      "decision_score": 0.002682916439624372,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__microsoft_DialoGPT-small.bin",
+      "verdict": "benign",
+      "decision_score": 0.0053963155649163486,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__microsoft_MiniLM-L12-H384-uncased.bin",
+      "verdict": "benign",
+      "decision_score": 0.003229859475167296,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__microsoft_xtremedistil-l12-h384-uncased.bin",
+      "verdict": "benign",
+      "decision_score": 0.009417757957132775,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__microsoft_xtremedistil-l6-h256-uncased.bin",
+      "verdict": "benign",
+      "decision_score": 0.007617432091229989,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__microsoft_xtremedistil-l6-h384-uncased.bin",
+      "verdict": "benign",
+      "decision_score": 0.007768299717523311,
+      "exit_code": 0
+    },
+    {
+      "artifact": "question-answering__monologg_koelectra-small-v2-distilled-korquad-384.bin",
+      "verdict": "benign",
+      "decision_score": 0.002897440303525317,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__monsoon-nlp_hindi-bert.bin",
+      "verdict": "benign",
+      "decision_score": 0.0027589142397627803,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__mrm8488_bert-tiny-finetuned-sms-spam-detection.bin",
+      "verdict": "benign",
+      "decision_score": 0.0018533330509536566,
+      "exit_code": 0
+    },
+    {
+      "artifact": "token-classification__mrm8488_mobilebert-finetuned-pos.bin",
+      "verdict": "benign",
+      "decision_score": 0.00033997784248629426,
+      "exit_code": 0
+    },
+    {
+      "artifact": "question-answering__mrm8488_mobilebert-uncased-finetuned-squadv2.bin",
+      "verdict": "benign",
+      "decision_score": 0.0003516809969582868,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__ncfrey_ChemGPT-19M.bin",
+      "verdict": "malicious",
+      "decision_score": -0.001181497103962481,
+      "exit_code": 1
+    },
+    {
+      "artifact": "text-generation__nickypro_tinyllama-15M.bin",
+      "verdict": "benign",
+      "decision_score": 0.004216560083678572,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__nisten_Biggie-SmoLlm-0.15B-Base.bin",
+      "verdict": "malicious",
+      "decision_score": -0.018361970000363576,
+      "exit_code": 1
+    },
+    {
+      "artifact": "feature-extraction__nreimers_MiniLM-L6-H384-uncased.bin",
+      "verdict": "benign",
+      "decision_score": 0.007486548136288601,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__ntu-spml_distilhubert.bin",
+      "verdict": "benign",
+      "decision_score": 0.004687470875545788,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__openai-community_openai-gpt.bin",
+      "verdict": "benign",
+      "decision_score": 0.005477913278557511,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__roneneldan_TinyStories-1M.bin",
+      "verdict": "benign",
+      "decision_score": 0.005706710747565735,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__roneneldan_TinyStories-33M.bin",
+      "verdict": "benign",
+      "decision_score": 0.004245893445771934,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__roneneldan_TinyStories-8M.bin",
+      "verdict": "benign",
+      "decision_score": 0.00744072937508429,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__roneneldan_TinyStories-Instruct-1M.bin",
+      "verdict": "benign",
+      "decision_score": 0.005798146970929452,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__sentence-transformers_msmarco-MiniLM-L12-v3.bin",
+      "verdict": "benign",
+      "decision_score": 0.008874862056758012,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__sentence-transformers_multi-qa-MiniLM-L6-dot-v1.bin",
+      "verdict": "benign",
+      "decision_score": 0.012168352238647845,
+      "exit_code": 0
+    },
+    {
+      "artifact": "feature-extraction__sentence-transformers_paraphrase-MiniLM-L3-v2.bin",
+      "verdict": "benign",
+      "decision_score": 0.0043603987560947854,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__shahrukhx01_bert-mini-finetune-question-detection.bin",
+      "verdict": "benign",
+      "decision_score": 0.005303958949135101,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__shibing624_macbert4csc-base-chinese.bin",
+      "verdict": "benign",
+      "decision_score": 0.0007263699409017499,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__somosnlp-hackathon-2022_electricidad-small-discriminator-finetuned-clasificacion-comentarios-suicidas.bin",
+      "verdict": "benign",
+      "decision_score": 0.008766678561144464,
+      "exit_code": 0
+    },
+    {
+      "artifact": "question-answering__squirro_albert-base-v2-squad_v2.bin",
+      "verdict": "benign",
+      "decision_score": 0.002682916439624372,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__ssary_XLM-RoBERTa-German-sentiment.bin",
+      "verdict": "error",
+      "decision_score": null,
+      "exit_code": 2
+    },
+    {
+      "artifact": "text-generation__sshleifer_tiny-gpt2.bin",
+      "verdict": "benign",
+      "decision_score": 0.001368372520504424,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-generation__trl-internal-testing_tiny-random-LlamaForCausalLM.bin",
+      "verdict": "benign",
+      "decision_score": 0.00046354468822694395,
+      "exit_code": 0
+    },
+    {
+      "artifact": "question-answering__twmkn9_albert-base-v2-squad2.bin",
+      "verdict": "benign",
+      "decision_score": 0.003524178606571546,
+      "exit_code": 0
+    },
+    {
+      "artifact": "text-classification__vineetsharma_customer-support-intent-albert.bin",
+      "verdict": "benign",
+      "decision_score": 0.0033737913502962513,
+      "exit_code": 0
+    },
+    {
+      "artifact": "question-answering__wptoux_albert-chinese-large-qa.bin",
+      "verdict": "benign",
+      "decision_score": 0.007985100401362938,
+      "exit_code": 0
+    },
+    {
+      "artifact": "question-answering__ydshieh_tiny-random-gptj-for-question-answering.bin",
+      "verdict": "malicious",
+      "decision_score": -0.0052657643510887475,
+      "exit_code": 1
+    }
+  ]
+}

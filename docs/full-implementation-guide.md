@@ -183,7 +183,10 @@ python3 scripts/analyze_fitness_ablation.py --db data/regenbench_campaign.db \
 python3 scripts/run_parallel_ablation.py --max-workers 4 --rounds 5 \
   --candidates-per-round 20 --seeds 1337 1338 1339 1340 1341 \
   --fitness-modes current oracle_aware oracle_dominant --backend docker \
-  --seed-corpus-dir real_benign_corpus/all --seed-cluster text-generation
+  --seed-corpus-dir real_benign_corpus/all_pt --seed-cluster text-generation \
+  --pt-corpus-dir real_benign_corpus/all_pt --gguf-corpus-dir real_benign_corpus/all_gguf \
+  --format mixed --format-ratio 0.3 \
+  --gguf-families ssti_chat_template,nkv_overflow,ntensors_overflow,string_overflow,path_traversal,negative_dims,version_zero,ssti_obfuscated_1,ssti_obfuscated_2,ssti_obfuscated_3
 ```
 - **Verify**: `data/regenbench_campaign.db` contains the new run rows.
 - **Charts**: `charts/04_campaigns/` — `coverage_opcode.png`,

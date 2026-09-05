@@ -35,6 +35,16 @@ def run_single_campaign(args: dict) -> dict[str, Any]:
         "--attack-families", args["attack_families"],
         "--oracle-model-dir", args["oracle_model_dir"],
     ]
+    if args.get("pt_corpus_dir"):
+        cmd.extend(["--pt-corpus-dir", args["pt_corpus_dir"]])
+    if args.get("gguf_corpus_dir"):
+        cmd.extend(["--gguf-corpus-dir", args["gguf_corpus_dir"]])
+    if args.get("format"):
+        cmd.extend(["--format", args["format"]])
+    if args.get("format_ratio"):
+        cmd.extend(["--format-ratio", str(args["format_ratio"])])
+    if args.get("gguf_families"):
+        cmd.extend(["--gguf-families", args["gguf_families"]])
     if args.get("ensemble_oracle"):
         cmd.append("--ensemble-oracle")
     
@@ -93,6 +103,11 @@ def run_parallel_ablation(
     evasion_mode: str = "adaptive",
     ensemble_oracle: bool = False,
     unguided: bool = True,
+    pt_corpus_dir: str = "real_benign_corpus/all_pt",
+    gguf_corpus_dir: str = "real_benign_corpus/all_gguf",
+    format_arg: str = "pt",
+    format_ratio: float = 0.3,
+    gguf_families: str = "",
 ) -> list[dict]:
     """Run ablation experiments in parallel."""
     
@@ -122,6 +137,11 @@ def run_parallel_ablation(
                 "attack_families": attack_families,
                 "oracle_model_dir": oracle_model_dir,
                 "ensemble_oracle": ensemble_oracle,
+                "pt_corpus_dir": pt_corpus_dir,
+                "gguf_corpus_dir": gguf_corpus_dir,
+                "format": format_arg,
+                "format_ratio": format_ratio,
+                "gguf_families": gguf_families,
             })
     
     # Unguided baselines
@@ -142,6 +162,11 @@ def run_parallel_ablation(
                 "attack_families": attack_families,
                 "oracle_model_dir": oracle_model_dir,
                 "ensemble_oracle": ensemble_oracle,
+                "pt_corpus_dir": pt_corpus_dir,
+                "gguf_corpus_dir": gguf_corpus_dir,
+                "format": format_arg,
+                "format_ratio": format_ratio,
+                "gguf_families": gguf_families,
             })
     
     print(f"Total campaigns: {len(configs)}")
@@ -196,6 +221,11 @@ def main():
     ap.add_argument("--ensemble-oracle", action="store_true")
     ap.add_argument("--no-unguided", action="store_true")
     ap.add_argument("--dry-run", action="store_true", help="show configs without running")
+    ap.add_argument("--pt-corpus-dir", default="real_benign_corpus/all_pt")
+    ap.add_argument("--gguf-corpus-dir", default="real_benign_corpus/all_gguf")
+    ap.add_argument("--format", default="pt", choices=["pt", "gguf", "mixed"])
+    ap.add_argument("--format-ratio", type=float, default=0.3)
+    ap.add_argument("--gguf-families", default="")
     
     args = ap.parse_args()
     
@@ -219,12 +249,17 @@ def main():
         db=args.db,
         backend=args.backend,
         seed_corpus_dir=args.seed_corpus_dir,
-        seed_cluster="text-generation",
+        seed_cluster=args.seed_cluster,
         attack_families=args.attack_families,
         oracle_model_dir=args.oracle_model_dir,
         evasion_mode=args.evasion_mode,
         ensemble_oracle=args.ensemble_oracle,
         unguided=not args.no_unguided,
+        pt_corpus_dir=args.pt_corpus_dir,
+        gguf_corpus_dir=args.gguf_corpus_dir,
+        format_arg=args.format,
+        format_ratio=args.format_ratio,
+        gguf_families=args.gguf_families,
     )
     
     # Print summary

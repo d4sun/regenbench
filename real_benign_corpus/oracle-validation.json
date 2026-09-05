@@ -4,86 +4,86 @@
   "image_gguf": "regenbench/gguf:latest",
   "backend": "docker",
   "format": "pt",
-  "generated_at": "2026-09-05T04:57:46Z",
+  "generated_at": "2026-09-05T07:04:03Z",
   "summary": {
     "n": 100,
     "scored": 97,
-    "positive_rate": 0.74,
-    "negative_rate": 0.23,
-    "verdict_benign": 74,
-    "verdict_malicious": 23,
+    "positive_rate": 0.72,
+    "negative_rate": 0.25,
+    "verdict_benign": 72,
+    "verdict_malicious": 25,
     "verdict_error": 3,
     "score_distribution": {
-      "min": -0.0482,
-      "q25": 0.0002,
+      "min": -0.0486,
+      "q25": -0.0011,
       "median": 0.0049,
-      "q75": 0.0104,
-      "max": 0.0236,
-      "mean": 0.0035,
+      "q75": 0.0098,
+      "max": 0.0237,
+      "mean": 0.0027,
       "std": 0.0104
     },
     "by_size_bucket": {
       "1-10MB": {
         "n": 4,
-        "mean": -0.0002,
-        "median": -0.0,
-        "min": -0.0025,
-        "max": 0.0016,
+        "mean": 0.0005,
+        "median": 0.0004,
+        "min": -0.0083,
+        "max": 0.0095,
         "positive": 0.5
       },
       "10-50MB": {
         "n": 26,
-        "mean": 0.005,
-        "median": 0.0049,
+        "mean": 0.0039,
+        "median": 0.0043,
         "min": -0.0102,
-        "max": 0.0213,
-        "positive": 0.9231
+        "max": 0.0205,
+        "positive": 0.8846
       },
       "100-500MB": {
         "n": 26,
-        "mean": 0.0016,
-        "median": 0.004,
-        "min": -0.0482,
-        "max": 0.0164,
+        "mean": 0.0008,
+        "median": 0.0041,
+        "min": -0.0486,
+        "max": 0.0107,
         "positive": 0.6538
       },
       "50-100MB": {
         "n": 39,
-        "mean": 0.0045,
-        "median": 0.0082,
+        "mean": 0.004,
+        "median": 0.0079,
         "min": -0.0216,
-        "max": 0.0236,
+        "max": 0.0237,
         "positive": 0.7692
       },
       "500MB-1GB": {
         "n": 1,
-        "mean": 0.0003,
-        "median": 0.0003,
-        "min": 0.0003,
-        "max": 0.0003,
-        "positive": 1.0
+        "mean": -0.0098,
+        "median": -0.0098,
+        "min": -0.0098,
+        "max": -0.0098,
+        "positive": 0.0
       },
       "<1MB": {
         "n": 1,
-        "mean": -0.0051,
-        "median": -0.0051,
-        "min": -0.0051,
-        "max": -0.0051,
+        "mean": -0.0052,
+        "median": -0.0052,
+        "min": -0.0052,
+        "max": -0.0052,
         "positive": 0.0
       }
     },
     "by_cluster": {
       "feature-extraction": {
         "n": 18,
-        "mean": 0.0065,
-        "median": 0.0087,
+        "mean": 0.0061,
+        "median": 0.0068,
         "min": -0.0091,
-        "max": 0.0188,
+        "max": 0.0233,
         "positive": 0.8333
       },
       "question-answering": {
         "n": 14,
-        "mean": -0.0044,
+        "mean": -0.0042,
         "median": -0.002,
         "min": -0.0216,
         "max": 0.0107,
@@ -91,72 +91,72 @@
       },
       "text-classification": {
         "n": 27,
-        "mean": 0.0058,
+        "mean": 0.0043,
         "median": 0.005,
         "min": -0.0216,
-        "max": 0.0236,
+        "max": 0.0237,
         "positive": 0.8519
       },
       "text-generation": {
         "n": 26,
-        "mean": 0.003,
-        "median": 0.0057,
-        "min": -0.0482,
-        "max": 0.0164,
-        "positive": 0.7692
+        "mean": 0.0021,
+        "median": 0.0056,
+        "min": -0.0486,
+        "max": 0.0205,
+        "positive": 0.7308
       },
       "token-classification": {
         "n": 12,
-        "mean": 0.0044,
-        "median": 0.0044,
+        "mean": 0.0035,
+        "median": 0.0042,
         "min": -0.0052,
-        "max": 0.0106,
-        "positive": 0.8333
+        "max": 0.0107,
+        "positive": 0.75
       }
     },
     "by_arch": {
       "bert": {
         "n": 35,
-        "mean": -0.0001,
-        "median": 0.0035,
+        "mean": -0.0011,
+        "median": 0.0032,
         "min": -0.0216,
-        "max": 0.0213,
+        "max": 0.0096,
         "positive": 0.6857
       },
       "electra": {
         "n": 5,
-        "mean": 0.0107,
-        "median": 0.0106,
+        "mean": 0.0081,
+        "median": 0.0107,
         "min": -0.002,
-        "max": 0.0236,
+        "max": 0.0107,
         "positive": 0.8
       },
       "gpt": {
         "n": 4,
-        "mean": 0.0027,
-        "median": 0.003,
-        "min": -0.0037,
+        "mean": -0.0024,
+        "median": -0.0022,
+        "min": -0.0136,
         "max": 0.0084,
-        "positive": 0.75
+        "positive": 0.5
       },
       "llama": {
         "n": 3,
-        "mean": 0.0028,
+        "mean": -0.0002,
         "median": 0.003,
-        "min": 0.0007,
+        "min": -0.0083,
         "max": 0.0049,
-        "positive": 1.0
+        "positive": 0.6667
       },
       "other": {
         "n": 50,
         "mean": 0.0054,
-        "median": 0.0075,
-        "min": -0.0482,
-        "max": 0.0232,
+        "median": 0.0076,
+        "min": -0.0486,
+        "max": 0.0237,
         "positive": 0.8
       }
     },
-    "spread": 0.0718,
+    "spread": 0.0723,
     "collapse_flag": true
   },
   "results": [
@@ -176,7 +176,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.779
+      "duration": 3.128
     },
     {
       "index": 2,
@@ -189,12 +189,12 @@
       "size_bytes": 17501357,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.001628755311577218,
+      "decision_score": 0.001774267750506403,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 5.352
+      "duration": 3.088
     },
     {
       "index": 3,
@@ -207,12 +207,12 @@
       "size_bytes": 85085771,
       "size_bucket": "50-100MB",
       "verdict": "malicious",
-      "decision_score": -0.021620455145252876,
+      "decision_score": -0.021611665003893415,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.249
+      "duration": 3.251
     },
     {
       "index": 4,
@@ -225,12 +225,12 @@
       "size_bytes": 67605529,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.004454063303403005,
+      "decision_score": 0.004629587124360873,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.96
+      "duration": 3.161
     },
     {
       "index": 5,
@@ -242,13 +242,13 @@
       "sha256": "4c0b01790e435da1337ea519d76e747427f2d3ee9c0e49b4952caa06298021f6",
       "size_bytes": 433316646,
       "size_bucket": "100-500MB",
-      "verdict": "benign",
-      "decision_score": 0.00758935855554177,
-      "exit_code": 0,
+      "verdict": "malicious",
+      "decision_score": -0.004356354492902642,
+      "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.222
+      "duration": 3.346
     },
     {
       "index": 6,
@@ -261,12 +261,12 @@
       "size_bytes": 409232875,
       "size_bucket": "100-500MB",
       "verdict": "malicious",
-      "decision_score": -0.006467797094779515,
+      "decision_score": -0.00644707137690384,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.161
+      "duration": 3.356
     },
     {
       "index": 7,
@@ -279,12 +279,12 @@
       "size_bytes": 56578459,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.010674086234831626,
+      "decision_score": 0.010652572156195694,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.962
+      "duration": 3.205
     },
     {
       "index": 8,
@@ -302,7 +302,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.983
+      "duration": 3.247
     },
     {
       "index": 9,
@@ -314,13 +314,13 @@
       "sha256": "8e6239cab0062b00b4623fad03d359f440e2500b49fab5eab21e4a79321fb1c5",
       "size_bytes": 15751077,
       "size_bucket": "10-50MB",
-      "verdict": "benign",
-      "decision_score": 0.00012136850643942876,
-      "exit_code": 0,
+      "verdict": "malicious",
+      "decision_score": -0.008940104350539796,
+      "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.953
+      "duration": 3.254
     },
     {
       "index": 10,
@@ -338,7 +338,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 2.73
+      "duration": 2.179
     },
     {
       "index": 11,
@@ -351,12 +351,12 @@
       "size_bytes": 25537070,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.00490779895280391,
+      "decision_score": 0.005024179925092742,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.972
+      "duration": 3.197
     },
     {
       "index": 12,
@@ -369,12 +369,12 @@
       "size_bytes": 117546024,
       "size_bucket": "100-500MB",
       "verdict": "benign",
-      "decision_score": 0.0038202431603708287,
+      "decision_score": 0.004335073557518804,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.043
+      "duration": 3.226
     },
     {
       "index": 13,
@@ -392,7 +392,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.035
+      "duration": 3.3
     },
     {
       "index": 14,
@@ -405,12 +405,12 @@
       "size_bytes": 265481570,
       "size_bucket": "100-500MB",
       "verdict": "benign",
-      "decision_score": 0.004560576557594009,
+      "decision_score": 0.00469325825128053,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.146
+      "duration": 3.446
     },
     {
       "index": 15,
@@ -428,7 +428,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.077
+      "duration": 3.218
     },
     {
       "index": 16,
@@ -441,12 +441,12 @@
       "size_bytes": 95334202,
       "size_bucket": "50-100MB",
       "verdict": "malicious",
-      "decision_score": -0.0006391572391203637,
+      "decision_score": -0.009118060917070125,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.141
+      "duration": 3.246
     },
     {
       "index": 17,
@@ -459,12 +459,12 @@
       "size_bytes": 98614149,
       "size_bucket": "50-100MB",
       "verdict": "malicious",
-      "decision_score": -0.021632414643186326,
+      "decision_score": -0.021610807151577857,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.113
+      "duration": 3.394
     },
     {
       "index": 18,
@@ -477,12 +477,12 @@
       "size_bytes": 65394301,
       "size_bucket": "50-100MB",
       "verdict": "malicious",
-      "decision_score": -0.008879832726709475,
+      "decision_score": -0.008560097713606607,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.864
+      "duration": 3.263
     },
     {
       "index": 19,
@@ -495,12 +495,12 @@
       "size_bytes": 83159107,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.007511222465738765,
+      "decision_score": 0.007533064599732797,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.88
+      "duration": 3.548
     },
     {
       "index": 20,
@@ -513,12 +513,12 @@
       "size_bytes": 56330037,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.010624317164213387,
+      "decision_score": 0.010693016593394139,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.924
+      "duration": 3.439
     },
     {
       "index": 21,
@@ -531,12 +531,12 @@
       "size_bytes": 89993673,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.02355263511959657,
+      "decision_score": 0.010672698076915205,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.885
+      "duration": 3.387
     },
     {
       "index": 22,
@@ -549,12 +549,12 @@
       "size_bytes": 95842633,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.006119629495694917,
+      "decision_score": 0.006230055600931789,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.944
+      "duration": 3.332
     },
     {
       "index": 23,
@@ -567,12 +567,12 @@
       "size_bytes": 98612899,
       "size_bucket": "50-100MB",
       "verdict": "malicious",
-      "decision_score": -0.02161451013535555,
+      "decision_score": -0.02162073760007617,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.109
+      "duration": 3.438
     },
     {
       "index": 24,
@@ -585,12 +585,12 @@
       "size_bytes": 44720779,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.021331263639141035,
+      "decision_score": 0.008687994278836458,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.009
+      "duration": 3.339
     },
     {
       "index": 25,
@@ -608,7 +608,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.964
+      "duration": 3.387
     },
     {
       "index": 26,
@@ -621,12 +621,12 @@
       "size_bytes": 46769003,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.005028299606822939,
+      "decision_score": 0.0052549251944782605,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.01
+      "duration": 3.417
     },
     {
       "index": 27,
@@ -639,12 +639,12 @@
       "size_bytes": 440227047,
       "size_bucket": "100-500MB",
       "verdict": "malicious",
-      "decision_score": -0.0045337110588635765,
+      "decision_score": -0.0045564735000254986,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.234
+      "duration": 3.604
     },
     {
       "index": 28,
@@ -657,12 +657,12 @@
       "size_bytes": 128983489,
       "size_bucket": "100-500MB",
       "verdict": "malicious",
-      "decision_score": -0.00372803854114212,
+      "decision_score": -0.013621009189956831,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.091
+      "duration": 3.422
     },
     {
       "index": 29,
@@ -675,12 +675,12 @@
       "size_bytes": 69583549,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.0069689857184671855,
+      "decision_score": 0.0065909147810327695,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.066
+      "duration": 3.431
     },
     {
       "index": 30,
@@ -693,12 +693,12 @@
       "size_bytes": 17565609,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.0018489490840014888,
+      "decision_score": 0.001406987661802639,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.073
+      "duration": 3.289
     },
     {
       "index": 31,
@@ -711,12 +711,12 @@
       "size_bytes": 290854321,
       "size_bucket": "100-500MB",
       "verdict": "benign",
-      "decision_score": 0.01643861109272779,
+      "decision_score": 0.0056613878702506115,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.202
+      "duration": 3.499
     },
     {
       "index": 32,
@@ -729,12 +729,12 @@
       "size_bytes": 54530025,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.01069312270791356,
+      "decision_score": 0.010623801731816207,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.271
+      "duration": 3.344
     },
     {
       "index": 33,
@@ -747,12 +747,12 @@
       "size_bytes": 265743541,
       "size_bucket": "100-500MB",
       "verdict": "benign",
-      "decision_score": 0.004135901245582829,
+      "decision_score": 0.004130999792055279,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.277
+      "duration": 3.47
     },
     {
       "index": 34,
@@ -765,12 +765,12 @@
       "size_bytes": 44719369,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.008131592833771656,
+      "decision_score": 0.008044679974312796,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.283
+      "duration": 3.328
     },
     {
       "index": 35,
@@ -783,12 +783,12 @@
       "size_bytes": 133530889,
       "size_bucket": "100-500MB",
       "verdict": "benign",
-      "decision_score": 0.010293190734171315,
+      "decision_score": 0.01032731509473242,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.356
+      "duration": 3.409
     },
     {
       "index": 36,
@@ -801,12 +801,12 @@
       "size_bytes": 12835213,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.007411888645163706,
+      "decision_score": 0.007654089110698481,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.715
+      "duration": 3.3
     },
     {
       "index": 37,
@@ -819,12 +819,12 @@
       "size_bytes": 84149626,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.009969847557144862,
+      "decision_score": 0.010055377120162745,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.419
+      "duration": 3.355
     },
     {
       "index": 38,
@@ -842,7 +842,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 2.959
+      "duration": 2.206
     },
     {
       "index": 39,
@@ -855,12 +855,12 @@
       "size_bytes": 78557661,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.007906487687548203,
+      "decision_score": 0.00786781574961648,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.361
+      "duration": 3.403
     },
     {
       "index": 40,
@@ -873,12 +873,12 @@
       "size_bytes": 60784601,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.004892608003363469,
+      "decision_score": 0.004865722344330137,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.49
+      "duration": 3.361
     },
     {
       "index": 41,
@@ -891,12 +891,12 @@
       "size_bytes": 90888945,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.01044835256488974,
+      "decision_score": 0.010362698705071227,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.601
+      "duration": 3.355
     },
     {
       "index": 42,
@@ -914,7 +914,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.644
+      "duration": 3.367
     },
     {
       "index": 43,
@@ -932,7 +932,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.726
+      "duration": 3.386
     },
     {
       "index": 44,
@@ -945,12 +945,12 @@
       "size_bytes": 90903017,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.0108803637577147,
+      "decision_score": 0.010964721033756036,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.336
+      "duration": 3.379
     },
     {
       "index": 45,
@@ -968,7 +968,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.15
+      "duration": 2.244
     },
     {
       "index": 46,
@@ -981,12 +981,12 @@
       "size_bytes": 425321,
       "size_bucket": "<1MB",
       "verdict": "malicious",
-      "decision_score": -0.0050562308057502114,
+      "decision_score": -0.005223594463221265,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.687
+      "duration": 3.341
     },
     {
       "index": 47,
@@ -999,12 +999,12 @@
       "size_bytes": 116817911,
       "size_bucket": "100-500MB",
       "verdict": "benign",
-      "decision_score": 0.0036499678522548262,
+      "decision_score": 0.004167566633807546,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.326
+      "duration": 3.402
     },
     {
       "index": 48,
@@ -1017,12 +1017,12 @@
       "size_bytes": 29577694,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.009698431005911223,
+      "decision_score": 0.00959907520197803,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.464
+      "duration": 3.362
     },
     {
       "index": 49,
@@ -1035,12 +1035,12 @@
       "size_bytes": 76338125,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.011963242088496445,
+      "decision_score": 0.011939038549788755,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 5.266
+      "duration": 3.377
     },
     {
       "index": 50,
@@ -1058,7 +1058,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.25
+      "duration": 3.305
     },
     {
       "index": 51,
@@ -1071,12 +1071,12 @@
       "size_bytes": 105915613,
       "size_bucket": "100-500MB",
       "verdict": "benign",
-      "decision_score": 0.005719606607332756,
+      "decision_score": 0.0055791356742858345,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.199
+      "duration": 3.428
     },
     {
       "index": 52,
@@ -1089,12 +1089,12 @@
       "size_bytes": 132921069,
       "size_bucket": "100-500MB",
       "verdict": "benign",
-      "decision_score": 0.010729171123766257,
+      "decision_score": 0.010702231739511375,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.275
+      "duration": 3.395
     },
     {
       "index": 53,
@@ -1107,12 +1107,12 @@
       "size_bytes": 47168503,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.0033237886206030354,
+      "decision_score": 0.0032154185491629628,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.221
+      "duration": 3.367
     },
     {
       "index": 54,
@@ -1125,12 +1125,12 @@
       "size_bytes": 116844767,
       "size_bucket": "100-500MB",
       "verdict": "benign",
-      "decision_score": 0.0035375653794259,
+      "decision_score": 0.0036499678522548262,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.93
+      "duration": 3.393
     },
     {
       "index": 55,
@@ -1143,12 +1143,12 @@
       "size_bytes": 90895153,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.010529850383053263,
+      "decision_score": 0.01060720127132167,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.869
+      "duration": 3.378
     },
     {
       "index": 56,
@@ -1160,13 +1160,13 @@
       "sha256": "fcbb955cae0ba40989b3fabbf6ee923c67e0e67fe6dfb39dae986f5afb0d00c8",
       "size_bytes": 2906835,
       "size_bucket": "1-10MB",
-      "verdict": "malicious",
-      "decision_score": -0.002544701786008907,
-      "exit_code": 1,
+      "verdict": "benign",
+      "decision_score": 0.00947509759363227,
+      "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.871
+      "duration": 3.334
     },
     {
       "index": 57,
@@ -1179,12 +1179,12 @@
       "size_bytes": 98820249,
       "size_bucket": "50-100MB",
       "verdict": "malicious",
-      "decision_score": -0.020283276288234453,
+      "decision_score": -0.02046395755490213,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.029
+      "duration": 3.431
     },
     {
       "index": 58,
@@ -1202,7 +1202,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 3.958
+      "duration": 3.392
     },
     {
       "index": 59,
@@ -1215,12 +1215,12 @@
       "size_bytes": 133506609,
       "size_bucket": "100-500MB",
       "verdict": "benign",
-      "decision_score": 0.010706114921785664,
+      "decision_score": 0.010640967027294529,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.037
+      "duration": 3.482
     },
     {
       "index": 60,
@@ -1232,13 +1232,13 @@
       "sha256": "b1e92435cfefc360a88297fd6232aae1014995dbd85fed81e1ac79b69b8ed977",
       "size_bytes": 46797739,
       "size_bucket": "10-50MB",
-      "verdict": "benign",
-      "decision_score": 0.004871768769123569,
-      "exit_code": 0,
+      "verdict": "malicious",
+      "decision_score": -0.004771780867756842,
+      "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.097
+      "duration": 3.391
     },
     {
       "index": 61,
@@ -1251,12 +1251,12 @@
       "size_bytes": 66559895,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.004082417442503455,
+      "decision_score": 0.00451458808242125,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.0
+      "duration": 3.374
     },
     {
       "index": 62,
@@ -1269,12 +1269,12 @@
       "size_bytes": 47164791,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.016993498671783985,
+      "decision_score": 0.0034132767108604745,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.046
+      "duration": 3.385
     },
     {
       "index": 63,
@@ -1287,12 +1287,12 @@
       "size_bytes": 269149770,
       "size_bucket": "100-500MB",
       "verdict": "malicious",
-      "decision_score": -0.048216577385946424,
+      "decision_score": -0.04860248895197414,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.837
+      "duration": 3.496
     },
     {
       "index": 64,
@@ -1305,12 +1305,12 @@
       "size_bytes": 46747084,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.004832611202622988,
+      "decision_score": 0.005245641045309224,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.962
+      "duration": 3.411
     },
     {
       "index": 65,
@@ -1323,12 +1323,12 @@
       "size_bytes": 93985618,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.01880082317651427,
+      "decision_score": 0.006911687196594352,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.449
+      "duration": 3.464
     },
     {
       "index": 66,
@@ -1341,12 +1341,12 @@
       "size_bytes": 44904343,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.004158344627135768,
+      "decision_score": 0.004331524035533829,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.888
+      "duration": 3.358
     },
     {
       "index": 67,
@@ -1359,12 +1359,12 @@
       "size_bytes": 98625685,
       "size_bucket": "50-100MB",
       "verdict": "malicious",
-      "decision_score": -0.021625243367328045,
+      "decision_score": -0.02161644809556401,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 5.04
+      "duration": 3.505
     },
     {
       "index": 68,
@@ -1377,12 +1377,12 @@
       "size_bytes": 28160018,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.003650186637187469,
+      "decision_score": 0.003821731143856727,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 5.377
+      "duration": 3.39
     },
     {
       "index": 69,
@@ -1395,12 +1395,12 @@
       "size_bytes": 56338966,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.010634908262223797,
+      "decision_score": 0.010600696342259158,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 5.535
+      "duration": 3.445
     },
     {
       "index": 70,
@@ -1413,12 +1413,12 @@
       "size_bytes": 34797782,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.006540182058421912,
+      "decision_score": 0.006665625288092641,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.935
+      "duration": 3.73
     },
     {
       "index": 71,
@@ -1436,7 +1436,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.411
+      "duration": 3.807
     },
     {
       "index": 72,
@@ -1449,12 +1449,12 @@
       "size_bytes": 93172669,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.010704023702585913,
+      "decision_score": 0.010766594714396366,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.554
+      "duration": 3.966
     },
     {
       "index": 73,
@@ -1467,12 +1467,12 @@
       "size_bytes": 95842633,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.006119629495694917,
+      "decision_score": 0.006272994643206381,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.308
+      "duration": 3.786
     },
     {
       "index": 74,
@@ -1485,12 +1485,12 @@
       "size_bytes": 17561831,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.001353977377529958,
+      "decision_score": 0.0016464354575869422,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.567
+      "duration": 3.732
     },
     {
       "index": 75,
@@ -1502,13 +1502,13 @@
       "sha256": "ead8d18a1b6d6948761f23fec1647cda5b6af3dbdd23a30769824ab26f4c30b8",
       "size_bytes": 2071008,
       "size_bucket": "1-10MB",
-      "verdict": "benign",
-      "decision_score": 0.0006822253249197108,
-      "exit_code": 0,
+      "verdict": "malicious",
+      "decision_score": -0.008316811691748083,
+      "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 5.431
+      "duration": 3.609
     },
     {
       "index": 76,
@@ -1521,12 +1521,12 @@
       "size_bytes": 5211510,
       "size_bucket": "1-10MB",
       "verdict": "benign",
-      "decision_score": 0.0016405872162104929,
+      "decision_score": 0.0014837816733738463,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.64
+      "duration": 3.532
     },
     {
       "index": 77,
@@ -1539,12 +1539,12 @@
       "size_bytes": 496313727,
       "size_bucket": "100-500MB",
       "verdict": "malicious",
-      "decision_score": -0.004973170124806997,
+      "decision_score": -0.004950655180443603,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 5.343
+      "duration": 3.852
     },
     {
       "index": 78,
@@ -1557,12 +1557,12 @@
       "size_bytes": 438039735,
       "size_bucket": "100-500MB",
       "verdict": "malicious",
-      "decision_score": -0.005244151592746493,
+      "decision_score": -0.0052228964431212666,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.999
+      "duration": 3.898
     },
     {
       "index": 79,
@@ -1575,12 +1575,12 @@
       "size_bytes": 54534299,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.023212747334787093,
+      "decision_score": 0.010284747594573457,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.398
+      "duration": 3.721
     },
     {
       "index": 80,
@@ -1592,13 +1592,13 @@
       "sha256": "fce267317649e8f40bf3952094cecada2c178d6bf1c3c79401ced957c15923bc",
       "size_bytes": 17565103,
       "size_bucket": "10-50MB",
-      "verdict": "malicious",
-      "decision_score": -0.009124060122687433,
-      "exit_code": 1,
+      "verdict": "benign",
+      "decision_score": 0.0010914426766353846,
+      "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 5.437
+      "duration": 3.677
     },
     {
       "index": 81,
@@ -1611,12 +1611,12 @@
       "size_bytes": 116813471,
       "size_bucket": "100-500MB",
       "verdict": "benign",
-      "decision_score": 0.004151095023499918,
+      "decision_score": 0.003930758170189591,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.657
+      "duration": 3.797
     },
     {
       "index": 82,
@@ -1629,12 +1629,12 @@
       "size_bytes": 90888945,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.01060720127132167,
+      "decision_score": 0.010529850383053263,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.743
+      "duration": 3.882
     },
     {
       "index": 83,
@@ -1652,7 +1652,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.407
+      "duration": 3.611
     },
     {
       "index": 84,
@@ -1665,12 +1665,12 @@
       "size_bytes": 90897162,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.011015653063587288,
+      "decision_score": 0.02372461295445044,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.378
+      "duration": 3.79
     },
     {
       "index": 85,
@@ -1688,7 +1688,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.359
+      "duration": 3.652
     },
     {
       "index": 86,
@@ -1701,12 +1701,12 @@
       "size_bytes": 90939949,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.010702754286448485,
+      "decision_score": 0.010551563783121748,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.483
+      "duration": 3.872
     },
     {
       "index": 87,
@@ -1719,12 +1719,12 @@
       "size_bytes": 333969117,
       "size_bucket": "100-500MB",
       "verdict": "benign",
-      "decision_score": 0.005649393842779571,
+      "decision_score": 0.005379643298035308,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.823
+      "duration": 3.696
     },
     {
       "index": 88,
@@ -1737,12 +1737,12 @@
       "size_bytes": 60630897,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.010348300967153445,
+      "decision_score": 0.02329604870811272,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.473
+      "duration": 3.459
     },
     {
       "index": 89,
@@ -1755,12 +1755,12 @@
       "size_bytes": 44415807,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.004393599003944343,
+      "decision_score": 0.004216539950582188,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.32
+      "duration": 3.403
     },
     {
       "index": 90,
@@ -1772,13 +1772,13 @@
       "sha256": "4e10bdbc83fdbb975a430fc2148c85051e55bd288334deab18db58664ef0ea13",
       "size_bytes": 260793700,
       "size_bucket": "100-500MB",
-      "verdict": "malicious",
-      "decision_score": -0.0066780854518431465,
-      "exit_code": 1,
+      "verdict": "benign",
+      "decision_score": 0.00469325825128053,
+      "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.366
+      "duration": 3.581
     },
     {
       "index": 91,
@@ -1791,12 +1791,12 @@
       "size_bytes": 66708541,
       "size_bucket": "50-100MB",
       "verdict": "benign",
-      "decision_score": 0.010439741596706714,
+      "decision_score": 0.010374695005622214,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 5.136
+      "duration": 3.483
     },
     {
       "index": 92,
@@ -1809,12 +1809,12 @@
       "size_bytes": 48578813,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.015897587560232185,
+      "decision_score": 0.020471362443447827,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.502
+      "duration": 3.418
     },
     {
       "index": 93,
@@ -1827,12 +1827,12 @@
       "size_bytes": 38651257,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.006033003767242473,
+      "decision_score": 0.006149016164520876,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.161
+      "duration": 3.51
     },
     {
       "index": 94,
@@ -1850,7 +1850,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.107
+      "duration": 3.495
     },
     {
       "index": 95,
@@ -1868,7 +1868,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.091
+      "duration": 3.463
     },
     {
       "index": 96,
@@ -1881,12 +1881,12 @@
       "size_bytes": 112405309,
       "size_bucket": "100-500MB",
       "verdict": "benign",
-      "decision_score": 0.01006138043482288,
+      "decision_score": 0.00998726714016876,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.42
+      "duration": 3.516
     },
     {
       "index": 97,
@@ -1898,13 +1898,13 @@
       "sha256": "9b38c2b2761e95b7bbd736e49a7ba553b8015bd3c0036b749043e1cebee464ed",
       "size_bytes": 526017373,
       "size_bucket": "500MB-1GB",
-      "verdict": "benign",
-      "decision_score": 0.000347772040022315,
-      "exit_code": 0,
+      "verdict": "malicious",
+      "decision_score": -0.009838179340848324,
+      "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 5.093
+      "duration": 3.615
     },
     {
       "index": 98,
@@ -1922,7 +1922,7 @@
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 5.311
+      "duration": 3.481
     },
     {
       "index": 99,
@@ -1935,12 +1935,12 @@
       "size_bytes": 7299843,
       "size_bucket": "1-10MB",
       "verdict": "malicious",
-      "decision_score": -0.0007160047401559289,
+      "decision_score": -0.000623904453503521,
       "exit_code": 1,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.726
+      "duration": 3.392
     },
     {
       "index": 100,
@@ -1953,12 +1953,12 @@
       "size_bytes": 17565609,
       "size_bucket": "10-50MB",
       "verdict": "benign",
-      "decision_score": 0.001974971136610798,
+      "decision_score": 0.0015332162645501357,
       "exit_code": 0,
       "load_ok": null,
       "strace_executed": null,
       "error": null,
-      "duration": 4.355
+      "duration": 3.382
     }
   ]
 }

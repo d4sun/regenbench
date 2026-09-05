@@ -51,3 +51,4 @@ results/
 
 # Per-step charts (regenerable via scripts/generate_charts.py)
 charts/
+docs/fuzzing-report-*.md
